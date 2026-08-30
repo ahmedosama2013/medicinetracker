@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Medicine Tracker</title>
+
+<!-- Every path here is relative, so the app behaves identically on
+     localhost:8000 and on username.github.io/Medicine-Tracker/. -->
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="stylesheet" href="./css/app.css">
+
+<meta name="theme-color" content="#1a56a0">
+<meta name="color-scheme" content="light">
+<meta name="description" content="A simple medicine reminder and pill identification app.">
+
+<!-- iOS ignores manifest icons for Add to Home Screen. -->
+<link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Medicines">
+</head>
+<body>
+
+<header id="topbar" hidden></header>
+
+<main id="app" tabindex="-1"></main>
+
+<nav id="bottomnav" hidden></nav>
+
+<!-- Overlay hosts: photo viewer, sheets, dialogs, toasts. -->
+<div id="overlay" hidden></div>
+<div id="toast" role="status" aria-live="polite" hidden></div>
+
+<noscript>
+  <p style="padding:1.5rem;font:1.25rem system-ui">
+    This app needs JavaScript switched on.
+  </p>
+</noscript>
+
+<script type="module" src="./js/main.js"></script>
+</body>
+</html>
