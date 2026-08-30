@@ -1,191 +1,43 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=3.0">
-    <title>MedicineTracker</title>
-    <link rel="icon" type="image/png" href="icon.png">
-    <link rel="apple-touch-icon" href="icon.png">
-    <link rel="manifest" href="manifest.json">
-    <link rel="stylesheet" href="style.css">
-    <script src="script.js" defer></script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Medicine Tracker</title>
+
+<!-- Every path here is relative, so the app behaves identically on
+     localhost:8000 and on username.github.io/Medicine-Tracker/. -->
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="stylesheet" href="./css/app.css">
+
+<meta name="theme-color" content="#1a56a0">
+<meta name="color-scheme" content="light">
+<meta name="description" content="A simple medicine reminder and pill identification app.">
+
+<!-- iOS ignores manifest icons for Add to Home Screen. -->
+<link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Medicines">
 </head>
 <body>
-    <div class="app-container">
-        <header class="header">
-            <div class="header-top">
-                <div class="brand">
-                    <svg class="brand-icon" viewBox="0 0 24 24" aria-hidden="true">
-                        <rect x="2" y="2" width="20" height="20" rx="5"></rect>
-                        <path class="brand-cross" d="M12 7v10M7 12h10"></path>
-                    </svg>
-                    <h1 class="app-title">MedicineTracker</h1>
-                </div>
-            </div>
 
-            <nav class="view-nav">
-                <button id="nav-today" class="nav-btn active" data-tab="today">Today</button>
-                <button id="nav-calendar" class="nav-btn" data-tab="calendar">Calendar</button>
-            </nav>
-        </header>
+<header id="topbar" hidden></header>
 
-        <main class="main-content">
-            <div id="tab-today" class="tab-content active">
-                <div class="header-date">
-                    <span id="current-date-text"></span>
-                </div>
+<main id="app" tabindex="-1"></main>
 
-                <section class="section progress-section">
-                    <div class="progress-header">
-                        <div class="progress-info">
-                            <span id="progress-count" class="progress-count">0 of 0</span>
-                            <span class="progress-label">medicines taken</span>
-                        </div>
-                        <span id="progress-percentage" class="progress-percentage">0%</span>
-                    </div>
-                    <div class="progress-bar-track">
-                        <div id="progress-bar-fill" class="progress-bar-fill"></div>
-                    </div>
-                </section>
+<nav id="bottomnav" hidden></nav>
 
-                <section class="section meds-section">
-                    <div class="section-heading-row">
-                        <h2 class="section-title">☀️ Day</h2>
-                    </div>
-                    <div id="day-list" class="meds-list"></div>
-                    <p id="day-empty" class="empty-note hidden">No day medicines yet.</p>
-                </section>
+<!-- Overlay hosts: photo viewer, sheets, dialogs, toasts. -->
+<div id="overlay" hidden></div>
+<div id="toast" role="status" aria-live="polite" hidden></div>
 
-                <section class="section meds-section">
-                    <div class="section-heading-row">
-                        <h2 class="section-title">🌙 Night</h2>
-                    </div>
-                    <div id="night-list" class="meds-list"></div>
-                    <p id="night-empty" class="empty-note hidden">No night medicines yet.</p>
-                </section>
+<noscript>
+  <p style="padding:1.5rem;font:1.25rem system-ui">
+    This app needs JavaScript switched on.
+  </p>
+</noscript>
 
-                <button id="add-med-btn" class="add-med-btn">
-                    <span class="add-med-plus">+</span>
-                    <span>Add Medicine</span>
-                </button>
-            </div>
-
-            <div id="tab-calendar" class="tab-content">
-                <section class="section calendar-section">
-                    <div class="calendar-header">
-                        <h2 class="section-title">History</h2>
-                        <div class="calendar-controls">
-                            <button id="prev-month" class="cal-nav-btn" aria-label="Previous month">&larr;</button>
-                            <span id="calendar-month-year" class="month-year-label"></span>
-                            <button id="next-month" class="cal-nav-btn" aria-label="Next month">&rarr;</button>
-                        </div>
-                    </div>
-
-                    <div class="calendar-grid-header">
-                        <span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span>
-                    </div>
-                    <div id="calendar-days-grid" class="calendar-days-grid"></div>
-
-                    <div id="calendar-day-details" class="calendar-details hidden">
-                        <div class="details-header">
-                            <div class="details-title-group">
-                                <span id="details-date-title" class="details-title"></span>
-                                <span class="details-hint">(Tap a medicine to edit that day)</span>
-                            </div>
-                            <span id="details-summary" class="details-summary">0 of 0</span>
-                        </div>
-                        <div id="details-meds-list" class="details-meds-list"></div>
-                        <p id="details-empty" class="empty-note hidden">No medicines were scheduled on this day.</p>
-                    </div>
-                </section>
-
-                <section class="section stats-section">
-                    <h2 class="section-title">Overview</h2>
-                    <div class="stats-grid">
-                        <div class="stat-card">
-                            <span id="stat-total" class="stat-num">0</span>
-                            <span class="stat-desc">Total Taken</span>
-                        </div>
-                        <div class="stat-card">
-                            <span id="stat-month-rate" class="stat-num">0%</span>
-                            <span class="stat-desc">This Month</span>
-                        </div>
-                        <div class="stat-card">
-                            <span id="stat-perfect-days" class="stat-num">0</span>
-                            <span class="stat-desc">Perfect Days</span>
-                        </div>
-                        <div class="stat-card">
-                            <span id="stat-best-streak" class="stat-num">0</span>
-                            <span class="stat-desc">Best Streak</span>
-                        </div>
-                    </div>
-                </section>
-            </div>
-        </main>
-
-        <footer class="app-footer">
-            <p class="footer-author">Made By : ahmedosama2013b@gmail.com</p>
-        </footer>
-    </div>
-
-    <!-- ADD / EDIT MEDICINE MODAL -->
-    <div id="med-modal" class="modal-overlay hidden">
-        <div class="modal-card">
-            <h2 id="med-modal-title" class="modal-title">Add Medicine</h2>
-
-            <div class="modal-body form-body">
-                <label class="form-label" for="med-name-input">Medicine name</label>
-                <input id="med-name-input" class="form-input" type="text" placeholder="e.g. Blood Pressure Pill" maxlength="60">
-
-                <label class="form-label" for="med-dose-input">Dose</label>
-                <input id="med-dose-input" class="form-input" type="text" placeholder="e.g. 1 tablet, 500mg" maxlength="40">
-
-                <label class="form-label">Time of day</label>
-                <div class="time-toggle-group">
-                    <button type="button" class="time-toggle-btn active" data-time="day" id="time-btn-day">☀️ Day</button>
-                    <button type="button" class="time-toggle-btn" data-time="night" id="time-btn-night">🌙 Night</button>
-                </div>
-            </div>
-
-            <div id="med-modal-error" class="modal-error hidden">Please enter a medicine name.</div>
-
-            <div class="modal-actions">
-                <button id="med-delete-btn" class="modal-btn danger-btn hidden">Delete</button>
-                <button id="med-cancel-btn" class="modal-btn secondary-btn">Cancel</button>
-                <button id="med-save-btn" class="modal-btn primary-btn">Save</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- DELETE CONFIRMATION MODAL -->
-    <div id="confirm-modal" class="modal-overlay hidden">
-        <div class="modal-card confirm-card">
-            <h2 class="modal-title">Delete this medicine?</h2>
-            <p class="modal-subtitle">This will permanently remove it from your list. This can't be undone.</p>
-            <div class="modal-actions">
-                <button id="confirm-cancel-btn" class="modal-btn secondary-btn">Cancel</button>
-                <button id="confirm-delete-btn" class="modal-btn danger-btn">Delete</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- WELCOME MODAL -->
-    <div id="welcome-modal" class="modal-overlay hidden">
-        <div class="modal-card">
-            <h2 class="modal-title">Welcome to MedicineTracker!</h2>
-            <p class="modal-subtitle">A simple, daily companion to help you stay on top of your medicines.</p>
-
-            <div class="modal-body">
-                <ul class="modal-list">
-                    <li><span class="modal-bullet">•</span> <span><strong>Add Medicines:</strong> Tap "Add Medicine" and choose Day or Night.</span></li>
-                    <li><span class="modal-bullet">•</span> <span><strong>Mark as Taken:</strong> Tap a medicine on the "Today" tab when you take it.</span></li>
-                    <li><span class="modal-bullet">•</span> <span><strong>Review History:</strong> Use the "Calendar" tab to check or fix past days.</span></li>
-                    <li><span class="modal-bullet">•</span> <span><strong>Saved Automatically:</strong> Everything is stored on this device, safely.</span></li>
-                </ul>
-            </div>
-
-            <button id="modal-get-started" class="modal-btn primary-btn full-width-btn">Get Started</button>
-        </div>
-    </div>
+<script type="module" src="./js/main.js"></script>
 </body>
 </html>

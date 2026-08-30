@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python3 \"/tmp/claude-1001/-home-umerbutt-personal-Medicine-Tracker/b7ba949d-55b1-446a-ac76-91932a5abba0/scratchpad/mkicons.py\")",
+      "Bash(python3 -)",
+      "Bash(cp \"/tmp/claude-1001/-home-umerbutt-personal-Medicine-Tracker/b7ba949d-55b1-446a-ac76-91932a5abba0/scratchpad/mkicons.py\" \"/home/umerbutt/personal/Medicine Tracker/icons/make-icons.py\")",
+      "Bash(mkdir -p \"/home/umerbutt/personal/Medicine Tracker/supabase/migrations\" \"/home/umerbutt/personal/Medicine Tracker/supabase/functions/send-reminders\" \"/home/umerbutt/personal/Medicine Tracker/supabase/functions/supporter-photo\")",
+      "WebSearch",
+      "WebFetch(domain:supabase.com)",
+      "Bash(grep -v \"^\\\\.\\\\.$\\\\|^\\\\.$\\\\|^\\\\.git$\")"
+    ]
+  }
+}
