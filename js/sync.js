@@ -59,9 +59,15 @@ async function refetchRoutine(householdId) {
   await store.saveSettings({ slots: (slotsRes.data || []).map(mapSlot) });
 
   for (const medicine of medicines) {
-    if (medicine.photoPath && medicine.photoPath !== previousPhotoPath.get(medicine.id)) {
-      await cachePhoto(medicine.id, medicine.photoPath);
-    } else if (!medicine.photoPath && previousPhotoPath.get(medicine.id)) {
+    if (medicine.photoPath) {
+      // Re-attempt even when the path looks unchanged: recording it as "seen"
+      // happens above regardless of whether the download actually succeeded,
+      // so a prior failed download (see cachePhoto's catch) must still retry.
+      const alreadyCached = await store.getPhoto(medicine.id);
+      if (medicine.photoPath !== previousPhotoPath.get(medicine.id) || !alreadyCached) {
+        await cachePhoto(medicine.id, medicine.photoPath);
+      }
+    } else if (previousPhotoPath.get(medicine.id)) {
       await store.deletePhoto(medicine.id);
     }
   }

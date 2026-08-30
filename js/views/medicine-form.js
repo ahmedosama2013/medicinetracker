@@ -327,6 +327,22 @@ export async function medicineFormView({ app, query }) {
 
   // ---- saving ------------------------------------------------------------
 
+  // The DB's freq_shape constraint requires the columns not used by a given
+  // frequency type to be null, and replace_schedules() keys its daysOfWeek
+  // handling off the JSON key's presence (not its value) -- but the form
+  // keeps stale values around when the user switches types, so the fields
+  // not applicable to the chosen type are dropped entirely here, right
+  // before it's sent.
+  function normalizeFrequency(freq) {
+    if (freq.type === 'everyNDays') {
+      return { type: 'everyNDays', interval: freq.interval, anchorDate: freq.anchorDate };
+    }
+    if (freq.type === 'weekly') {
+      return { type: 'weekly', daysOfWeek: freq.daysOfWeek };
+    }
+    return { type: 'daily' };
+  }
+
   function validate() {
     for (const key of Object.keys(errors)) delete errors[key];
     if (!draft.name.trim()) errors.name = S.errNameRequired;
@@ -354,7 +370,9 @@ export async function medicineFormView({ app, query }) {
     let saved;
     try {
       saved = await supporter.saveMedicine(code, draft);
-      await supporter.replaceSchedules(code, saved.id, schedules);
+      draft.id = saved.id; // so a retry after a later failure updates this row instead of inserting a new one
+      const payload = schedules.map(s => ({ ...s, frequency: normalizeFrequency(s.frequency) }));
+      await supporter.replaceSchedules(code, saved.id, payload);
 
       if (photoDirty) {
         if (photoBlob) await supporter.uploadPhoto(code, saved.id, photoBlob);

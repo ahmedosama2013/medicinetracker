@@ -2,8 +2,6 @@
 
 A medicine reminder and pill identification app for elderly users. Runs in the browser, backed by Supabase (Postgres, Auth, Realtime, Storage). Only the person taking the medicines has an account — a helper never signs up at all, they just enter a code.
 
-**Live:** https://umerbutt.github.io/Medicine-Tracker/
-
 It solves two problems:
 
 1. **Which pill is which.** Every medicine can carry a photo the helper took themselves, shown full screen with one tap. This is the point of the app.
