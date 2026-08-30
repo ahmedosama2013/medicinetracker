@@ -121,9 +121,3 @@ export function formatLong(str, monthNames, weekdayNames) {
   const { m, d } = parse(str);
   return `${weekdayNames[dayOfWeek(str)]} ${d} ${monthNames[m - 1]}`;
 }
-
-/** "2026-08-30" -> "30 August 2026". */
-export function formatDate(str, monthNames) {
-  const { y, m, d } = parse(str);
-  return `${d} ${monthNames[m - 1]} ${y}`;
-}

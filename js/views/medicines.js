@@ -1,6 +1,9 @@
-/* Supporter: the medicine list. */
+/* Supporter: the medicine list. Reads live from Supabase via the share code
+ * on every visit -- supporter writes already require connectivity, so there
+ * is no local cache to keep in sync here. */
 
 import * as store from '../store.js';
+import * as supporter from '../supporter.js';
 import { S } from '../strings.js';
 import { el, clear, emptyState, confirmDialog, toast } from '../ui.js';
 import { formatTime } from '../date.js';
@@ -28,13 +31,21 @@ function scheduleSummary(schedules, slots) {
 }
 
 export async function medicinesView({ app }) {
-  const [medicines, schedules, slots] = await Promise.all([
-    store.getMedicines(), store.getSchedules(), store.getSlots(),
-  ]);
+  const settings = await store.getSettings();
+  const code = settings.supporterCode;
 
   clear(app);
   app.appendChild(el('h1.page-title', { text: S.medicinesTitle }));
 
+  let routine;
+  try {
+    routine = await supporter.loadRoutine(code);
+  } catch {
+    app.appendChild(emptyState(S.errGeneric, S.pairCodeInvalid));
+    return;
+  }
+
+  const { medicines, schedules, slots } = routine;
   const active = medicines.filter(m => !m.archived);
   const archived = medicines.filter(m => m.archived);
   const visible = showArchived ? [...active, ...archived] : active;
@@ -73,7 +84,7 @@ export async function medicinesView({ app }) {
 }
 
 /** Archive from inside the form. Exported so the form can reuse the wording. */
-export async function archiveMedicine(medicine) {
+export async function archiveMedicine(code, medicine) {
   const ok = await confirmDialog({
     title: S.archive,
     body: S.archiveConfirm(medicine.name),
@@ -81,7 +92,7 @@ export async function archiveMedicine(medicine) {
     danger: true,
   });
   if (!ok) return false;
-  await store.setArchived(medicine.id, true);
+  await supporter.setArchived(code, medicine.id, true);
   toast(S.archived);
   return true;
 }

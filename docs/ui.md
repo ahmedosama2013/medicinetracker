@@ -79,13 +79,20 @@ This is the pill-identification feature and the reason the app exists, so it get
 
 One ring per day: filled when everything expected was logged, a partial arc for some of it, hollow when nothing was marked, and **nothing at all** for a day with nothing due. Today is outlined.
 
-Tapping a day opens a sheet with that day's slots and the same Done/Undo controls as Today — the same code, so there is nothing new to learn. Future days open read only ("Not yet"). Days on or before the last import open read only with a plain explanation.
+Tapping a day opens a sheet with that day's slots and the same Done/Undo controls as Today — the same code, so there is nothing new to learn. Future days open read only ("Not yet"). Days on or before the household's lock line (a couple of days back, advanced nightly by the server) open read only with a plain explanation.
 
 No percentages, no streaks, no scores, anywhere. This is a memory aid, and it must never read as judgement of someone's behaviour.
 
 ### Settings
 
-Four items and nothing else: get my medicines from my helper, save a copy of my information, change who uses this phone, app version. Plus one calm note stating that the app does not send notifications, because the absence of reminders is the one thing here that could be mistaken for a fault.
+Three groups: **Account** (signed-in Google email, the share code with a "Get a new code" button, sign out), **Reminders** (a single turn-on/turn-off row for Web Push), and app version at the bottom. No export/import screen anymore — the medicine list syncs on its own.
+
+## Sign-in and pairing (before either mode is chosen)
+
+Two small screens, reached from the "Who uses this phone?" question, styled like it (`.welcome`/`.role-btn`):
+
+- **Sign in** (simple): one button, "Sign in with Google". Nothing else — no password field, no form.
+- **Enter the code** (supporter): a single text field plus a "Connect" button. A wrong code shows an inline error under the field, not a dialog; nothing is stored until the code is confirmed against the server.
 
 ## Supporter mode
 
@@ -104,6 +111,10 @@ Each time row is: slot, an optional time override, and a frequency of every day 
 ### Times of day
 
 The four built-in slots with editable times, plus custom ones. Removing a slot that is in use warns how many medicine times will stop appearing, then deactivates those schedules rather than deleting any history.
+
+### Settings (supporter)
+
+Which household this device is connected to (its display name, not any identifying detail about the elder beyond that), **Times of day**, and **Disconnect this device** — clears the locally-stored code and returns to the "Who uses this phone?" screen. There is nothing server-side to undo: a supporter's device never had an account to begin with.
 
 ## Interaction primitives
 

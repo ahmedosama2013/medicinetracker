@@ -4,9 +4,14 @@
  * exists but is scheduled nowhere appears on no Today screen and in no
  * calendar, and the supporter has no way to notice - it is a dead state that
  * looks exactly like success. So: no save without at least one time.
+ *
+ * Every write here goes through supporter.js (code-gated Supabase calls, no
+ * local cache) and requires connectivity -- unlike the elder's device, this
+ * one is never used offline.
  */
 
 import * as store from '../store.js';
+import * as supporter from '../supporter.js';
 import * as photosLib from '../photos.js';
 import { S } from '../strings.js';
 import { el, clear, field, section, toast } from '../ui.js';
@@ -32,11 +37,21 @@ const blankSchedule = slots => ({
 
 export async function medicineFormView({ app, query }) {
   const id = query.get('id');
-  const slots = await store.getSlots();
+  const settings = await store.getSettings();
+  const code = settings.supporterCode;
 
-  const existing = id ? await store.getMedicine(id) : null;
-  const existingSchedules = id ? await store.getSchedulesForMedicine(id) : [];
-  const existingPhoto = id ? await store.getPhoto(id) : null;
+  let routine;
+  try {
+    routine = await supporter.loadRoutine(code);
+  } catch {
+    clear(app);
+    app.appendChild(el('p.note', { text: S.pairCodeInvalid }));
+    return;
+  }
+
+  const { slots } = routine;
+  const existing = id ? routine.medicines.find(m => m.id === id) : null;
+  const existingSchedules = id ? routine.schedules.filter(s => s.medicineId === id) : [];
 
   // Working copy: nothing is written until Save.
   const draft = {
@@ -47,10 +62,13 @@ export async function medicineFormView({ app, query }) {
     form: existing?.form || 'tablet',
     notes: existing?.notes || '',
     archived: existing?.archived || false,
-    createdAt: existing?.createdAt || null,
   };
 
-  let photoBlob = existingPhoto?.blob || null;
+  let photoUrl = null;
+  if (existing?.photoPath) {
+    photoUrl = await supporter.getPhotoUrl(code, existing.id).catch(() => null);
+  }
+  let photoBlob = null;      // a freshly picked, not-yet-saved photo
   let photoDirty = false;
 
   const schedules = existingSchedules.filter(s => s.active).map(s => ({
@@ -93,6 +111,8 @@ export async function medicineFormView({ app, query }) {
       const { url, token } = photosLib.objectUrl(photoBlob);
       previewToken = token;
       preview = el('span.photo-preview', el('img', { src: url, alt: '' }));
+    } else if (photoUrl) {
+      preview = el('span.photo-preview', el('img', { src: photoUrl, alt: '' }));
     } else {
       preview = el('span.photo-preview', { text: S.noPhoto });
     }
@@ -110,6 +130,7 @@ export async function medicineFormView({ app, query }) {
         if (!file) return;
         try {
           photoBlob = await photosLib.compress(file);
+          photoUrl = null;
           photoDirty = true;
           draw();
         } catch {
@@ -127,13 +148,13 @@ export async function medicineFormView({ app, query }) {
         el('div.btn-row', [
           el('button.btn', {
             type: 'button',
-            text: photoBlob ? S.retakePhoto : S.takePhoto,
+            text: (photoBlob || photoUrl) ? S.retakePhoto : S.takePhoto,
             onclick: () => input.click(),
           }),
-          photoBlob ? el('button.btn.btn-quiet', {
+          (photoBlob || photoUrl) ? el('button.btn.btn-quiet', {
             type: 'button',
             text: S.removePhoto,
-            onclick: () => { photoBlob = null; photoDirty = true; draw(); },
+            onclick: () => { photoBlob = null; photoUrl = null; photoDirty = true; draw(); },
           }) : null,
         ]),
       ]),
@@ -287,7 +308,7 @@ export async function medicineFormView({ app, query }) {
         text: S.archive,
         style: 'margin-top: 1rem; color: var(--danger); border-color: var(--danger);',
         onclick: async () => {
-          if (await archiveMedicine(existing)) go('#/medicines');
+          if (await archiveMedicine(code, existing)) go('#/medicines');
         },
       }));
     }
@@ -297,7 +318,7 @@ export async function medicineFormView({ app, query }) {
         text: S.unarchive,
         style: 'margin-top: 1rem;',
         onclick: async () => {
-          await store.setArchived(existing.id, false);
+          await supporter.setArchived(code, existing.id, false);
           go('#/medicines');
         },
       }));
@@ -330,12 +351,18 @@ export async function medicineFormView({ app, query }) {
       return;
     }
 
-    const saved = await store.saveMedicine(draft);
-    await store.replaceSchedulesForMedicine(saved.id, schedules);
+    let saved;
+    try {
+      saved = await supporter.saveMedicine(code, draft);
+      await supporter.replaceSchedules(code, saved.id, schedules);
 
-    if (photoDirty) {
-      if (photoBlob) await store.putPhoto(saved.id, photoBlob);
-      else await store.deletePhoto(saved.id);
+      if (photoDirty) {
+        if (photoBlob) await supporter.uploadPhoto(code, saved.id, photoBlob);
+        else await supporter.deletePhoto(code, saved.id);
+      }
+    } catch {
+      toast(S.errGeneric);
+      return;
     }
 
     releasePreview();

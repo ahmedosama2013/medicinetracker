@@ -134,3 +134,25 @@ self.addEventListener('fetch', event => {
     event.respondWith(cacheFirst(request));
   }
 });
+
+self.addEventListener('push', event => {
+  let payload = { title: 'Medicine Tracker', body: 'Time for your medicines' };
+  try { payload = { ...payload, ...event.data.json() }; } catch { /* keep default */ }
+  event.waitUntil(self.registration.showNotification(payload.title, {
+    body: payload.body,
+    icon: './icons/icon-192.png',
+    badge: './icons/icon-192.png',
+  }));
+});
+
+self.addEventListener('notificationclick', event => {
+  event.notification.close();
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window' }).then(clients => {
+      for (const client of clients) {
+        if ('focus' in client) return client.focus();
+      }
+      return self.clients.openWindow('./#/today');
+    })
+  );
+});

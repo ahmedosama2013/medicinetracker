@@ -16,8 +16,21 @@ export const S = {
   roleSimple: 'I take the medicines',
   roleSimpleHint: 'A simple screen showing what to take today.',
   roleSupporter: 'I help someone with their medicines',
-  roleSupporterHint: 'Add medicines, photos and times, then send them across.',
+  roleSupporterHint: 'Add medicines, photos and times. They sync automatically.',
   roleChangeLater: 'You can change this later in Settings.',
+
+  // ---- sign in (simple) --------------------------------------------------
+  signInTitle: 'Sign in',
+  signInIntro: 'One tap, no password to remember.',
+  signInGoogle: 'Sign in with Google',
+
+  // ---- pairing (supporter) -----------------------------------------------
+  pairTitle: 'Enter the code',
+  pairIntro: 'Ask the person you are helping for their code, from their Settings screen.',
+  pairCodeLabel: 'Code',
+  pairCodeRequired: 'Enter the code first.',
+  pairCodeInvalid: 'That code is not valid. Check it and try again.',
+  pairConnect: 'Connect',
 
   // ---- navigation -------------------------------------------------------
   navToday: 'Today',
@@ -27,7 +40,7 @@ export const S = {
 
   // ---- today ------------------------------------------------------------
   todayNothing: 'No medicines yet',
-  todayNothingSimple: 'Ask your helper to send you your medicine list.',
+  todayNothingSimple: 'Ask your helper to add your medicines. They will appear here as soon as they do.',
   todayNothingSupporter: 'Add a medicine to get started.',
   done: 'Done',
   undo: 'Undo',
@@ -44,7 +57,6 @@ export const S = {
   today: 'Today',
   notYet: 'Not yet',
   notYetBody: 'This day has not arrived. You can mark medicines on the day itself.',
-  lockedDay: 'Locked',
   lockedBody: 'This day is from before your last update, so it is kept as a record and cannot be changed.',
   dayNothing: 'No medicines were due on this day.',
   ofDoses: (taken, expected) => `${taken} of ${expected} taken`,
@@ -106,7 +118,6 @@ export const S = {
   cancel: 'Cancel',
   back: 'Back',
   close: 'Close',
-  delete: 'Delete',
   confirm: 'Confirm',
 
   errNameRequired: 'Give the medicine a name.',
@@ -127,58 +138,39 @@ export const S = {
   slotRemoveConfirm: (label, n) => n === 0
     ? `Remove ${label}?`
     : `Remove ${label}? ${n} medicine ${n === 1 ? 'time' : 'times'} using it will stop appearing. The record of doses already taken is kept.`,
-  slotDefaults: {
-    morning: 'Morning', afternoon: 'Afternoon', evening: 'Evening', night: 'Night',
-  },
   errSlotLabel: 'Give this time of day a name.',
-  errSlotTime: 'Set a time.',
 
   // ---- settings --------------------------------------------------------
   settingsTitle: 'Settings',
-  settingsImportSimple: 'Get my medicines from my helper',
-  settingsImportSimpleHint: 'Pick the file your helper sent you.',
-  settingsExportSimple: 'Save a copy of my information',
-  settingsExportSimpleHint: 'Keep this file somewhere safe. It can restore everything.',
-  settingsExportSupporter: 'Send medicines to the person I help',
-  settingsExportSupporterHint: 'Makes one file. Send it over WhatsApp or email.',
-  settingsImportSupporter: 'Restore from a backup file',
-  settingsImportSupporterHint: 'Use this to move to a new phone.',
   settingsSlots: 'Times of day',
-  settingsMode: 'Change who uses this phone',
-  settingsModeNow: role => role === 'simple'
-    ? 'Now set to: I take the medicines'
-    : 'Now set to: I help someone with their medicines',
   settingsVersion: 'App version',
   settingsStorage: 'Storage',
   storagePersisted: 'This phone has been asked to keep your data safely.',
   storageNotPersisted: 'Keep a saved copy of your information, just in case.',
-  noRemindersTitle: 'There are no reminders yet',
-  noRemindersBody: 'This app does not send notifications. Open it when you take your medicines, or set an alarm in the Clock app.',
 
-  // ---- export / import -------------------------------------------------
-  exportDone: 'File saved',
-  exportBig: 'That file is large. It may be too big to send over email.',
-  exportEmpty: 'There is nothing to send yet. Add a medicine first.',
+  settingsAccount: 'Account',
+  settingsSignedInAs: 'Signed in as',
+  settingsShareCode: 'Your code',
+  settingsShareCodeHint: 'Share this with anyone helping you, so they can add and update your medicines.',
+  settingsRotateCode: 'Get a new code',
+  settingsRotateCodeHint: 'Anyone using the old code loses access.',
+  settingsRotateCodeConfirm: 'Anyone using your current code will no longer be able to update your medicines. Continue?',
+  settingsRotateCodeDone: 'New code ready',
+  settingsSignOut: 'Sign out',
+  settingsSignOutConfirm: 'You can sign back in with the same Google account any time.',
 
-  importPick: 'Choose file',
-  importTitleSimple: 'New medicine list from your helper',
-  importTitleSupporter: 'Restore from this file',
-  importKeepsHistory: 'Your record of what you have taken will be kept.',
-  importCounts: c => {
-    const parts = [];
-    if (c.added) parts.push(`${c.added} new ${c.added === 1 ? 'medicine' : 'medicines'}`);
-    if (c.changed) parts.push(`${c.changed} changed`);
-    if (c.removed) parts.push(`${c.removed} removed`);
-    if (c.unchanged && !parts.length) parts.push('nothing changed');
-    return parts.join(' · ');
-  },
-  importAccept: 'Use the new list',
-  importReject: 'Keep what I have',
-  importDone: 'Your medicines are up to date',
-  errImportShape: 'This file does not look like a medicine list.',
-  errImportVersion: 'Your app needs updating. Open it while connected to the internet, then try again.',
-  errImportSlots: 'This file is incomplete: a medicine is set to a time of day that the file does not describe. Ask your helper to send it again.',
-  errImportRead: 'That file could not be read.',
+  settingsConnection: 'Connection',
+  settingsConnectedTo: 'Connected to',
+  settingsDisconnect: 'Disconnect this device',
+  settingsDisconnectHint: 'You can reconnect any time with the code.',
+  settingsDisconnectConfirm: 'This device will stop being able to update this household’s medicines until reconnected with a code.',
+
+  settingsNotifications: 'Reminders',
+  notificationsHint: 'A gentle reminder when it is time for medicines that have not been marked done.',
+  notificationsOffLabel: 'Reminders are off',
+  notificationsOnLabel: 'Reminders are on',
+  notificationsTurnOn: 'Turn on',
+  notificationsTurnOff: 'Turn off',
 
   // ---- misc ------------------------------------------------------------
   loading: 'Loading',

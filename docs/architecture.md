@@ -1,34 +1,47 @@
 # Architecture
 
-## Shape of it
+## Online sync (current)
 
-A static site. Plain HTML, CSS and ES modules, no build step, no dependencies, no `package.json`. The browser loads `index.html`, which loads `js/main.js`, which opens IndexedDB and renders a view into `<main>`.
+Only the "simple" (elder) person has an account: Google sign-in via Supabase Auth, one household per account. A supporter has **no account at all** — their device holds a standing share code (shown and rotatable in the simple person's Settings) and every write it makes goes through a `SECURITY DEFINER` Postgres function that resolves the household from that code (`supabase/migrations/0001_init.sql`). Nothing about a supporter is ever stored server-side. This is a deliberate friction/security tradeoff at this app's scale (a handful of households) — see the schema comments and `supabase/README.md`.
 
 ```
 index.html
    │
-   └── js/main.js ── opens DB, reads role, registers routes, draws nav
+   └── js/main.js ── opens local DB (cache), resolves auth/role, registers routes, draws nav
           │
           ├── js/router.js ────── hash routes (#/today), guarded by role
-          ├── js/store.js ─────── the only module that touches the database
+          ├── js/auth.js ───────── simple-only: Google sign-in, household create/resume
+          ├── js/supporter.js ──── code-gated Supabase calls, no local cache, no session
+          ├── js/sync.js ───────── simple-only: realtime mirror into IndexedDB + dose-log offline outbox
+          ├── js/store.js ──────── the only module that touches the local IndexedDB cache
           │      └── js/db.js ─── IndexedDB promise wrapper
-          ├── js/schedule.js ──── what is due on a date
-          ├── js/backup.js ────── export / import orchestration
-          │      └── js/merge.js  merge rules, pure functions
+          ├── js/schedule.js ──── what is due on a date (also ported into Postgres, `app.compute_day`/`app.is_due`)
           └── js/views/* ──────── one module per screen
 ```
 
-Three decisions explain most of the code:
+The **simple device**: Supabase Postgres is the source of truth; IndexedDB is a write-through cache kept fresh by `js/sync.js`'s Realtime subscription, plus a small `outbox` store so Done/Undo taps queue and replay if the connection drops — the one action that must never silently fail. Medicines, schedules and slots are read-only here; editing them has only ever lived in supporter-mode screens.
 
-**No build step.** Relative paths behave identically on `localhost` and on GitHub Pages, so the base-path problem that normally bites project pages does not exist. Deploy is a push. The cost is no bundler and no npm packages, which is why `js/db.js` is a hand-written IndexedDB wrapper instead of the `idb` library and the CSS is hand-written instead of a framework.
+The **supporter device**: no local cache at all. Every screen calls `js/supporter.js`, which round-trips to Supabase on every load and every save. This requires connectivity, which is fine — routine edits are not the time-critical path.
+
+A nightly Postgres cron job (`app.run_daily_freeze`) replaces the old file-import-time freeze: it computes and stores "what was due" for each household's local yesterday, then advances a read-only lock line that trails the freeze by a couple of days, so the offline dose-log outbox always has slack to catch up into. Reminders are Web Push (VAPID), sent by a `pg_cron`-scheduled Edge Function querying "due, unlogged, unnotified" slots — see the schema for the exact query.
+
+The rest of this document describes the parts that are unchanged from the original local-only design: the append-only dose log rule, local-date arithmetic, and photo compression all still apply exactly as written below, just enforced in Postgres (constraints, triggers) as well as in `js/store.js`. The **"Import merges, it never replaces"** section further down describes the retired file-based sync model; it's kept for historical context, since the same asymmetry (routine vs. history have different owners) is what the RLS/function design above encodes, just as database policy instead of merge rules.
+
+## Shape of it (local cache layer)
+
+Plain HTML, CSS and ES modules, no build step for the frontend, no `package.json`. The one exception is `js/supabase.js`, which imports the Supabase client from a CDN ESM build (`esm.sh`) rather than `node_modules` — same "no bundler" constraint, just extended to cover a dependency that can't reasonably be hand-rolled.
+
+Three decisions still explain most of the frontend code:
+
+**No build step.** Relative paths behave identically on `localhost` and on GitHub Pages, so the base-path problem that normally bites project pages does not exist. Deploy is a push. `js/config.js`'s Supabase URL and anon key are safe to commit, so there's nothing to inject at deploy time either.
 
 **Hash routing.** GitHub Pages has no redirects file, so a path-based client route 404s on refresh. `#/today` never does.
 
-**Network-first service worker.** With no build step nothing bumps a cache version on deploy, so a cache-first worker would serve stale JavaScript forever. See §2.1 of the build plan; the `cache: 'no-cache'` in the fetch is load-bearing, not decoration.
+**Network-first service worker.** With no build step nothing bumps a cache version on deploy, so a cache-first worker would serve stale JavaScript forever. See §2.1 of the build plan; the `cache: 'no-cache'` in the fetch is load-bearing, not decoration. Supabase calls are cross-origin and pass through the service worker untouched.
 
-## Data model
+## Local cache data model
 
-Six IndexedDB object stores, database `medtrack` version 1. Defined in [js/db.js](../js/db.js), accessed only through [js/store.js](../js/store.js).
+Six IndexedDB object stores plus an `outbox`, database `medtrack` version 2. Defined in [js/db.js](../js/db.js), accessed only through [js/store.js](../js/store.js). This is the *cache* shape on the simple device; the authoritative shape lives in Postgres (`supabase/migrations/0001_init.sql`).
 
 | Store | Key | Holds |
 |---|---|---|

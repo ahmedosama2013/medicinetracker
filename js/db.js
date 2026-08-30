@@ -6,7 +6,7 @@
  */
 
 const DB_NAME = 'medtrack';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 
 export const STORES = {
   medicines: 'medicines',
@@ -15,6 +15,7 @@ export const STORES = {
   doseLog: 'doseLog',
   daySnapshots: 'daySnapshots',
   settings: 'settings',
+  outbox: 'outbox',
 };
 
 let dbPromise = null;
@@ -41,6 +42,10 @@ function upgrade(db) {
   if (!db.objectStoreNames.contains(STORES.settings)) {
     db.createObjectStore(STORES.settings, { keyPath: 'key' });
   }
+  // Dose-log writes that couldn't reach Supabase yet -- see js/sync.js.
+  if (!db.objectStoreNames.contains(STORES.outbox)) {
+    db.createObjectStore(STORES.outbox, { keyPath: 'id' });
+  }
 }
 
 export function open() {
@@ -63,27 +68,6 @@ function wrap(request) {
   return new Promise((resolve, reject) => {
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error);
-  });
-}
-
-/**
- * Run `fn(tx)` inside one transaction and resolve when it commits.
- * Used by the import merge, which must be all-or-nothing.
- */
-export async function transaction(storeNames, mode, fn) {
-  const db = await open();
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(storeNames, mode);
-    let result;
-    tx.oncomplete = () => resolve(result);
-    tx.onerror = () => reject(tx.error);
-    tx.onabort = () => reject(tx.error || new Error('Transaction aborted'));
-    try {
-      result = fn(tx);
-    } catch (err) {
-      tx.abort();
-      reject(err);
-    }
   });
 }
 

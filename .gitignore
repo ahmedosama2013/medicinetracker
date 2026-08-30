@@ -1,0 +1,6 @@
+.env
+.env.local
+supabase/.env
+.supabase/
+node_modules/
+.DS_Store

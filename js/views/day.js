@@ -8,6 +8,7 @@
  */
 
 import * as store from '../store.js';
+import * as sync from '../sync.js';
 import * as schedule from '../schedule.js';
 import * as photos from '../photos.js';
 import { S } from '../strings.js';
@@ -23,10 +24,12 @@ import { formatTime } from '../date.js';
  *                               caller must not re-render this day in response.
  */
 export async function renderDay({ date, editable = true, lockReason = null, onChange = null }) {
-  const [groups, log] = await Promise.all([
+  const [groups, log, settings] = await Promise.all([
     schedule.expectedFor(date),
     store.getDoseLogForDate(date),
+    store.getSettings(),
   ]);
+  const householdId = settings.householdId;
 
   const tokens = [];
   const cleanup = () => photos.releaseAll(tokens.splice(0));
@@ -108,10 +111,10 @@ export async function renderDay({ date, editable = true, lockReason = null, onCh
           const hadFocus = document.activeElement === button;
           try {
             if (complete) {
-              await store.undoSlot(date, group.slotId);
+              await sync.undoSlot(householdId, date, group.slotId);
               for (const m of group.medicines) takenKeys.delete(`${group.slotId}|${m.medicineId}`);
             } else {
-              await store.logSlot(date, group.slotId, group.medicines.map(m => m.medicineId));
+              await sync.logSlot(householdId, date, group.slotId, group.medicines.map(m => m.medicineId));
               for (const m of group.medicines) takenKeys.add(`${group.slotId}|${m.medicineId}`);
             }
             const next = buildSlot(group);

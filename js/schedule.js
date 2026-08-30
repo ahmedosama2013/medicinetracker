@@ -113,9 +113,10 @@ export async function dueOn(dateStr) {
 
 /**
  * What was expected on `dateStr`: the frozen snapshot if one exists, otherwise
- * computed from the current routine. Snapshots are written only by imports
- * (see js/backup.js), which is what keeps past calendar days honest after the
- * routine changes.
+ * computed from the current routine. Snapshots are written server-side by a
+ * nightly job (see supabase/migrations/0001_init.sql, app.run_daily_freeze)
+ * and synced onto this device by js/sync.js, which is what keeps past
+ * calendar days honest after the routine changes.
  */
 export async function expectedFor(dateStr) {
   const snapshot = await store.getSnapshot(dateStr);

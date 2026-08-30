@@ -1,23 +1,20 @@
 /* Settings, in both modes.
  *
- * Simple mode gets four items and nothing else: get the list, save a copy,
- * change mode, version. Supporter mode gets the slot times and the hand-off.
+ * Simple mode: account (email, share code, rotate, sign out) and
+ * notifications. Supporter mode: which household this device is connected
+ * to, slot times, and a way to disconnect.
  *
- * Reached from the nav, not a hidden gesture. The person who needs the
- * supporter side is a relative visiting occasionally, and nobody will tell
- * them the trick.
+ * Reached from the nav, not a hidden gesture.
  */
 
 import * as store from '../store.js';
-import * as backup from '../backup.js';
-import * as merge from '../merge.js';
+import * as auth from '../auth.js';
+import * as supporter from '../supporter.js';
+import * as pushLib from '../push.js';
 import { S, APP_VERSION } from '../strings.js';
-import {
-  el, clear, section, toast, confirmDialog, alertDialog, field, pickFile,
-} from '../ui.js';
-import { timeToMinutes, formatDate } from '../date.js';
+import { el, clear, section, toast, confirmDialog, field } from '../ui.js';
+import { timeToMinutes } from '../date.js';
 import { go, refresh } from '../router.js';
-import { uuid } from '../db.js';
 
 function settingRow({ label, hint, control }) {
   return el('div.setting-row', [
@@ -41,74 +38,51 @@ function actionRow({ label, hint, buttonLabel, onClick, primary = false }) {
   ]);
 }
 
-// ---- export / import ------------------------------------------------------
-
-async function doExport() {
+async function rotateCode() {
+  const ok = await confirmDialog({
+    title: S.settingsRotateCode, body: S.settingsRotateCodeConfirm,
+    confirmLabel: S.settingsRotateCode, danger: true,
+  });
+  if (!ok) return;
   try {
-    const result = await backup.exportToFile();
-    if (result.empty) { toast(S.exportEmpty); return; }
-    toast(S.exportDone);
-    if (result.big) await alertDialog({ title: S.exportDone, body: S.exportBig });
+    const code = await auth.rotateShareCode();
+    await store.saveSettings({ shareCode: code });
+    toast(S.settingsRotateCodeDone);
+    refresh();
   } catch {
     toast(S.errGeneric);
   }
 }
 
-async function doImport(role) {
-  // The extension must be listed: iOS Safari greys out .json files when only
-  // the MIME type is given, leaving an unselectable filename on screen.
-  const file = await pickFile('.json,application/json');
-  if (!file) return;
-
-  let result;
-  try {
-    result = await backup.inspectFile(file);
-  } catch {
-    await alertDialog({ title: S.errGeneric, body: S.errImportRead });
-    return;
-  }
-
-  if (!result.ok) {
-    const body = result.error === merge.ERR.version ? S.errImportVersion
-      : result.error === merge.ERR.slots ? S.errImportSlots
-        : S.errImportShape;
-    await alertDialog({ title: S.errGeneric, body });
-    return;
-  }
-
+async function signOut() {
   const ok = await confirmDialog({
-    title: role === 'simple' ? S.importTitleSimple : S.importTitleSupporter,
-    body: [
-      el('p', { text: S.importCounts(result.counts) }),
-      el('p', { text: S.importKeepsHistory }),
-    ],
-    confirmLabel: S.importAccept,
-    cancelLabel: S.importReject,
+    title: S.settingsSignOut, body: S.settingsSignOutConfirm, confirmLabel: S.settingsSignOut, danger: true,
   });
   if (!ok) return;
-
-  try {
-    await backup.applyImport(result.data);
-    toast(S.importDone);
-    refresh();
-  } catch {
-    await alertDialog({ title: S.errGeneric, body: S.errImportRead });
-  }
+  await auth.signOut();
+  await store.saveSettings({ role: null, householdId: null, shareCode: null });
+  window.location.replace('#/welcome');
+  window.location.reload();
 }
 
-async function changeMode(current) {
-  const next = current === 'simple' ? 'supporter' : 'simple';
+async function disconnect() {
   const ok = await confirmDialog({
-    title: S.settingsMode,
-    body: next === 'simple' ? S.roleSimple : S.roleSupporter,
-    confirmLabel: S.confirm,
+    title: S.settingsDisconnect, body: S.settingsDisconnectConfirm, confirmLabel: S.settingsDisconnect, danger: true,
   });
   if (!ok) return;
-  await store.saveSettings({ role: next });
-  // Everything downstream of the mode - navigation, route ownership, the type
-  // scale - is decided at boot, so reload rather than re-theme in place.
-  window.location.replace('#/');
+  await store.saveSettings({ role: null, supporterCode: null, supporterHouseholdName: null });
+  window.location.replace('#/welcome');
   window.location.reload();
+}
+
+async function toggleNotifications(householdId) {
+  try {
+    if (await pushLib.isSubscribed()) await pushLib.unsubscribe();
+    else await pushLib.subscribe(householdId);
+  } catch (err) {
+    toast(err.message || S.errGeneric);
+  }
+  refresh();
 }
 
 // ---- the view -------------------------------------------------------------
@@ -121,35 +95,42 @@ export async function settingsView({ app }) {
   app.appendChild(el('h1.page-title', { text: S.settingsTitle }));
 
   if (role === 'simple') {
-    app.appendChild(section(null, [
-      actionRow({
-        label: S.settingsImportSimple,
-        hint: S.settingsImportSimpleHint,
-        buttonLabel: S.importPick,
-        primary: true,
-        onClick: () => doImport(role),
+    const session = await auth.getSession().catch(() => null);
+    const notifOn = await pushLib.isSubscribed().catch(() => false);
+
+    app.appendChild(section(S.settingsAccount, [
+      settingRow({
+        label: S.settingsSignedInAs,
+        control: el('span.setting-value', { text: session?.user?.email || '' }),
+      }),
+      settingRow({
+        label: S.settingsShareCode,
+        hint: S.settingsShareCodeHint,
+        control: el('span.setting-value.setting-code', { text: settings.shareCode || '' }),
       }),
       actionRow({
-        label: S.settingsExportSimple,
-        hint: S.settingsExportSimpleHint,
-        buttonLabel: S.save,
-        onClick: doExport,
+        label: S.settingsRotateCode,
+        hint: S.settingsRotateCodeHint,
+        buttonLabel: S.settingsRotateCode,
+        onClick: rotateCode,
+      }),
+      actionRow({ label: S.settingsSignOut, buttonLabel: S.settingsSignOut, onClick: signOut }),
+    ]));
+
+    app.appendChild(section(S.settingsNotifications, [
+      actionRow({
+        label: notifOn ? S.notificationsOnLabel : S.notificationsOffLabel,
+        hint: S.notificationsHint,
+        buttonLabel: notifOn ? S.notificationsTurnOff : S.notificationsTurnOn,
+        primary: !notifOn,
+        onClick: () => toggleNotifications(settings.householdId),
       }),
     ]));
   } else {
-    app.appendChild(section(null, [
-      actionRow({
-        label: S.settingsExportSupporter,
-        hint: S.settingsExportSupporterHint,
-        buttonLabel: S.save,
-        primary: true,
-        onClick: doExport,
-      }),
-      actionRow({
-        label: S.settingsImportSupporter,
-        hint: S.settingsImportSupporterHint,
-        buttonLabel: S.importPick,
-        onClick: () => doImport(role),
+    app.appendChild(section(S.settingsConnection, [
+      settingRow({
+        label: S.settingsConnectedTo,
+        control: el('span.setting-value', { text: settings.supporterHouseholdName || '' }),
       }),
       actionRow({
         label: S.settingsSlots,
@@ -157,33 +138,16 @@ export async function settingsView({ app }) {
         buttonLabel: S.settingsSlots,
         onClick: () => go('#/slots'),
       }),
+      actionRow({
+        label: S.settingsDisconnect,
+        hint: S.settingsDisconnectHint,
+        buttonLabel: S.settingsDisconnect,
+        onClick: disconnect,
+      }),
     ]));
   }
 
-  // Stated plainly, because the absence of notifications is the one thing
-  // about this app that could be mistaken for a fault.
-  app.appendChild(el('div.note', [
-    el('strong', { text: S.noRemindersTitle }),
-    el('p', { text: S.noRemindersBody }),
-  ]));
-
   app.appendChild(section(null, [
-    actionRow({
-      label: S.settingsMode,
-      hint: S.settingsModeNow(role),
-      buttonLabel: S.confirm,
-      onClick: () => changeMode(role),
-    }),
-    settingRow({
-      label: S.settingsStorage,
-      hint: settings.storagePersisted ? S.storagePersisted : S.storageNotPersisted,
-    }),
-    settings.lastImportAt ? settingRow({
-      label: 'Last update received',
-      control: el('span.setting-value', {
-        text: formatDate(settings.lastImportAt.slice(0, 10), S.monthNames),
-      }),
-    }) : null,
     settingRow({
       label: S.settingsVersion,
       control: el('span.setting-value', { text: APP_VERSION }),
@@ -195,14 +159,16 @@ export async function settingsView({ app }) {
 
 export async function slotsView({ app }) {
   const settings = await store.getSettings();
-  const schedules = await store.getSchedules();
-  const slots = [...settings.slots].sort((a, b) => timeToMinutes(a.time) - timeToMinutes(b.time));
+  const code = settings.supporterCode;
+  const routine = await supporter.loadRoutine(code);
+  const slots = [...routine.slots].sort((a, b) => timeToMinutes(a.time) - timeToMinutes(b.time));
+  const schedules = routine.schedules;
   const errors = {};
 
   const usageCount = slotId => schedules.filter(s => s.slotId === slotId && s.active).length;
 
   async function persist() {
-    await store.saveSettings({ slots });
+    await supporter.saveSlots(code, slots);
   }
 
   async function removeSlot(slot) {
@@ -215,11 +181,8 @@ export async function slotsView({ app }) {
     });
     if (!ok) return;
 
-    // Schedules using the slot are deactivated, never deleted: doseLog rows
-    // point at them, and history must survive a routine change.
-    for (const schedule of schedules.filter(s => s.slotId === slot.id && s.active)) {
-      await store.deactivateSchedule(schedule.id);
-    }
+    // Schedules using the slot are deactivated server-side, never deleted:
+    // dose_log rows point at them, and history must survive a routine change.
     slots.splice(slots.indexOf(slot), 1);
     await persist();
     refresh();
@@ -289,14 +252,14 @@ export async function slotsView({ app }) {
       text: S.addSlot,
       onclick: async () => {
         slots.push({
-          id: `slot-${uuid().slice(0, 8)}`,
+          id: null,
           label: 'New time',
           time: '12:00',
           order: slots.length + 1,
           builtIn: false,
         });
         await persist();
-        draw();
+        refresh();     // server has now assigned a real id -- reload to pick it up
       },
     }));
 

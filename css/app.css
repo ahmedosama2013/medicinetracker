@@ -654,6 +654,13 @@ body.mode-simple .dialog-actions { flex-direction: column-reverse; }
 .setting-label { font-weight: 600; }
 .setting-hint { color: var(--ink-2); font-size: var(--font-sm); }
 .setting-value { color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.setting-code {
+  font-family: ui-monospace, monospace;
+  font-size: var(--font-lg);
+  letter-spacing: 0.1em;
+  color: var(--ink);
+  font-weight: 700;
+}
 
 /* ---- motion and print -------------------------------------------------- */
 

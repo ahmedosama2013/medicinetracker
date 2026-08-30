@@ -2,6 +2,8 @@
 
 Everything deliberately deferred from v1. Ordered roughly by value. Nothing here blocks the v1 build.
 
+> **§1 (Reminders) and §2 (Two-way sync) are done.** Both shipped together as the online-sync rearchitecture — see [docs/architecture.md](architecture.md) and `supabase/migrations/0001_init.sql`. Left below for the historical reasoning (the ntfy-can't-reach-a-phone diagnosis and the snapshot/doseLog asymmetry both still explain *why* the shipped design looks the way it does).
+
 ---
 
 ## 1. Reminders

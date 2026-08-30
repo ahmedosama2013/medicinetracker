@@ -1,5 +1,7 @@
 # Medicine Tracker: Build Plan v3
 
+> **Superseded.** The app moved from this file-based, backend-less design to a Supabase-backed online-sync model (accounts, live sync, Web Push reminders) — see [architecture.md](architecture.md) for what's actually running today. Kept here for the record of why v1–v3's decisions were made; §9 and §11 in particular describe the reminders and two-way-sync problems that the online-sync rewrite solved.
+
 Supersedes `medicine-tracker-spec.md` v1.0 and Build Plan v2. On approval this becomes the canonical spec in the repo; v1 and v2 are kept for reference.
 
 > **Amended before build.** Five defects found in review, folded in below.

@@ -5,9 +5,10 @@
  * streaks, no scores - this is a memory aid, and it must never read as
  * medical judgement.
  *
- * Editable days are those after the last import and not in the future. A day
- * on or before `lockedThrough` was frozen by an import (see js/backup.js) and
- * is kept as a record.
+ * Editable days are those after the household's lock line and not in the
+ * future. A nightly server-side job (see supabase/migrations/0001_init.sql,
+ * app.run_daily_freeze) advances `lockedThrough`, synced onto this device by
+ * js/sync.js; a day on or before it is kept as a record.
  */
 
 import * as store from '../store.js';

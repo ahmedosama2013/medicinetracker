@@ -3,15 +3,21 @@
 
 import * as store from './store.js';
 import * as router from './router.js';
+import * as auth from './auth.js';
+import * as sync from './sync.js';
 import { S } from './strings.js';
 import { el, clear } from './ui.js';
 
 import { welcomeView } from './views/onboarding.js';
+import { signInView } from './views/auth.js';
+import { pairView } from './views/pairing.js';
 import { todayView } from './views/today.js';
 import { calendarView } from './views/calendar.js';
 import { medicinesView } from './views/medicines.js';
 import { medicineFormView } from './views/medicine-form.js';
 import { settingsView, slotsView } from './views/settings.js';
+
+const PREAUTH_PATHS = ['#/welcome', '#/signin', '#/pair'];
 
 const NAV = {
   simple: [
@@ -67,6 +73,8 @@ function registerRoutes() {
   // an old #/welcome in the address bar survives a reload and drops a
   // configured device back onto the onboarding question.
   router.register('#/welcome', { view: welcomeView, modes: [null] });
+  router.register('#/signin', { view: signInView, modes: [null] });
+  router.register('#/pair', { view: pairView, modes: [null] });
   router.register('#/today', { view: todayView, modes: ['simple', 'supporter'] });
   router.register('#/calendar', { view: calendarView, modes: ['simple'] });
   router.register('#/medicines', { view: medicinesView, modes: ['supporter'] });
@@ -86,6 +94,20 @@ function registerServiceWorker() {
   });
 }
 
+/** Runs once, after a Google redirect lands back on the app with a session
+ * but no local role yet: create the household on first sign-in, or resume
+ * the one this account already owns (a reinstall, or a second browser). */
+async function completeSimpleSignIn(session) {
+  let household = await auth.getMyHousehold();
+  if (!household) {
+    const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const displayName = session.user.email?.split('@')[0] || 'My household';
+    await auth.createHousehold(displayName, timezone);
+    household = await auth.getMyHousehold();
+  }
+  await store.saveSettings({ role: 'simple', householdId: household.id, shareCode: household.share_code });
+}
+
 async function boot() {
   registerRoutes();
   registerServiceWorker();
@@ -101,6 +123,17 @@ async function boot() {
     return;
   }
 
+  if (!settings.role) {
+    // Returning from the Google OAuth redirect: no local role yet, but a
+    // session may now exist. Never blocks boot on a slow/offline network --
+    // a failure here just leaves onboarding showing, same as before sign-in.
+    const session = await auth.getSession().catch(() => null);
+    if (session) {
+      await completeSimpleSignIn(session).catch(() => {});
+      settings = await store.getSettings();
+    }
+  }
+
   const mode = settings.role;
   document.body.classList.add(mode ? `mode-${mode}` : 'mode-none');
   router.setMode(mode);
@@ -110,14 +143,18 @@ async function boot() {
   if (!mode) {
     // No role yet: onboarding owns the screen and nothing else is reachable.
     drawNav(null, '');
-    if (router.currentPath() !== '#/welcome') {
+    if (!PREAUTH_PATHS.includes(router.currentPath())) {
       window.location.replace('#/welcome');
     }
-  } else if (router.currentPath() === '#/welcome') {
+  } else if (PREAUTH_PATHS.includes(router.currentPath())) {
     window.location.replace(router.HOME[mode]);
   }
 
   await router.start();
+
+  if (mode === 'simple' && settings.householdId) {
+    sync.startRealtime(settings.householdId);
+  }
 
   // Ask for durable storage once the app is actually in use. Chrome grants it
   // for installed apps; Safari does not implement it, which is why export

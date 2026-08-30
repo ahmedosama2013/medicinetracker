@@ -42,10 +42,6 @@ export async function todayView({ app }) {
       ));
       if (settings.role === 'supporter') {
         app.appendChild(el('a.btn.btn-primary.btn-block', { href: '#/medicine', text: S.addMedicine }));
-      } else {
-        app.appendChild(el('a.btn.btn-primary.btn-block', {
-          href: '#/settings', text: S.settingsImportSimple,
-        }));
       }
       return;
     }
