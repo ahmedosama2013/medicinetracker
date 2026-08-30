@@ -5,4 +5,4 @@
 
 export const SUPABASE_URL = 'https://bvrunnaoeotbijttrvkz.supabase.co';
 export const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ2cnVubmFvZW90YmlqdHRydmt6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgwODIwOTYsImV4cCI6MjEwMzY1ODA5Nn0.REQPX0vir_LgdBf76o5G7PsuGMiTgbPj6ANqvt2iVfo';
-export const VAPID_PUBLIC_KEY = 'BPHTdfNjDEua2qDIfHFe2AFOvh-wAzx3eAZ9PF84kYPUr86y7AQyBfG2ochjAc3devXm8eMHmuVp-NU8P6zSAeY';
+export const VAPID_PUBLIC_KEY = 'BHNPEt3oUWpxFGk9Fq9NfXLOXFu0X-IbH43q5-G04WKBNaJdUW9YxxUjkLwLBQmhT39QvyIuPyi0bIbIVjgOu_4';
