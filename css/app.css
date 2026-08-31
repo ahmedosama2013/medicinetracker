@@ -252,7 +252,7 @@ body.mode-supporter #app { padding-bottom: 3rem; }
   text-decoration: none;
 }
 .row-btn:hover { border-color: var(--line-strong); }
-.row-main { flex: 1; min-width: 0; }
+.row-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: .15rem; }
 .row-title { font-weight: 600; }
 .row-sub { color: var(--ink-2); font-size: var(--font-sm); }
 .row-chev { color: var(--ink-3); flex: none; }
@@ -567,6 +567,15 @@ body.mode-simple .dialog-actions { flex-direction: column-reverse; }
 }
 .sheet-body { padding: var(--gap); overflow: auto; }
 
+/* The bottom-sheet slide-up is a mobile pattern (thumb-reachable, edge to
+ * edge). On a desktop-width viewport there is no thumb to reach and no edge
+ * to anchor to, so the same sheet just reads as a bar stuck to the bottom of
+ * the window. From this breakpoint up it centers like a dialog instead. */
+@media (min-width: 46rem) {
+  .overlay-layer.sheet-layer { align-items: center; padding: 2rem 0; }
+  .sheet-layer .sheet { border-radius: var(--radius-lg); max-height: 80vh; }
+}
+
 .photoview-layer { background: #000; }
 .photoview {
   position: relative;
@@ -622,7 +631,16 @@ body.mode-simple .dialog-actions { flex-direction: column-reverse; }
 
 /* ---- onboarding --------------------------------------------------------- */
 
-.welcome { padding-top: 2rem; text-align: center; }
+/* #app carries a fixed top gap + 6rem bottom padding on every screen (see
+ * the #app rule near the top of this file); subtracting that keeps this
+ * roughly centered in the actual viewport rather than the full 100vh. */
+.welcome {
+  min-height: calc(100vh - 7rem);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  text-align: center;
+}
 .welcome-title { font-size: 1.6rem; }
 .welcome-intro { color: var(--ink-2); margin-bottom: 2rem; }
 .role-btn {
