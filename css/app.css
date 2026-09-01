@@ -120,6 +120,15 @@ body.mode-supporter #app { padding-bottom: 3rem; }
 .topbar-brand { font-weight: 700; color: var(--primary); }
 .tabs { display: flex; gap: .25rem; margin-left: auto; }
 
+/* Below this, .topbar-inner wraps onto two lines (flex-wrap above). Without
+ * this, the brand stays pinned left and .tabs' margin-left:auto still pins
+ * it right on its own wrapped line -- two mismatched edges instead of one
+ * centered block. */
+@media (max-width: 30rem) {
+  .topbar-inner { flex-direction: column; align-items: center; }
+  .tabs { margin-left: 0; }
+}
+
 #bottomnav {
   position: fixed;
   bottom: 0; left: 0; right: 0;
@@ -212,6 +221,10 @@ body.mode-supporter #app { padding-bottom: 3rem; }
   color: var(--primary); font: inherit; font-weight: 600;
   text-decoration: underline; cursor: pointer;
 }
+/* The "Show archived" toggle is the only .btn-link ever appended straight to
+ * #app (medicines.js) -- every other .btn-link lives inside a card and keeps
+ * its own alignment (e.g. .sched-head .btn-link below). */
+#app > .btn-link { display: block; width: 100%; text-align: center; margin-top: .5rem; }
 
 /* ---- cards and lists ---------------------------------------------------- */
 
@@ -540,7 +553,6 @@ input:focus, select:focus, textarea:focus { border-color: var(--primary); outlin
 .dialog-actions .btn { flex: 1; }
 body.mode-simple .dialog-actions { flex-direction: column-reverse; }
 
-.sheet-layer { align-items: end; }
 .sheet {
   position: relative;
   width: 100%;
@@ -571,10 +583,11 @@ body.mode-simple .dialog-actions { flex-direction: column-reverse; }
  * edge). On a desktop-width viewport there is no thumb to reach and no edge
  * to anchor to, so the same sheet just reads as a bar stuck to the bottom of
  * the window. From this breakpoint up it centers like a dialog instead. */
-@media (min-width: 46rem) {
-  .overlay-layer.sheet-layer { align-items: center; padding: 2rem 0; }
-  .sheet-layer .sheet { border-radius: var(--radius-lg); max-height: 80vh; }
-}
+/* Centered like a dialog on every screen size -- was a bottom sheet on
+ * narrow viewports only, but that read as "stuck to the bottom" rather than
+ * a deliberate slide-up, so it's centered everywhere now. */
+.overlay-layer.sheet-layer { align-items: center; padding: 2rem 1rem; }
+.sheet-layer .sheet { border-radius: var(--radius-lg); max-height: 80vh; }
 
 .photoview-layer { background: #000; }
 .photoview {
