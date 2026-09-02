@@ -10,23 +10,32 @@
  */
 
 import { S } from '../strings.js';
-import { el, clear } from '../ui.js';
+import { el, clear, icon } from '../ui.js';
 
 export async function welcomeView({ app }) {
   clear(app);
 
   app.appendChild(el('div.welcome', [
+    el('div.welcome-logo', icon('pill')),
     el('h1.welcome-title', { text: S.welcomeTitle }),
     el('p.welcome-intro', { text: S.welcomeIntro }),
 
     el('a.role-btn', { href: '#/signin' }, [
-      el('span.role-name', { text: S.roleSimple }),
-      el('span.role-hint', { text: S.roleSimpleHint }),
+      el('span.role-icon', icon('today')),
+      el('span.role-text', [
+        el('span.role-name', { text: S.roleSimple }),
+        el('span.role-hint', { text: S.roleSimpleHint }),
+      ]),
+      el('span.role-chevron', { 'aria-hidden': 'true', text: '›' }),
     ]),
 
     el('a.role-btn', { href: '#/pair' }, [
-      el('span.role-name', { text: S.roleSupporter }),
-      el('span.role-hint', { text: S.roleSupporterHint }),
+      el('span.role-icon.role-icon-accent', icon('pill')),
+      el('span.role-text', [
+        el('span.role-name', { text: S.roleSupporter }),
+        el('span.role-hint', { text: S.roleSupporterHint }),
+      ]),
+      el('span.role-chevron', { 'aria-hidden': 'true', text: '›' }),
     ]),
 
     el('p.welcome-foot', { text: S.roleChangeLater }),
