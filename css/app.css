@@ -20,6 +20,9 @@
   --primary-dark: #12406f;
   --primary-tint: #e7effa;
   --on-primary: #ffffff;
+  --accent: #6b3fa0;
+  --accent-dark: #4f2d78;
+  --accent-tint: #f1e9fa;
   --ok: #1a7a3c;
   --ok-tint: #e3f4e8;
   --warn: #8a4b00;
@@ -32,6 +35,7 @@
   --radius: 14px;
   --radius-lg: 20px;
   --shadow: 0 1px 2px rgba(16, 20, 27, .08), 0 4px 12px rgba(16, 20, 27, .06);
+  --shadow-md: 0 2px 8px rgba(20, 44, 79, .1), 0 10px 24px rgba(20, 44, 79, .1);
   --shadow-lg: 0 8px 40px rgba(16, 20, 27, .22);
 
   --tap: 44px;
@@ -44,12 +48,16 @@
   --font-stack: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 }
 
+/* Reduced from the original 20px/56px floor (see docs/ui.md) -- still well
+ * clear of the 44px/16px supporter density, just no longer oversized on a
+ * modern phone screen. Confirm these hold up with actual users before
+ * treating them as final. */
 body.mode-simple {
-  --tap: 56px;
-  --font-base: 1.25rem;      /* 20px floor, per the spec */
-  --font-lg: 1.5rem;
-  --font-sm: 1.125rem;
-  --gap: 1.125rem;
+  --tap: 52px;
+  --font-base: 1.125rem;    /* 18px floor */
+  --font-lg: 1.375rem;
+  --font-sm: 1rem;
+  --gap: 1rem;
   --page-max: 32rem;
 }
 
@@ -155,6 +163,7 @@ body.mode-supporter #app { padding-bottom: 3rem; }
   text-decoration: none;
   font-weight: 600;
   font-size: var(--font-sm);
+  transition: color .12s ease, background-color .12s ease;
 }
 #bottomnav .navlink { flex-direction: column; gap: .15rem; padding: .6rem .25rem .5rem; }
 .navlink[aria-current="page"] { color: var(--primary); }
@@ -176,6 +185,8 @@ body.mode-supporter #app { padding-bottom: 3rem; }
 [data-icon="settings"].icon { --icon: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 100 8 4 4 0 000-8zm9.4 4c0-.6-.1-1.2-.2-1.8l2-1.5-2-3.4-2.3 1a8 8 0 00-3-1.7L15.5 2h-4l-.4 2.6a8 8 0 00-3 1.7l-2.3-1-2 3.4 2 1.5a8.6 8.6 0 000 3.6l-2 1.5 2 3.4 2.3-1a8 8 0 003 1.7l.4 2.6h4l.4-2.6a8 8 0 003-1.7l2.3 1 2-3.4-2-1.5c.1-.6.2-1.2.2-1.8z"/></svg>'); }
 [data-icon="pill"] .navlink-icon,
 [data-icon="pill"].icon { --icon: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4.2 12.8l8.6-8.6a5 5 0 017 7l-8.6 8.6a5 5 0 01-7-7zm2.2 2.2a2.5 2.5 0 003.5 3.5l3-3-3.5-3.5-3 3z"/></svg>'); }
+[data-icon="account"] .navlink-icon,
+[data-icon="account"].icon { --icon: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 12a5 5 0 100-10 5 5 0 000 10zm0 2c-4.4 0-8 2.2-8 5v3h16v-3c0-2.8-3.6-5-8-5z"/></svg>'); }
 
 .icon {
   display: inline-block;
@@ -205,16 +216,21 @@ body.mode-supporter #app { padding-bottom: 3rem; }
   gap: .5rem;
   text-decoration: none;
   text-align: center;
+  transition: transform .12s ease, box-shadow .12s ease, background-color .12s ease, border-color .12s ease;
 }
 .btn:active { transform: translateY(1px); }
-.btn-primary { background: var(--primary); color: var(--on-primary); }
+.btn-primary { background: var(--primary); color: var(--on-primary); box-shadow: var(--shadow-md); }
 .btn-primary:hover { background: var(--primary-dark); }
+.btn-primary:active { box-shadow: var(--shadow); }
 .btn-quiet { background: transparent; border-color: var(--line-strong); color: var(--ink); }
+.btn-quiet:hover { background: var(--surface-2); }
 .btn-danger { background: var(--danger); color: #fff; }
 .btn-ok { background: var(--ok); color: #fff; }
 .btn-block { width: 100%; }
 .btn-lg { font-size: var(--font-lg); min-height: calc(var(--tap) + 8px); }
 .btn[disabled] { opacity: .5; cursor: not-allowed; }
+.btn[disabled]:hover { background: var(--surface-2); }
+.btn-primary[disabled]:hover { background: var(--primary); }
 .btn-row { display: flex; gap: .6rem; flex-wrap: wrap; }
 .btn-link {
   background: none; border: none; padding: .35rem 0; min-height: 0;
@@ -263,8 +279,10 @@ body.mode-supporter #app { padding-bottom: 3rem; }
   align-items: center;
   gap: .75rem;
   text-decoration: none;
+  transition: border-color .12s ease, box-shadow .12s ease, transform .12s ease;
 }
-.row-btn:hover { border-color: var(--line-strong); }
+.row-btn:hover { border-color: var(--primary); box-shadow: var(--shadow); }
+.row-btn:active { transform: translateY(1px); }
 .row-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: .15rem; }
 .row-title { font-weight: 600; }
 .row-sub { color: var(--ink-2); font-size: var(--font-sm); }
@@ -315,6 +333,7 @@ body.mode-supporter #app { padding-bottom: 3rem; }
   border-radius: var(--radius-lg);
   margin-bottom: .75rem;
   overflow: hidden;
+  box-shadow: var(--shadow);
 }
 .slot-done { border-color: var(--ok); }
 
@@ -430,11 +449,14 @@ body.mode-simple .med-thumb { width: 3rem; height: 3rem; }
   display: grid;
   place-items: center;
   padding: 0;
+  transition: box-shadow .12s ease, transform .12s ease;
 }
+.cal-day:not([disabled]):hover { box-shadow: var(--shadow); }
+.cal-day:not([disabled]):active { transform: translateY(1px); }
 .cal-day[disabled] { cursor: default; }
 .cal-day-out { opacity: .35; }
 .cal-day-future { color: var(--ink-3); }
-.cal-day-today { box-shadow: inset 0 0 0 2px var(--primary); font-weight: 800; }
+.cal-day-today { box-shadow: inset 0 0 0 2px var(--accent); font-weight: 800; }
 .cal-day-num { position: relative; z-index: 1; font-size: .95em; }
 .cal-ring {
   position: absolute; inset: 12%;
@@ -476,6 +498,7 @@ select, textarea {
   border-radius: var(--radius);
   background: var(--surface);
   color: var(--ink);
+  transition: border-color .12s ease;
 }
 textarea { min-height: 5rem; resize: vertical; }
 input:focus, select:focus, textarea:focus { border-color: var(--primary); outline: none; }
@@ -494,7 +517,9 @@ input:focus, select:focus, textarea:focus { border-color: var(--primary); outlin
   font: inherit; font-weight: 600;
   cursor: pointer;
   color: var(--ink);
+  transition: background-color .12s ease, border-color .12s ease, color .12s ease;
 }
+.chip:hover { border-color: var(--primary); }
 .chip[aria-pressed="true"] { background: var(--primary); border-color: var(--primary); color: #fff; }
 
 .photo-picker { display: flex; gap: var(--gap); align-items: center; flex-wrap: wrap; }
@@ -642,7 +667,13 @@ body.mode-simple .dialog-actions { flex-direction: column-reverse; }
 
 .fatal { padding: 2rem 1rem; }
 
-/* ---- onboarding --------------------------------------------------------- */
+/* ---- onboarding ---------------------------------------------------------
+ *
+ * Shared by the "Who uses this phone?" role picker (onboarding.js) and the
+ * sign-in / pairing screens (views/auth.js, views/pairing.js), which reuse
+ * .role-btn for their single action so the whole pre-auth flow feels like
+ * one screen rather than three different ones.
+ */
 
 /* #app carries a fixed top gap + 6rem bottom padding on every screen (see
  * the #app rule near the top of this file); subtracting that keeps this
@@ -654,13 +685,28 @@ body.mode-simple .dialog-actions { flex-direction: column-reverse; }
   justify-content: center;
   text-align: center;
 }
+.welcome-logo {
+  width: 3.5rem; height: 3.5rem;
+  margin: 0 auto 1.25rem;
+  border-radius: var(--radius-lg);
+  background: var(--primary);
+  color: #fff;
+  display: grid;
+  place-items: center;
+  box-shadow: var(--shadow-md);
+}
+.welcome-logo .icon { width: 1.75em; height: 1.75em; }
 .welcome-title { font-size: 1.6rem; }
 .welcome-intro { color: var(--ink-2); margin-bottom: 2rem; }
+
 .role-btn {
-  display: block; width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  width: 100%;
   text-align: left;
   background: var(--surface);
-  border: 2px solid var(--line-strong);
+  border: 2px solid var(--line);
   border-radius: var(--radius-lg);
   padding: 1.1rem;
   margin-bottom: 1rem;
@@ -668,10 +714,30 @@ body.mode-simple .dialog-actions { flex-direction: column-reverse; }
   text-decoration: none;
   cursor: pointer;
   min-height: 56px;
+  box-shadow: var(--shadow);
+  transition: border-color .12s ease, box-shadow .12s ease, transform .12s ease;
 }
-.role-btn:hover { border-color: var(--primary); }
-.role-name { display: block; font-weight: 700; font-size: 1.25rem; margin-bottom: .2rem; }
-.role-hint { display: block; color: var(--ink-2); font-size: 1rem; }
+.role-btn:hover { border-color: var(--primary); box-shadow: var(--shadow-md); }
+.role-btn:active { transform: translateY(1px); }
+
+.role-icon {
+  flex: none;
+  width: 3.25rem; height: 3.25rem;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  background: var(--primary-tint);
+  color: var(--primary);
+}
+.role-icon .icon { width: 1.6em; height: 1.6em; }
+.role-icon-accent { background: var(--accent-tint); color: var(--accent-dark); }
+
+.role-text { flex: 1; min-width: 0; }
+.role-name { display: block; font-weight: 700; font-size: 1.15rem; margin-bottom: .15rem; }
+.role-hint { display: block; color: var(--ink-2); font-size: .95rem; }
+
+.role-chevron { flex: none; color: var(--ink-3); font-size: 1.3rem; }
+
 .welcome-foot { color: var(--ink-2); font-size: var(--font-sm); margin-top: 1rem; }
 
 /* ---- settings ----------------------------------------------------------- */
