@@ -1,6 +1,6 @@
 {
-  "name": "Medicine Tracker",
-  "short_name": "Medicines",
+  "name": "MedicineTracker",
+  "short_name": "MedicineTracker",
   "description": "A simple medicine reminder and pill identification app.",
   "start_url": "./",
   "scope": "./",
