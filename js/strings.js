@@ -5,7 +5,7 @@
  * the codebase should contain display text.
  */
 
-export const APP_VERSION = '1.0.0';
+export const APP_VERSION = '1.1.0';
 
 export const S = {
   appName: 'Medicine Tracker',
@@ -47,7 +47,8 @@ export const S = {
   allTaken: 'All taken',
   noPhoto: 'No photo',
   // Shown once at the top of the day rather than on every card: with six
-  // medicines in a slot, six copies of the same hint is noise.
+  // medicines in a slot, six copies of the same hint is noise. Only rendered
+  // once there is at least one medicine -- see js/views/today.js.
   tapForPhoto: 'Tap a medicine to see its photo.',
   closePhoto: 'Close',
 
@@ -127,6 +128,9 @@ export const S = {
   errDaysRequired: 'Pick at least one day of the week.',
   errPhotoFailed: 'That photo could not be read. Try taking it again.',
   savedMedicine: 'Saved',
+  // Shown instead of the generic error when the medicine and its schedule
+  // saved fine but the photo step itself failed -- see js/views/medicine-form.js.
+  savedMedicineNoPhoto: 'Saved, but the photo could not be uploaded. Try adding it again from the medicine\u2019s page.',
 
   // ---- slots -----------------------------------------------------------
   slotsTitle: 'Times of day',
