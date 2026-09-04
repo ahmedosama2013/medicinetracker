@@ -367,24 +367,38 @@ export async function medicineFormView({ app, query }) {
       return;
     }
 
+    // The medicine record and its schedule are the core save. If either of
+    // these throws, nothing usable was written, so the person stays on the
+    // form and sees the generic error -- there is nothing to navigate to yet.
     let saved;
     try {
       saved = await supporter.saveMedicine(code, draft);
       draft.id = saved.id; // so a retry after a later failure updates this row instead of inserting a new one
       const payload = schedules.map(s => ({ ...s, frequency: normalizeFrequency(s.frequency) }));
       await supporter.replaceSchedules(code, saved.id, payload);
-
-      if (photoDirty) {
-        if (photoBlob) await supporter.uploadPhoto(code, saved.id, photoBlob);
-        else await supporter.deletePhoto(code, saved.id);
-      }
     } catch {
       toast(S.errGeneric);
       return;
     }
 
+    // From here on the medicine IS saved. A photo failure at this point used
+    // to be caught by the same catch block above and reported as "something
+    // went wrong" -- which was true of the photo, not of the save, and left
+    // the person confused when the medicine showed up on the list anyway
+    // despite the error. Reported separately here so the toast matches what
+    // actually happened.
+    let photoFailed = false;
+    if (photoDirty) {
+      try {
+        if (photoBlob) await supporter.uploadPhoto(code, saved.id, photoBlob);
+        else await supporter.deletePhoto(code, saved.id);
+      } catch {
+        photoFailed = true;
+      }
+    }
+
     releasePreview();
-    toast(S.savedMedicine);
+    toast(photoFailed ? S.savedMedicineNoPhoto : S.savedMedicine);
     go('#/medicines');
   }
 
