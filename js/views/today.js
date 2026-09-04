@@ -21,20 +21,16 @@ export async function todayView({ app }) {
     cleanup();
     clear(app);
 
+    // Checked before anything else, so the "tap a medicine" hint below never
+    // has a moment where it is showing next to an empty-state message with
+    // nothing to tap yet.
+    const medicines = await store.getActiveMedicines();
+
     app.appendChild(el('div.day-head', [
       el('h1.page-title', { text: S.navToday }),
       el('span.day-date', { text: formatLong(date, S.monthNames, S.weekdayNames) }),
     ]));
-    app.appendChild(el('p.page-sub', { text: S.tapForPhoto }));
 
-    // No onChange: renderDay swaps the tapped slot in place, so the screen
-    // must not redraw itself underneath the person.
-    const { node, cleanup: release } = await renderDay({ date, editable: true });
-    cleanup = release;
-
-    // An empty day is either a fresh install or a day nothing is due: the
-    // first needs pointing at the fix, so check whether anything exists yet.
-    const medicines = await store.getActiveMedicines();
     if (!medicines.length) {
       app.appendChild(emptyState(
         S.todayNothing,
@@ -46,6 +42,12 @@ export async function todayView({ app }) {
       return;
     }
 
+    app.appendChild(el('p.page-sub', { text: S.tapForPhoto }));
+
+    // No onChange: renderDay swaps the tapped slot in place, so the screen
+    // must not redraw itself underneath the person.
+    const { node, cleanup: release } = await renderDay({ date, editable: true });
+    cleanup = release;
     app.appendChild(node);
   }
 
