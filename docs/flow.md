@@ -2,8 +2,6 @@
 
 Everything the two people actually do, start to finish. This is the only file that describes the flows; other docs link here.
 
-**Live app:** https://umerbutt.github.io/Medicine-Tracker/
-
 ---
 
 ## The two people
