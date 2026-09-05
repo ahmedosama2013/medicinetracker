@@ -202,6 +202,21 @@ body.mode-none #app {
   .card, .row-btn { padding: var(--space-4); }
   .role-btn { padding: var(--space-3); gap: var(--space-3); }
   .dialog, .sheet { max-width: 100%; }
+
+  /* Supporter's top bar only (simple mode's bottom nav doesn't use this
+     markup at all). At this width "Medicine Tracker" plus the tabs pill on
+     one row either wraps the brand to two lines or pushes the tabs hard
+     against the edge with the brand sitting flush left -- neither reads as
+     centred or intentional. Stacking removes both problems at once: the
+     brand gets the full row to itself (no wrap), and the tabs pill is
+     centred under it with the same margin on both sides, so nothing ever
+     touches the edge regardless of how narrow the screen gets. */
+  .topbar-inner {
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+  .topbar-brand { font-size: var(--text-md); }
+  .tabs { width: 100%; justify-content: center; }
 }
 
 /* Supporter: top tabs, sticky. */
