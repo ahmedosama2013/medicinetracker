@@ -89,6 +89,7 @@ Elder's Settings  →  Reminders  →  Turn on  →  allow notifications
 1. On the elder's phone, **Settings** → **Reminders** → **Turn on**.
 2. The phone will ask for permission to send notifications — allow it.
 3. From then on, a notification like *"Time for your evening medicines"* arrives if a slot's time passes with something still unmarked. It never names the medicine, for privacy.
+4. If it's still unmarked about 45 minutes later, one follow-up arrives (*"Still time for your evening medicines"*) — and only one. Marking it done any time before or after either notification stops both.
 
 On iPhone this needs the app to have been added to the home screen (Flow 1, step 3) and iOS 16.4 or later — both already true if setup was followed as written.
 
