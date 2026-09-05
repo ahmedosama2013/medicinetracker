@@ -162,6 +162,7 @@ Push to `main`, then in the repo's GitHub settings go to **Settings > Pages** an
 - [ ] A medicine added by the supporter reaches the elder's Today screen live.
 - [ ] Marking a dose Done/Undo works with the browser's network set to offline, and syncs once back online (devtools > Network > Offline, tap Done, go back online, check the `dose_log` table).
 - [ ] Reminders arrive for a due-and-unlogged slot (test by adding a schedule due a few minutes from now, or by manually calling `select * from app.claim_due_notifications();` in the SQL editor to confirm it finds the right rows).
+- [ ] A second reminder arrives ~45 minutes later if the slot is still unlogged, and stops entirely once the slot is marked done — test by lowering `p_followup`/`p_followup_grace` temporarily when calling `claim_due_notifications()` directly rather than waiting 45 real minutes.
 - [ ] Rotating the share code (Settings, elder) invalidates the old code immediately.
 - [ ] A direct query against `medicines`/`schedules`/`slots` using only the anon key (no session, no code) returns nothing — confirms the code-gated function surface is the only way in.
 
