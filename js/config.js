@@ -3,6 +3,6 @@
  * protect data, not these values. Fill in with your own Supabase project's
  * values -- see .env.example for where each one comes from. */
 
-export const SUPABASE_URL = 'https://bvrunnaoeotbijttrvkz.supabase.co';
-export const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ2cnVubmFvZW90YmlqdHRydmt6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgwODIwOTYsImV4cCI6MjEwMzY1ODA5Nn0.REQPX0vir_LgdBf76o5G7PsuGMiTgbPj6ANqvt2iVfo';
-export const VAPID_PUBLIC_KEY = 'BHNPEt3oUWpxFGk9Fq9NfXLOXFu0X-IbH43q5-G04WKBNaJdUW9YxxUjkLwLBQmhT39QvyIuPyi0bIbIVjgOu_4';
+export const SUPABASE_URL = 'https://dskldijulbxdzagrcmeo.supabase.co';
+export const SUPABASE_ANON_KEY = 'sb_publishable_1VgKgaoTVARa6-1y6jmpRA_wKMIGTCK';
+export const VAPID_PUBLIC_KEY = 'BP5eRNvWPHRGtk_FW5865HNi8_ilralRR3HUzjCHRbpAFDbrHqFtozZeZvxS7R7EWONJTDf4xd9EU718QAQ9P7I';
