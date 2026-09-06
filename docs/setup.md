@@ -187,7 +187,20 @@ Two sides to this: a Google Cloud OAuth client, and telling Supabase about it.
 ### 3a. Google Cloud Console
 
 1. Go to [console.cloud.google.com](https://console.cloud.google.com/home/dashboard) and create a project (or reuse one), if you don't already have one.
-2. Go to **APIs & Services > OAuth consent screen** (`console.cloud.google.com/auth/overview`). Choose **External** as the user type, fill in the required fields (app name, support email), and save. You don't need to submit it for verification for this app's scale — a handful of named test users is fine, or leave it in "Testing" mode and add each household's Google account as a test user under **Audience**.
+2. Go to **APIs & Services > OAuth consent screen** (`console.cloud.google.com/auth/overview`). Choose **External** as the user type, fill in the required fields (app name, support email), and save.
+
+   Then decide the **publishing status**, because it decides who can sign in at all:
+
+   | | Who can sign in | Cost to you |
+   |---|---|---|
+   | **Testing** (default) | Only accounts listed under **Audience → Test users**, max 100. Everyone else gets a generic "access blocked" that does not explain itself | One entry per person, added by you |
+   | **In production** | Anyone with a Google account | Every sign-in creates a household in *your* Supabase project |
+
+   **Publishing does not require Google's verification review.** That is only for sensitive scopes — Gmail, Drive, contacts. Supabase's Google provider asks for `email`, `profile` and `openid`, which are not sensitive, so "Publish App" is the whole step. (Confirm in the console; Google moves these rules around.)
+
+   Testing is the better default for a family-scale deployment: nobody else knows the URL, and an open sign-up on a free-tier project means strangers' photos counting against your 1 GB of storage. Publish when you actually want that.
+
+   One Testing-mode caveat that sounds alarming and is not: Google expires *its* refresh tokens after 7 days. It does not sign anyone out, because Supabase issues its own session tokens after the initial sign-in and never returns to Google to refresh them.
 3. Go to **APIs & Services > Credentials > Create Credentials > OAuth client ID** (`console.cloud.google.com/auth/clients/create`).
   - Application type: **Web application**.
   - **Authorized JavaScript origins**: the **origin only, no path** — e.g. `https://YOUR-GITHUB-USERNAME.github.io`, plus `http://localhost:8000` and `http://localhost:8848` for local testing.
