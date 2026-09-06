@@ -116,7 +116,40 @@ export async function logSlot(date, slotId, medicineIds) {
   return rows;
 }
 
-/** The one sanctioned deletion in the app. See the header comment. */
+/**
+ * One medicine's state within a slot: 'taken' or 'skipped'.
+ *
+ * Reuses the existing row when there is one, so cycling a dose through the
+ * states keeps a single row with a stable id rather than churning through
+ * delete/insert pairs -- see supabase/migrations/0005_skipped_doses.sql for
+ * why that matters to the offline outbox.
+ */
+export async function setDose(date, slotId, medicineId, status) {
+  const existing = (await getDoseLogForSlot(date, slotId))
+    .find(r => r.medicineId === medicineId);
+  const row = existing
+    ? { ...existing, status, takenAt: nowIso() }
+    : { id: uuid(), medicineId, slotId, date, takenAt: nowIso(), status };
+  await db.put(STORES.doseLog, row);
+  return row;
+}
+
+/** Back to unmarked. A person un-ticking one medicine, same as undoSlot is a
+ * person un-ticking a whole slot -- see the header comment's exception. */
+export async function clearDose(date, slotId, medicineId) {
+  const existing = (await getDoseLogForSlot(date, slotId))
+    .find(r => r.medicineId === medicineId);
+  if (existing) await db.del(STORES.doseLog, existing.id);
+  return existing || null;
+}
+
+/**
+ * The one sanctioned deletion in the app. See the header comment.
+ *
+ * This clears skipped rows too. Undo on a slot means "put this slot back to
+ * untouched", and leaving skips behind would make the button's effect depend
+ * on invisible history -- the person would tap Undo and still see amber.
+ */
 export async function undoSlot(date, slotId) {
   const rows = await getDoseLogForSlot(date, slotId);
   await db.delMany(STORES.doseLog, rows.map(r => r.id));

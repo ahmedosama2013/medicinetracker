@@ -1,62 +1,107 @@
-/* Medicine Tracker — visual layer.
+/* Medicine Tracker — visual layer, v3.
  *
  * Everything, two densities switched by a body class (`.mode-simple` /
- * `.mode-supporter`), per docs/repo-structure.md. This file is the entire
- * v2 visual refresh: palette, type scale, buttons, motion. It does not
- * change markup — every selector here targets a class or data-attribute
- * that already exists in js/views/*.js and js/ui.js. See docs/ui.md for
- * the design rationale and the exact numbers this file implements.
+ * `.mode-supporter`), per docs/repo-structure.md. See docs/v3-plan.md for why
+ * this rewrite exists and docs/ui.md for the design rationale.
  *
- * No webfont, still: an offline app cannot wait on a CDN, and a thin
- * display face is unreadable at arm's length for the simple-mode audience.
- * Personality here comes from weight, spacing and colour, not a second
- * typeface — the system-ui stack is unchanged from v1.
+ * Three things changed from v2 and explain most of what follows:
+ *
+ * 1. A warm canvas. v2 sat white cards on #f6f7fb, which is the default cold
+ *    grey every framework ships with. Paper (#F3F1EA) makes a white card read
+ *    as a card, and costs nothing.
+ * 2. Dark mode, via a second token block. Shadows carry no information on a
+ *    dark canvas, so elevation there comes from the surface ladder plus
+ *    hairlines. Every semantic colour is defined twice, never derived.
+ * 3. Weight capped at 600. v2 used 800 in thirteen places; on the system-ui
+ *    stack that is the heaviest available face and it is most of why the app
+ *    read blunt. With no webfont (still: an offline app cannot wait on a CDN),
+ *    the typographic personality has to come from restraint, tracking and
+ *    tabular numerals instead.
+ *
+ * The two densities now differ on *touch*, not text: once a photo carries the
+ * recognition, 20px body copy stops earning its space but a 46px target still
+ * does.
  */
 
 /* ---------------------------------------------------------------------
-   1. Tokens
+   1. Tokens — light
    --------------------------------------------------------------------- */
 
 :root {
-  --primary: #1a56a0;
-  --primary-600: #164a8a;
-  --primary-700: #123f78;
-  --primary-50: #ffffff;
-  --primary-100: #d3e4f7;
+  color-scheme: light dark;
 
-  /* Decorative only — the supporter role-picker chip, today's calendar
-     ring. Never used for status, so it can never be mistaken for one. */
-  --accent: #6b3fa0;
-  --accent-600: #5a3488;
-  --accent-50: #f2ecf9;
-
-  --ok: #1a7a3c;
-  --ok-50: #e7f5eb;
-  --warn: #a5690c;
-  --warn-50: #fbf2e2;
-  --danger: #b3272d;
-  --danger-50: #fceced;
-
-  --ink: #12151c;
-  --ink-2: #454e5c;
-  --ink-3: #6b7280;
-  --paper: #ffffff;
-  --bg: #f6f7fb;
+  /* Surfaces. `sunken` is for insets (a schedule block inside a card);
+     `raised` is the quiet-button fill. */
+  --canvas: #f3f1ea;
   --surface: #ffffff;
-  --surface-2: #f1f3f7;
-  --surface-3: #e8ebf1;
-  --line: #e4e7ee;
-  --line-strong: #c7ceda;
+  --sunken: #f7f5ef;
+  --raised: #ebe8df;
+  --line: #e2dfd5;
+  --line-strong: #cfcbbe;
 
-  --radius-sm: 0.6rem;
-  --radius: 1rem;
-  --radius-lg: 1.375rem;
-  --radius-pill: 999px;
+  --ink: #22211e;
+  --ink-2: #57554e;
+  --ink-3: #8a877d;
 
-  --shadow-sm: 0 1px 2px rgba(18, 21, 28, 0.06);
-  --shadow: 0 4px 14px rgba(18, 21, 28, 0.08), 0 1px 3px rgba(18, 21, 28, 0.06);
-  --shadow-md: 0 10px 30px rgba(18, 21, 28, 0.12);
-  --shadow-lg: 0 20px 48px rgba(18, 21, 28, 0.18);
+  /* Brand blue is unchanged from v1/v2 on purpose: it is baked into
+     icons/make-icons.py and the theme-color meta, so changing it would mean
+     regenerating home-screen icons already installed on real phones. */
+  --primary: #1a56a0;
+  --primary-hover: #164a8a;
+  --primary-tint: #e6f1fb;
+  --primary-ink: #0c447c;
+  --primary-line: #b5d4f4;
+  --on-primary: #ffffff;
+
+  /* Taken. Its own hue, not the brand blue, so "done" can never be confused
+     with "tap this". */
+  --taken: #0f6e56;
+  --taken-tint: #e1f5ee;
+  --taken-ink: #085041;
+  --taken-line: #9fe1cb;
+  --on-taken: #ffffff;
+
+  /* `tint` is for small fills — a badge, a 44px tile. `wash` is for whole
+     surfaces. They are the same value in light mode and diverge sharply in
+     dark, because a tint that reads as a whisper behind a badge reads as a
+     shout when it is an entire card. */
+  --taken-wash: #e1f5ee;
+  --attn-wash: #faece7;
+
+  /* Skipped is a recorded outcome, not a failure. Amber, never red. */
+  --skip: #ba7517;
+  --skip-tint: #faeeda;
+  --skip-ink: #854f0b;
+  --skip-line: #fac775;
+  --on-skip: #ffffff;
+
+  /* Attention: the passive "Now" marker and non-blocking notices. */
+  --attn: #993c1d;
+  --attn-tint: #faece7;
+  --attn-line: #f5c4b3;
+
+  --danger: #a32d2d;
+  --danger-tint: #fcebeb;
+  --danger-ink: #791f1f;
+  --on-danger: #ffffff;
+
+  /* Decorative only — today's calendar ring, the supporter role chip. Never
+     used for status, so it can never be mistaken for one. */
+  --accent: #534ab7;
+  --accent-tint: #eeedfe;
+  --accent-ink: #3c3489;
+
+  --shadow-sm: 0 1px 2px rgba(34, 33, 30, 0.06);
+  --shadow: 0 2px 8px rgba(34, 33, 30, 0.07);
+  --shadow-md: 0 8px 22px rgba(34, 33, 30, 0.12);
+  --shadow-lg: 0 18px 40px rgba(34, 33, 30, 0.2);
+
+  --scrim: rgba(24, 22, 18, 0.55);
+
+  --r-sm: 0.625rem;   /* 10px — inputs, small tiles */
+  --r-md: 0.875rem;   /* 14px — pill tiles, rows */
+  --r-lg: 1.125rem;   /* 18px — cards, sheets, dialogs */
+  --r-pill: 999px;
 
   --space-1: 0.25rem;
   --space-2: 0.5rem;
@@ -66,19 +111,19 @@
   --space-6: 2rem;
   --space-7: 3rem;
 
-  /* Type scale. Supporter is the baseline; body.mode-simple below
-     overrides these to be larger while remaining smaller than v1. */
+  /* Supporter is the baseline. body.mode-simple lifts a few of these. */
   --text-xs: 0.8125rem;   /* 13px */
   --text-sm: 0.875rem;    /* 14px */
   --text-base: 0.9375rem; /* 15px */
   --text-md: 1rem;        /* 16px */
   --text-lg: 1.125rem;    /* 18px */
   --text-xl: 1.375rem;    /* 22px */
-  --text-2xl: 1.75rem;    /* 28px */
-  --text-3xl: 2.125rem;   /* 34px */
+  --text-2xl: 1.625rem;   /* 26px */
+  --text-3xl: 2rem;       /* 32px */
 
-  --target-min: 2.5rem;   /* 40px — supporter tap targets */
-  --row-h: 3rem;
+  --target-min: 2.5rem;   /* 40px */
+  --row-h: 3rem;          /* 48px */
+  --tile: 2.75rem;        /* 44px — the pill identity tile */
 
   --content-max: 40rem;
 
@@ -89,19 +134,145 @@
   --dur-slow: 360ms;
 }
 
-/* Simple mode: reduced from v1's 20px/56px (already brought to 18px/52px
-   in an earlier pass, per docs/ui.md history) down again. These are the
-   numbers this refresh ships with — see docs/ui.md for the note that they
-   still want confirming with the app's actual users before being final. */
+/* ---------------------------------------------------------------------
+   2. Tokens — dark
+   --------------------------------------------------------------------- */
+
+/* Follows the OS unless Settings has written an explicit choice onto <html>.
+   Both blocks set the same names, so nothing downstream knows which is live. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { color-scheme: dark; }
+}
+
+:root[data-theme="dark"] { color-scheme: dark; }
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --canvas: #171613;
+    --surface: #201f1b;
+    --sunken: #2a2823;
+    --raised: #35332c;
+    --line: #35332c;
+    --line-strong: #4a473e;
+
+    --ink: #f2f0e9;
+    --ink-2: #b8b4a8;
+    --ink-3: #8a877d;
+
+    /* Fills lighten and text on them darkens: a #1a56a0 button on a near-black
+       canvas is a dark shape on a dark ground, which reads as disabled. */
+    --primary: #85b7eb;
+    --primary-hover: #b5d4f4;
+    --primary-tint: #0c447c;
+    --primary-ink: #b5d4f4;
+    --primary-line: #185fa5;
+    --on-primary: #042c53;
+
+    /* The completed tint must stay positive, not dimmed. Saturated deep teal,
+       light teal text — the naive inverse of #e1f5ee reads as "greyed out". */
+    --taken: #5dcaa5;
+    --taken-tint: #085041;
+    --taken-ink: #9fe1cb;
+    --taken-line: #0f6e56;
+    --on-taken: #04342c;
+    --taken-wash: #10251f;
+
+    --skip: #ef9f27;
+    --skip-tint: #633806;
+    --skip-ink: #fac775;
+    --skip-line: #854f0b;
+    --on-skip: #412402;
+
+    --attn: #f0997b;
+    --attn-tint: #712b13;
+    --attn-line: #993c1d;
+    --attn-wash: #2b1610;
+
+    --danger: #f09595;
+    --danger-tint: #791f1f;
+    --danger-ink: #f7c1c1;
+    --on-danger: #501313;
+
+    --accent: #afa9ec;
+    --accent-tint: #3c3489;
+    --accent-ink: #cecbf6;
+
+    /* Near-invisible on a dark ground; the surface ladder does this job now. */
+    --shadow-sm: none;
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+    --shadow-md: 0 8px 22px rgba(0, 0, 0, 0.5);
+    --shadow-lg: 0 18px 40px rgba(0, 0, 0, 0.6);
+
+    --scrim: rgba(0, 0, 0, 0.66);
+  }
+}
+
+/* The same block again, for an explicit choice in Settings. Duplicated rather
+   than shared because a media query cannot be re-scoped to an attribute. */
+:root[data-theme="dark"] {
+  --canvas: #171613;
+  --surface: #201f1b;
+  --sunken: #2a2823;
+  --raised: #35332c;
+  --line: #35332c;
+  --line-strong: #4a473e;
+
+  --ink: #f2f0e9;
+  --ink-2: #b8b4a8;
+  --ink-3: #8a877d;
+
+  --primary: #85b7eb;
+  --primary-hover: #b5d4f4;
+  --primary-tint: #0c447c;
+  --primary-ink: #b5d4f4;
+  --primary-line: #185fa5;
+  --on-primary: #042c53;
+
+  --taken: #5dcaa5;
+  --taken-tint: #085041;
+  --taken-ink: #9fe1cb;
+  --taken-line: #0f6e56;
+  --on-taken: #04342c;
+  --taken-wash: #10251f;
+
+  --skip: #ef9f27;
+  --skip-tint: #633806;
+  --skip-ink: #fac775;
+  --skip-line: #854f0b;
+  --on-skip: #412402;
+
+  --attn: #f0997b;
+  --attn-tint: #712b13;
+  --attn-line: #993c1d;
+  --attn-wash: #2b1610;
+
+  --danger: #f09595;
+  --danger-tint: #791f1f;
+  --danger-ink: #f7c1c1;
+  --on-danger: #501313;
+
+  --accent: #afa9ec;
+  --accent-tint: #3c3489;
+  --accent-ink: #cecbf6;
+
+  --shadow-sm: none;
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 8px 22px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 18px 40px rgba(0, 0, 0, 0.6);
+
+  --scrim: rgba(0, 0, 0, 0.66);
+}
+
+/* Simple mode. v1 shipped 20px/56px, v2 brought it to 16px/46px, and this pass
+   stops shrinking the type: the photo does the recognising now, so the last
+   thing worth trading away is the 46px target, which clears the 44px
+   accessibility floor and stays. */
 body.mode-simple {
   --text-base: 1rem;       /* 16px */
   --text-md: 1.0625rem;    /* 17px */
-  --text-lg: 1.25rem;      /* 20px */
-  --text-xl: 1.5rem;       /* 24px */
-  --text-2xl: 1.875rem;    /* 30px */
-  --text-3xl: 2.25rem;     /* 36px */
-  --target-min: 2.875rem;  /* 46px, was 52px */
-  --row-h: 2.875rem;       /* 46px, was 52px */
+  --text-lg: 1.1875rem;    /* 19px */
+  --target-min: 2.875rem;  /* 46px */
+  --row-h: 3.625rem;       /* 58px — a 44px tile plus breathing room */
   --content-max: 28rem;
 }
 
@@ -110,7 +281,7 @@ body.mode-supporter {
 }
 
 /* ---------------------------------------------------------------------
-   2. Reset & base
+   3. Reset & base
    --------------------------------------------------------------------- */
 
 *, *::before, *::after { box-sizing: border-box; }
@@ -118,12 +289,13 @@ body.mode-supporter {
 html {
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
+  background: var(--canvas);
 }
 
 body {
   margin: 0;
   min-height: 100dvh;
-  background: var(--bg);
+  background: var(--canvas);
   color: var(--ink);
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
     Helvetica, Arial, sans-serif;
@@ -133,22 +305,24 @@ body {
 }
 
 h1, h2, h3, p { margin: 0; }
+h1, h2, h3 { font-weight: 600; letter-spacing: -0.015em; }
 
 a { color: inherit; text-decoration: none; }
 
-button, input, select, textarea {
-  font: inherit;
-  color: inherit;
-}
+button, input, select, textarea { font: inherit; color: inherit; }
 
 img { max-width: 100%; display: block; }
 
-::selection { background: var(--primary-100); color: var(--ink); }
+/* Times, doses, counts and the share code are read aloud over the phone and
+   compared against a physical box. Proportional digits jitter; these do not. */
+time, .slot-time, .day-date, .setting-code, .rail-count { font-variant-numeric: tabular-nums; }
+
+::selection { background: var(--primary-tint); color: var(--primary-ink); }
 
 :focus-visible {
   outline: 2px solid var(--primary);
   outline-offset: 2px;
-  border-radius: var(--radius-sm);
+  border-radius: var(--r-sm);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -161,19 +335,18 @@ img { max-width: 100%; display: block; }
 }
 
 /* ---------------------------------------------------------------------
-   3. App shell & navigation
+   4. App shell & navigation
    --------------------------------------------------------------------- */
 
 #app {
   max-width: var(--content-max);
   margin: 0 auto;
-  padding: var(--space-4) var(--space-4) calc(var(--space-7) + var(--space-4));
+  padding: var(--space-4) var(--space-4) calc(var(--space-7) + var(--space-5));
   animation: fade-in var(--dur-slow) var(--ease-out);
 }
 
 /* Pre-auth (welcome, sign-in, pairing): centred in the viewport rather than
-   pinned to the top — these are the only screens with nothing else on the
-   page, so leaving them top-aligned left a lot of empty space beneath them. */
+   pinned to the top — the only screens with nothing else on the page. */
 body.mode-none {
   display: flex;
   min-height: 100dvh;
@@ -194,116 +367,25 @@ body.mode-none #app {
   #app { padding-top: var(--space-6); }
 }
 
-/* Small phones: pull card and role-picker padding in a step so nothing
-   crowds the edges below ~380px wide. */
 @media (max-width: 26rem) {
   .card, .row-btn { padding: var(--space-4); }
   .role-btn { padding: var(--space-3); gap: var(--space-3); }
   .dialog, .sheet { max-width: 100%; }
-
-  /* Supporter's top bar only (simple mode's bottom nav doesn't use this
-     markup at all). At this width "Medicine Tracker" plus the tabs pill on
-     one row either wraps the brand to two lines or pushes the tabs hard
-     against the edge with the brand sitting flush left -- neither reads as
-     centred or intentional. Stacking removes both problems at once: the
-     brand gets the full row to itself (no wrap), and the tabs pill is
-     centred under it with the same margin on both sides, so nothing ever
-     touches the edge regardless of how narrow the screen gets. */
-  .topbar-inner {
-    flex-direction: column;
-    gap: var(--space-2);
-  }
-  .topbar-brand { font-size: var(--text-md); }
-  .tabs { width: 100%; justify-content: center; }
 }
 
-/* Supporter: top tabs, sticky. */
-#topbar {
-  position: sticky;
-  top: 0;
-  z-index: 30;
-  background: rgba(255, 255, 255, 0.92);
-  backdrop-filter: saturate(1.6) blur(10px);
-  -webkit-backdrop-filter: saturate(1.6) blur(10px);
-  border-bottom: 1px solid var(--line);
-}
+/* One bottom bar for both roles. v2 gave the supporter sticky top tabs and the
+   patient a bottom bar, which meant two navigation models to learn, explain and
+   maintain — and it was the reason the supporter had no room for a Calendar
+   tab. Tab *sets* differ by role; the bar does not. */
+#topbar { display: none; }
 
-.topbar-inner {
-  max-width: var(--content-max);
-  margin: 0 auto;
-  padding: var(--space-3) var(--space-4);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-4);
-}
-
-.topbar-brand {
-  font-size: var(--text-lg);
-  font-weight: 800;
-  letter-spacing: -0.01em;
-  color: var(--primary);
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-}
-
-.topbar-brand::before {
-  content: "";
-  width: 1.5em;
-  height: 1.5em;
-  border-radius: var(--radius-pill);
-  background: var(--primary);
-  box-shadow: 0 0 0 5px var(--primary-50);
-  -webkit-mask-image: var(--icon-pill);
-  mask-image: var(--icon-pill);
-  -webkit-mask-repeat: no-repeat;
-  mask-repeat: no-repeat;
-  -webkit-mask-position: center;
-  mask-position: center;
-  -webkit-mask-size: 62%;
-  mask-size: 62%;
-}
-
-.tabs {
-  display: flex;
-  gap: var(--space-1);
-  background: var(--surface-2);
-  padding: var(--space-1);
-  border-radius: var(--radius-pill);
-}
-
-.tabs .navlink {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  padding: var(--space-2) var(--space-4);
-  border-radius: var(--radius-pill);
-  font-size: var(--text-sm);
-  font-weight: 600;
-  color: var(--ink-2);
-  transition: background var(--dur) var(--ease), color var(--dur) var(--ease),
-    box-shadow var(--dur) var(--ease);
-}
-
-.tabs .navlink[aria-current="page"] {
-  background: var(--paper);
-  color: var(--primary);
-  box-shadow: var(--shadow-sm);
-}
-
-.tabs .navlink:hover { color: var(--primary); }
-
-/* Simple: bottom bar, big icon-over-label targets. */
 #bottomnav {
   position: fixed;
   left: 0;
   right: 0;
   bottom: 0;
   z-index: 30;
-  background: rgba(255, 255, 255, 0.94);
-  backdrop-filter: saturate(1.6) blur(14px);
-  -webkit-backdrop-filter: saturate(1.6) blur(14px);
+  background: var(--surface);
   border-top: 1px solid var(--line);
   padding-bottom: env(safe-area-inset-bottom, 0);
 }
@@ -324,23 +406,22 @@ body.mode-none #app {
   min-height: var(--target-min);
   color: var(--ink-3);
   font-size: var(--text-xs);
-  font-weight: 700;
+  font-weight: 500;
   transition: color var(--dur) var(--ease), transform var(--dur-fast) var(--ease);
 }
 
 .nav-inner .navlink:active { transform: scale(0.94); }
-
-.nav-inner .navlink[aria-current="page"] { color: var(--primary); }
+.nav-inner .navlink[aria-current="page"] { color: var(--primary); font-weight: 600; }
 
 .navlink-icon {
   width: 1.5rem;
   height: 1.5rem;
-  border-radius: var(--radius-pill);
+  border-radius: var(--r-pill);
   transition: background var(--dur) var(--ease), transform var(--dur) var(--ease-out);
 }
 
 .nav-inner .navlink[aria-current="page"] .navlink-icon {
-  background: var(--primary-50);
+  background: var(--primary-tint);
   transform: translateY(-1px) scale(1.05);
 }
 
@@ -364,7 +445,7 @@ body.mode-none #app {
 .navlink[data-icon="pill"] .navlink-icon::before { -webkit-mask-image: var(--icon-pill); mask-image: var(--icon-pill); }
 
 /* ---------------------------------------------------------------------
-   4. Icons (masked inline SVG — no icon font, no build step)
+   5. Icons (masked inline SVG — no icon font, no build step)
    --------------------------------------------------------------------- */
 
 :root {
@@ -372,6 +453,11 @@ body.mode-none #app {
   --icon-calendar: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M5 4h1V2h2v2h8V2h2v2h1a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm-1 6v10a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1V10H4zm3 3h3v3H7v-3z'/%3E%3C/svg%3E");
   --icon-settings: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect x='3' y='5' width='18' height='2' rx='1'/%3E%3Ccircle cx='7' cy='6' r='2.6'/%3E%3Crect x='3' y='11' width='18' height='2' rx='1'/%3E%3Ccircle cx='17' cy='12' r='2.6'/%3E%3Crect x='3' y='17' width='18' height='2' rx='1'/%3E%3Ccircle cx='10' cy='18' r='2.6'/%3E%3C/svg%3E");
   --icon-today: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M4.5 12.5 9 17l10.5-10.5-1.6-1.6L9 13.8l-2.9-2.9z'/%3E%3C/svg%3E");
+  --icon-check: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M4.5 12.5 9 17l10.5-10.5-1.6-1.6L9 13.8l-2.9-2.9z'/%3E%3C/svg%3E");
+  --icon-minus: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect x='5' y='11' width='14' height='2.4' rx='1.2'/%3E%3C/svg%3E");
+  --icon-people: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='9' cy='8' r='3.4'/%3E%3Cpath d='M2.5 19c0-3.3 2.9-5.4 6.5-5.4s6.5 2.1 6.5 5.4z'/%3E%3Ccircle cx='17.5' cy='9' r='2.6'/%3E%3Cpath d='M17.5 13c2.8 0 4.5 1.6 4.5 4h-6.2c0-1.6-.5-2.9-1.3-3.8.9-.14 1.9-.2 3-.2z'/%3E%3C/svg%3E");
+  --icon-box: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2 3 6.2v11.6L12 22l9-4.2V6.2zm0 2.2 6.4 3L12 10.2 5.6 7.2zM5 9l6 2.8v7.4L5 16.4zm8 10.2v-7.4L19 9v7.4z'/%3E%3C/svg%3E");
+  --icon-drop: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2.5c4 4.8 6.5 8.3 6.5 11.4A6.5 6.5 0 0 1 5.5 13.9c0-3.1 2.5-6.6 6.5-11.4z'/%3E%3C/svg%3E");
 }
 
 .icon {
@@ -386,31 +472,157 @@ body.mode-none #app {
   -webkit-mask-size: contain;
   mask-size: contain;
   vertical-align: -0.2em;
+  flex: none;
 }
 
 .icon[data-icon="pill"] { -webkit-mask-image: var(--icon-pill); mask-image: var(--icon-pill); }
 .icon[data-icon="calendar"] { -webkit-mask-image: var(--icon-calendar); mask-image: var(--icon-calendar); }
 .icon[data-icon="settings"] { -webkit-mask-image: var(--icon-settings); mask-image: var(--icon-settings); }
 .icon[data-icon="today"] { -webkit-mask-image: var(--icon-today); mask-image: var(--icon-today); }
+.icon[data-icon="check"] { -webkit-mask-image: var(--icon-check); mask-image: var(--icon-check); }
+.icon[data-icon="minus"] { -webkit-mask-image: var(--icon-minus); mask-image: var(--icon-minus); }
+.icon[data-icon="people"] { -webkit-mask-image: var(--icon-people); mask-image: var(--icon-people); }
+.icon[data-icon="box"] { -webkit-mask-image: var(--icon-box); mask-image: var(--icon-box); }
+.icon[data-icon="drop"] { -webkit-mask-image: var(--icon-drop); mask-image: var(--icon-drop); }
 
 /* ---------------------------------------------------------------------
-   5. Typography helpers
+   6. Pill identity
+   --------------------------------------------------------------------- */
+
+/* The one component this redesign is built around. A medicine has exactly one
+   visual identity — its photo — and that identity appears at every size, on
+   every screen, in both roles.
+ *
+ * Without a photo it falls back to a tinted tile with the form's glyph, tinted
+ * by a hash of the medicine id (see tileTone in js/ui.js). That is not an
+ * attempt to guess the pill's real colour: it is a stable, distinguishable
+ * marker, which is all a fallback can honestly be. Anywhere the real colour
+ * would matter — checking a filled organiser — the UI counts instead.
+ *
+ * A rounded square, not a circle: supporters photograph oblong tablets and
+ * blister strips, and a circular mask eats the ends of both. */
+
+.ptile {
+  width: var(--tile);
+  height: var(--tile);
+  flex: none;
+  position: relative;
+  border-radius: var(--r-md);
+  overflow: visible;
+  background: var(--sunken);
+  color: var(--ink-3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ptile img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: inherit;
+}
+
+.ptile .icon { width: 50%; height: 50%; }
+
+.ptile-sm { --tile: 2.125rem; border-radius: var(--r-sm); }
+.ptile-lg { --tile: 3.5rem; border-radius: var(--r-lg); }
+
+/* Six tones, assigned by hash so a medicine keeps the same one everywhere. */
+.ptile[data-tone="0"] { background: var(--primary-tint); color: var(--primary-ink); }
+.ptile[data-tone="1"] { background: var(--attn-tint); color: var(--attn); }
+.ptile[data-tone="2"] { background: var(--skip-tint); color: var(--skip-ink); }
+.ptile[data-tone="3"] { background: var(--taken-tint); color: var(--taken-ink); }
+.ptile[data-tone="4"] { background: var(--accent-tint); color: var(--accent-ink); }
+.ptile[data-tone="5"] { background: var(--raised); color: var(--ink-2); }
+
+/* No photo yet. Dashed, so the gap is visible and tappable rather than silent —
+   a missing photo is the single biggest thing a supporter can fix. */
+.ptile-empty { border: 1px dashed var(--line-strong); }
+
+.ptile-archived { background: var(--raised); color: var(--ink-3); opacity: 0.6; }
+
+.ptile-badge {
+  position: absolute;
+  right: -3px;
+  bottom: -3px;
+  width: 1.125rem;
+  height: 1.125rem;
+  border-radius: var(--r-pill);
+  border: 2px solid var(--surface);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: pop-in var(--dur) var(--ease-out);
+}
+.ptile-badge .icon { width: 0.7rem; height: 0.7rem; }
+.ptile-badge[data-kind="taken"] { background: var(--taken); color: var(--on-taken); }
+.ptile-badge[data-kind="skipped"] { background: var(--skip); color: var(--on-skip); }
+.ptile-badge[data-kind="community"] { background: var(--primary); color: var(--on-primary); }
+
+/* Inside a tinted slot the badge ring has to match that tint, not the card. */
+.slot-done .ptile-badge { border-color: var(--taken-wash); }
+
+/* A completed slot collapses to this: every medicine still shown, overlapped,
+   at a size that says "these, and they are done" without spending a row each. */
+.ptile-stack { display: flex; }
+.ptile-stack .ptile + .ptile { margin-left: -0.5rem; }
+.ptile-stack .ptile { box-shadow: 0 0 0 2px var(--taken-wash); }
+
+/* ---------------------------------------------------------------------
+   7. Dose target — the three-state control
+   --------------------------------------------------------------------- */
+
+/* Cycles not-yet → taken → skipped → not-yet. One target, one tap for the
+   common case. Because a double-tap lands on "skipped", that state is loud
+   (filled amber, struck-through name) and raises a toast with Undo — an
+   accidental skip has to announce itself. */
+
+.dose {
+  width: 1.875rem;
+  height: 1.875rem;
+  flex: none;
+  border-radius: var(--r-pill);
+  border: 1.5px solid var(--line-strong);
+  background: var(--surface);
+  color: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  transition: background var(--dur) var(--ease), border-color var(--dur) var(--ease),
+    color var(--dur) var(--ease), transform var(--dur-fast) var(--ease-out);
+}
+.dose .icon { width: 1.0625rem; height: 1.0625rem; }
+.dose:active { transform: scale(0.88); }
+
+.dose[data-state="taken"] {
+  background: var(--taken);
+  border-color: var(--taken);
+  color: var(--on-taken);
+}
+.dose[data-state="skipped"] {
+  background: var(--skip);
+  border-color: var(--skip);
+  color: var(--on-skip);
+}
+
+body.mode-simple .dose { width: 2.125rem; height: 2.125rem; }
+
+/* ---------------------------------------------------------------------
+   8. Typography helpers
    --------------------------------------------------------------------- */
 
 .page-title {
   font-size: var(--text-2xl);
-  font-weight: 800;
-  letter-spacing: -0.015em;
+  font-weight: 600;
+  letter-spacing: -0.02em;
   text-align: center;
   color: var(--ink);
-  /* Sits between the nav above and the first card below, not flush against
-     either — bigger gap underneath since that's the boundary into content. */
   margin: var(--space-3) 0 var(--space-6);
 }
 
-/* Today pairs the title tightly with the date beneath it in one small
-   block; day-head's own `gap` already spaces them, so the title's own
-   margin would double up. */
 .day-head .page-title { margin: 0; }
 
 .page-sub {
@@ -430,63 +642,74 @@ body.mode-none #app {
   margin-bottom: var(--space-1);
 }
 
-.day-date {
-  color: var(--ink-3);
-  font-size: var(--text-sm);
-  font-weight: 600;
+.day-date { color: var(--ink-3); font-size: var(--text-sm); font-weight: 500; }
+
+/* Today-only orientation. Not a score: it resets at midnight, is never stored,
+   and has no historical counterpart anywhere in the app. See docs/ui.md. */
+.rail { display: flex; gap: var(--space-1); margin-top: var(--space-3); }
+.rail-seg {
+  flex: 1;
+  height: 0.3125rem;
+  border-radius: var(--r-pill);
+  background: var(--line-strong);
+  transition: background var(--dur-slow) var(--ease);
 }
+.rail-seg.is-on { background: var(--taken); }
+.rail-count {
+  font-size: var(--text-xs);
+  color: var(--ink-3);
+  margin-top: var(--space-2);
+  text-align: center;
+}
+.day-head + div .rail { margin-top: var(--space-4); }
 
 /* ---------------------------------------------------------------------
-   6. Buttons
+   9. Buttons
    --------------------------------------------------------------------- */
 
 .btn {
   appearance: none;
-  border: 1px solid var(--line);
-  background: var(--paper);
+  border: 1px solid var(--line-strong);
+  background: var(--surface);
   color: var(--ink);
-  font-weight: 700;
+  font-weight: 500;
   font-size: var(--text-base);
   padding: 0.7rem 1.1rem;
-  border-radius: var(--radius-pill);
+  border-radius: var(--r-pill);
   min-height: var(--target-min);
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: var(--space-2);
   cursor: pointer;
-  box-shadow: var(--shadow-sm);
-  transition: transform var(--dur-fast) var(--ease-out), box-shadow var(--dur) var(--ease),
-    background var(--dur) var(--ease), border-color var(--dur) var(--ease), color var(--dur) var(--ease);
+  transition: transform var(--dur-fast) var(--ease-out), background var(--dur) var(--ease),
+    border-color var(--dur) var(--ease), color var(--dur) var(--ease);
 }
 
-.btn:hover { box-shadow: var(--shadow); border-color: var(--line-strong); }
+.btn:hover { background: var(--sunken); }
 .btn:active { transform: scale(0.97); }
-.btn:disabled { opacity: 0.55; cursor: not-allowed; box-shadow: none; transform: none; }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
 
 .btn-primary {
-  background: linear-gradient(155deg, var(--primary), var(--primary-600));
-  border-color: transparent;
-  color: #fff;
-  box-shadow: 0 6px 16px rgba(26, 86, 160, 0.28);
+  background: var(--primary);
+  border-color: var(--primary);
+  color: var(--on-primary);
 }
-.btn-primary:hover { box-shadow: 0 8px 22px rgba(26, 86, 160, 0.34); }
+.btn-primary:hover { background: var(--primary-hover); border-color: var(--primary-hover); }
 
 .btn-danger,
 .btn-danger.btn-primary {
   background: var(--danger);
-  border-color: transparent;
-  color: #fff;
-  box-shadow: 0 6px 16px rgba(179, 39, 45, 0.26);
+  border-color: var(--danger);
+  color: var(--on-danger);
 }
 
 .btn-quiet {
-  background: var(--surface-2);
+  background: var(--raised);
   border-color: transparent;
   color: var(--ink-2);
-  box-shadow: none;
 }
-.btn-quiet:hover { background: var(--surface-3); box-shadow: none; }
+.btn-quiet:hover { background: var(--line); }
 
 .btn-block { display: flex; width: 100%; }
 
@@ -499,15 +722,16 @@ body.mode-none #app {
 .btn-link {
   border: none;
   background: none;
-  box-shadow: none;
   color: var(--primary);
-  font-weight: 700;
+  font-weight: 500;
   padding: var(--space-2) 0;
   min-height: auto;
-  border-radius: var(--radius-sm);
+  border-radius: var(--r-sm);
 }
-.btn-link:hover { text-decoration: underline; box-shadow: none; }
+.btn-link:hover { text-decoration: underline; background: none; }
 .btn-link:active { transform: none; }
+
+.btn-row { display: flex; gap: var(--space-2); flex-wrap: wrap; }
 
 .form-actions {
   display: flex;
@@ -517,13 +741,13 @@ body.mode-none #app {
 .form-actions .btn { flex: 1; }
 
 /* ---------------------------------------------------------------------
-   7. Cards, fields, forms
+   10. Cards, fields, forms
    --------------------------------------------------------------------- */
 
 .card {
   background: var(--surface);
   border: 1px solid var(--line);
-  border-radius: var(--radius-lg);
+  border-radius: var(--r-lg);
   padding: var(--space-5);
   box-shadow: var(--shadow-sm);
   margin-bottom: var(--space-4);
@@ -532,39 +756,30 @@ body.mode-none #app {
 
 .card-title {
   font-size: var(--text-lg);
-  font-weight: 800;
+  font-weight: 600;
   margin-bottom: var(--space-4);
-  letter-spacing: -0.01em;
 }
 
 .field { margin-bottom: var(--space-4); }
 .field:last-child { margin-bottom: 0; }
 
-.field-inline {
-  display: flex;
-  gap: var(--space-3);
-  flex-wrap: wrap;
-}
+.field-inline { display: flex; gap: var(--space-3); flex-wrap: wrap; }
 .field-inline > .field { flex: 1 1 10rem; }
 
 .field-label {
   display: block;
   font-size: var(--text-sm);
-  font-weight: 700;
+  font-weight: 500;
   color: var(--ink-2);
   margin-bottom: var(--space-2);
 }
 
-.field-hint {
-  font-size: var(--text-xs);
-  color: var(--ink-3);
-  margin-top: var(--space-2);
-}
+.field-hint { font-size: var(--text-xs); color: var(--ink-3); margin-top: var(--space-2); }
 
 .field-error {
   font-size: var(--text-xs);
   color: var(--danger);
-  font-weight: 700;
+  font-weight: 500;
   margin-top: var(--space-2);
 }
 
@@ -575,9 +790,9 @@ input[type="number"],
 select,
 textarea {
   width: 100%;
-  border: 1.5px solid var(--line);
+  border: 1.5px solid var(--line-strong);
   background: var(--surface);
-  border-radius: var(--radius-sm);
+  border-radius: var(--r-sm);
   padding: 0.65rem 0.85rem;
   min-height: var(--target-min);
   font-size: var(--text-base);
@@ -589,29 +804,30 @@ textarea { min-height: 4.5rem; resize: vertical; }
 input:focus, select:focus, textarea:focus {
   outline: none;
   border-color: var(--primary);
-  box-shadow: 0 0 0 3px var(--primary-50);
+  box-shadow: 0 0 0 3px var(--primary-tint);
 }
 
 .input-invalid { border-color: var(--danger) !important; }
-.input-invalid:focus { box-shadow: 0 0 0 3px var(--danger-50) !important; }
+.input-invalid:focus { box-shadow: 0 0 0 3px var(--danger-tint) !important; }
 
 .chips { display: flex; flex-wrap: wrap; gap: var(--space-2); }
 
 .chip {
-  border: 1.5px solid var(--line);
+  border: 1.5px solid var(--line-strong);
   background: var(--surface);
-  border-radius: var(--radius-pill);
+  border-radius: var(--r-pill);
   padding: 0.45rem 0.9rem;
   font-size: var(--text-sm);
-  font-weight: 700;
+  font-weight: 500;
   color: var(--ink-2);
   cursor: pointer;
-  transition: all var(--dur) var(--ease);
+  transition: background var(--dur) var(--ease), border-color var(--dur) var(--ease),
+    color var(--dur) var(--ease), transform var(--dur-fast) var(--ease-out);
 }
 .chip[aria-pressed="true"] {
   background: var(--primary);
   border-color: var(--primary);
-  color: #fff;
+  color: var(--on-primary);
 }
 .chip:active { transform: scale(0.95); }
 
@@ -621,8 +837,8 @@ input:focus, select:focus, textarea:focus {
   width: 100%;
   max-width: 12rem;
   aspect-ratio: 1;
-  border-radius: var(--radius);
-  background: var(--surface-2);
+  border-radius: var(--r-md);
+  background: var(--sunken);
   overflow: hidden;
   display: flex;
   align-items: center;
@@ -633,14 +849,12 @@ input:focus, select:focus, textarea:focus {
 }
 .photo-preview img { width: 100%; height: 100%; object-fit: cover; }
 
-.btn-row { display: flex; gap: var(--space-2); flex-wrap: wrap; }
-
 .sched {
   border: 1px solid var(--line);
-  border-radius: var(--radius);
+  border-radius: var(--r-md);
   padding: var(--space-4);
   margin-bottom: var(--space-3);
-  background: var(--surface-2);
+  background: var(--sunken);
 }
 .sched-head {
   display: flex;
@@ -651,10 +865,10 @@ input:focus, select:focus, textarea:focus {
 .sched-num {
   width: 1.6rem;
   height: 1.6rem;
-  border-radius: var(--radius-pill);
-  background: var(--primary-50);
-  color: var(--primary);
-  font-weight: 800;
+  border-radius: var(--r-pill);
+  background: var(--primary-tint);
+  color: var(--primary-ink);
+  font-weight: 600;
   font-size: var(--text-xs);
   display: flex;
   align-items: center;
@@ -662,7 +876,7 @@ input:focus, select:focus, textarea:focus {
 }
 
 /* ---------------------------------------------------------------------
-   8. Rows / lists
+   11. Rows / lists
    --------------------------------------------------------------------- */
 
 .rows { display: flex; flex-direction: column; gap: var(--space-2); }
@@ -673,19 +887,19 @@ input:focus, select:focus, textarea:focus {
   gap: var(--space-3);
   background: var(--surface);
   border: 1px solid var(--line);
-  border-radius: var(--radius);
+  border-radius: var(--r-md);
   padding: var(--space-3) var(--space-4);
-  box-shadow: var(--shadow-sm);
-  transition: transform var(--dur-fast) var(--ease-out), box-shadow var(--dur) var(--ease),
+  min-height: var(--row-h);
+  transition: transform var(--dur-fast) var(--ease-out), background var(--dur) var(--ease),
     border-color var(--dur) var(--ease);
 }
-.row-btn:hover { box-shadow: var(--shadow); border-color: var(--line-strong); }
+.row-btn:hover { border-color: var(--line-strong); background: var(--sunken); }
 .row-btn:active { transform: scale(0.99); }
 
 .row-archived { opacity: 0.55; }
 
 .row-main { flex: 1; min-width: 0; }
-.row-title { font-weight: 700; font-size: var(--text-md); }
+.row-title { font-weight: 500; font-size: var(--text-md); }
 .row-sub {
   display: block;
   color: var(--ink-3);
@@ -699,35 +913,45 @@ input:focus, select:focus, textarea:focus {
 
 .badge {
   display: inline-block;
-  background: var(--surface-2);
-  color: var(--ink-3);
+  background: var(--raised);
+  color: var(--ink-2);
   font-size: var(--text-xs);
-  font-weight: 700;
+  font-weight: 500;
   padding: 0.15rem 0.55rem;
-  border-radius: var(--radius-pill);
+  border-radius: var(--r-pill);
   margin-left: var(--space-2);
 }
 
 /* ---------------------------------------------------------------------
-   9. Today / day view
+   12. Today / day view
    --------------------------------------------------------------------- */
 
-.day { display: flex; flex-direction: column; gap: var(--space-4); }
+.day { display: flex; flex-direction: column; gap: var(--space-3); }
 
 .slot {
   background: var(--surface);
   border: 1px solid var(--line);
-  border-radius: var(--radius-lg);
+  border-radius: var(--r-lg);
   overflow: hidden;
   box-shadow: var(--shadow-sm);
-  transition: background var(--dur-slow) var(--ease), border-color var(--dur-slow) var(--ease),
-    box-shadow var(--dur-slow) var(--ease);
+  transition: background var(--dur-slow) var(--ease), border-color var(--dur-slow) var(--ease);
 }
 
 .slot-done {
-  background: var(--ok-50);
-  border-color: #bfe3c9;
+  background: var(--taken-wash);
+  border-color: var(--taken-line);
 }
+
+/* Every medicine dealt with, but not all of them taken. Deliberately neutral
+   rather than amber: the slot is finished, and tinting the whole card the
+   colour of "skipped" would make one skipped medicine out of six read as a
+   problem with the slot. Skipped is a recorded outcome, not a failure. */
+.slot-marked { background: var(--sunken); }
+.slot-marked .slot-tag { color: var(--ink-2); }
+.slot-marked .slot-count { color: var(--ink-2); }
+.slot-marked .slot-collapsed .row-chev { color: var(--ink-3); }
+.slot-marked .ptile-stack .ptile { box-shadow: 0 0 0 2px var(--sunken); }
+.slot-marked .ptile-badge { border-color: var(--sunken); }
 
 .slot-head {
   display: flex;
@@ -735,44 +959,119 @@ input:focus, select:focus, textarea:focus {
   gap: var(--space-2);
   padding: var(--space-4) var(--space-4) var(--space-2);
 }
-.slot-name { font-weight: 800; font-size: var(--text-md); }
-.slot-time { color: var(--ink-3); font-size: var(--text-sm); font-weight: 600; }
+.slot-name { font-weight: 600; font-size: var(--text-md); }
+.slot-done .slot-name { color: var(--taken-ink); }
+.slot-time { color: var(--ink-3); font-size: var(--text-sm); font-weight: 500; }
+.slot-done .slot-time { color: var(--taken); }
+
+/* Passive. It never reorders, hides or dims anything — it only says where in
+   the day you are, which is the one thing the fixed order cannot express. */
+.slot-now {
+  margin-left: auto;
+  background: var(--attn-tint);
+  color: var(--attn);
+  font-size: var(--text-xs);
+  font-weight: 500;
+  padding: 0.15rem 0.6rem;
+  border-radius: var(--r-pill);
+}
+
 .slot-tag {
   margin-left: auto;
-  background: var(--ok);
-  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  color: var(--taken-ink);
   font-size: var(--text-xs);
-  font-weight: 700;
-  padding: 0.2rem 0.65rem;
-  border-radius: var(--radius-pill);
+  font-weight: 500;
   animation: pop-in var(--dur) var(--ease-out);
 }
 
+/* On a tinted card the neutral quiet fill reads as a grey smear. Undo borrows
+   the tint's own family instead, so the completed slot stays one colour. */
+.slot-done .btn-quiet {
+  background: transparent;
+  border: 1px solid var(--taken-line);
+  color: var(--taken-ink);
+}
+/* Transparent on hover too: the card is already the tint, so a tinted hover
+   fill would be invisible in light mode. The border carries it. */
+.slot-done .btn-quiet:hover { background: transparent; border-color: var(--taken); }
+
+/* Same reasoning on a marked slot, in neutral rather than teal. */
+.slot-marked .btn-quiet {
+  background: transparent;
+  border: 1px solid var(--line-strong);
+  color: var(--ink-2);
+}
+.slot-marked .btn-quiet:hover { background: transparent; border-color: var(--ink-3); }
+
 .slot-body { display: flex; flex-direction: column; }
 
-.med {
+/* A completed slot's medicines, as a strip of photos rather than six rows.
+   Still a button: the photos must not become unreachable just because the
+   slot was marked done. */
+.slot-collapsed {
   display: flex;
   align-items: center;
   gap: var(--space-3);
   width: 100%;
-  text-align: left;
   border: none;
   background: none;
   padding: var(--space-2) var(--space-4);
   min-height: var(--row-h);
   cursor: pointer;
+  text-align: left;
+}
+.slot-count { flex: 1; color: var(--taken-ink); font-size: var(--text-sm); font-weight: 500; }
+.slot-collapsed .row-chev { color: var(--taken); }
+
+/* The row holds two controls -- open the photo, and cycle the dose -- so it
+   is a container, not a button. Nesting one button inside another is invalid
+   and breaks keyboard traversal. */
+.med {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-4);
+  min-height: var(--row-h);
+}
+
+.med-open {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex: 1;
+  min-width: 0;
+  text-align: left;
+  border: none;
+  background: none;
+  padding: var(--space-2) var(--space-2) var(--space-2) 0;
+  margin: 0;
+  border-radius: var(--r-md);
+  cursor: pointer;
   transition: background var(--dur) var(--ease);
 }
-.med:hover { background: var(--surface-2); }
-.med:active { background: var(--surface-3); }
+.med-open:hover { background: var(--sunken); }
+.slot-done .med-open:hover,
+.slot-marked .med-open:hover { background: transparent; }
 
+.med-skip-note { color: var(--skip-ink); font-weight: 500; }
+
+/* Only the photo desaturates. A fallback tile is already carrying the amber
+   badge, and draining its tone as well would leave the row looking disabled
+   rather than decided. */
+.med-skipped .ptile img { filter: grayscale(1); opacity: 0.6; }
+
+/* v2's 42px square. Kept as an alias so any view still emitting it renders,
+   but new code uses .ptile. */
 .med-thumb {
-  width: 2.6rem;
-  height: 2.6rem;
+  width: var(--tile);
+  height: var(--tile);
   flex: none;
-  border-radius: var(--radius-sm);
+  border-radius: var(--r-md);
   overflow: hidden;
-  background: var(--surface-2);
+  background: var(--sunken);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -789,17 +1088,20 @@ input:focus, select:focus, textarea:focus {
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.med-name { font-weight: 700; }
+.med-name { font-weight: 500; }
 .med-strength { color: var(--ink-3); font-size: var(--text-sm); }
 .med-sub { color: var(--ink-3); font-size: var(--text-sm); gap: var(--space-3); }
+
+.med-skipped .med-name { text-decoration: line-through; color: var(--ink-3); }
+.med-skipped .med-sub { color: var(--skip-ink); }
 
 .slot-foot { padding: var(--space-2) var(--space-4) var(--space-4); }
 .slot-tick {
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  color: var(--ok);
-  font-weight: 700;
+  color: var(--taken-ink);
+  font-weight: 500;
   font-size: var(--text-sm);
   justify-content: center;
   padding: var(--space-2) 0;
@@ -810,21 +1112,57 @@ input:focus, select:focus, textarea:focus {
   padding: var(--space-6) var(--space-4);
   animation: fade-in var(--dur-slow) var(--ease-out);
 }
-.empty-title { font-size: var(--text-lg); font-weight: 800; margin-bottom: var(--space-2); }
+.empty-title { font-size: var(--text-lg); font-weight: 600; margin-bottom: var(--space-2); }
 .empty-body { color: var(--ink-3); max-width: 26rem; margin: 0 auto; }
 
+/* The elder's cold start. The code is the largest thing on the screen because
+   its only job is to be read aloud down a phone line, and the character set
+   already excludes 0/O/1/I/L for the same reason. */
+.coldstart {
+  text-align: center;
+  padding: var(--space-6) var(--space-2);
+  animation: rise-in var(--dur-slow) var(--ease-out);
+}
+.coldstart-body {
+  color: var(--ink-2);
+  max-width: 22rem;
+  margin: var(--space-2) auto var(--space-6);
+}
+.coldstart-label {
+  color: var(--ink-3);
+  font-size: var(--text-sm);
+  margin-bottom: var(--space-2);
+}
+.coldstart-code {
+  display: inline-block;
+  font-size: var(--text-3xl);
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  font-variant-numeric: tabular-nums;
+  text-indent: 0.18em;          /* the tracking is trailing space; recentre it */
+  color: var(--primary-ink);
+  background: var(--primary-tint);
+  border-radius: var(--r-lg);
+  padding: var(--space-4) var(--space-5);
+}
+.coldstart-foot {
+  color: var(--ink-3);
+  font-size: var(--text-sm);
+  margin-top: var(--space-6);
+}
+
 .note {
-  background: var(--warn-50);
-  color: var(--warn);
-  border-radius: var(--radius);
+  background: var(--attn-wash);
+  color: var(--attn);
+  border-radius: var(--r-md);
   padding: var(--space-3) var(--space-4);
   font-size: var(--text-sm);
-  font-weight: 600;
+  font-weight: 500;
   margin-bottom: var(--space-4);
 }
 
 /* ---------------------------------------------------------------------
-   10. Calendar
+   13. Calendar
    --------------------------------------------------------------------- */
 
 .cal-head {
@@ -836,9 +1174,10 @@ input:focus, select:focus, textarea:focus {
 .cal-nav {
   width: 2.5rem;
   height: 2.5rem;
-  border-radius: var(--radius-pill);
-  border: 1px solid var(--line);
+  border-radius: var(--r-pill);
+  border: 1px solid var(--line-strong);
   background: var(--surface);
+  color: var(--ink);
   font-size: var(--text-lg);
   display: flex;
   align-items: center;
@@ -846,20 +1185,21 @@ input:focus, select:focus, textarea:focus {
   cursor: pointer;
   transition: background var(--dur) var(--ease), transform var(--dur-fast) var(--ease-out);
 }
-.cal-nav:hover { background: var(--surface-2); }
+.cal-nav:hover { background: var(--sunken); }
 .cal-nav:active { transform: scale(0.92); }
 
 .cal-title {
-  font-weight: 800;
+  font-weight: 600;
   font-size: var(--text-lg);
   border: none;
   background: none;
+  color: var(--ink);
   cursor: pointer;
   padding: var(--space-2) var(--space-3);
-  border-radius: var(--radius-pill);
+  border-radius: var(--r-pill);
   transition: background var(--dur) var(--ease);
 }
-.cal-title:hover { background: var(--surface-2); }
+.cal-title:hover { background: var(--sunken); }
 
 .cal-weekdays {
   display: grid;
@@ -867,41 +1207,39 @@ input:focus, select:focus, textarea:focus {
   text-align: center;
   color: var(--ink-3);
   font-size: var(--text-xs);
-  font-weight: 700;
+  font-weight: 500;
   margin-bottom: var(--space-2);
 }
 
-.cal-grid {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: 0.2rem;
-}
+.cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 0.2rem; }
 
 .cal-day {
   aspect-ratio: 1;
   border: none;
   background: none;
-  border-radius: var(--radius-sm);
+  color: var(--ink);
+  border-radius: var(--r-sm);
   display: flex;
   align-items: center;
   justify-content: center;
   position: relative;
   cursor: pointer;
   font-size: var(--text-sm);
-  font-weight: 600;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
   transition: background var(--dur) var(--ease), transform var(--dur-fast) var(--ease-out);
 }
-.cal-day:hover { background: var(--surface-2); }
+.cal-day:hover { background: var(--sunken); }
 .cal-day:active { transform: scale(0.9); }
 .cal-day-out { opacity: 0.32; }
 .cal-day-future { color: var(--ink-3); }
-.cal-day-today { box-shadow: inset 0 0 0 2px var(--accent); border-radius: var(--radius-pill); }
+.cal-day-today { box-shadow: inset 0 0 0 2px var(--accent); border-radius: var(--r-pill); }
 .cal-locked { opacity: 0.55; }
 
 .cal-ring {
   position: absolute;
   inset: 0.1rem;
-  border-radius: var(--radius-pill);
+  border-radius: var(--r-pill);
   transition: background var(--dur) var(--ease);
 }
 .cal-day-num { position: relative; z-index: 1; }
@@ -915,7 +1253,7 @@ input:focus, select:focus, textarea:focus {
   flex-wrap: wrap;
 }
 .cal-legend-item { display: flex; align-items: center; gap: var(--space-2); }
-.cal-swatch { width: 0.9rem; height: 0.9rem; border-radius: var(--radius-pill); display: inline-block; }
+.cal-swatch { width: 0.9rem; height: 0.9rem; border-radius: var(--r-pill); display: inline-block; }
 
 .year-row {
   display: flex;
@@ -924,16 +1262,18 @@ input:focus, select:focus, textarea:focus {
   gap: var(--space-4);
   margin-bottom: var(--space-4);
 }
-.year-label { font-weight: 800; font-size: var(--text-lg); min-width: 4rem; text-align: center; }
-.month-picker {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: var(--space-2);
+.year-label {
+  font-weight: 600;
+  font-size: var(--text-lg);
+  min-width: 4rem;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
 }
+.month-picker { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-2); }
 .month-picker .btn { min-height: var(--target-min); }
 
 /* ---------------------------------------------------------------------
-   11. Settings
+   14. Settings
    --------------------------------------------------------------------- */
 
 .setting-row {
@@ -947,28 +1287,25 @@ input:focus, select:focus, textarea:focus {
 .setting-row:last-child { border-bottom: none; }
 
 .setting-main { flex: 1; }
-.setting-label { font-weight: 700; }
+.setting-label { font-weight: 500; }
 .setting-hint { color: var(--ink-3); font-size: var(--text-sm); margin-top: 0.15rem; }
-.setting-value { color: var(--ink-2); font-weight: 600; }
+.setting-value { color: var(--ink-2); font-weight: 500; }
 .setting-code {
-  font-variant-numeric: tabular-nums;
   letter-spacing: 0.12em;
-  font-weight: 800;
-  background: var(--primary-50);
-  color: var(--primary);
+  font-weight: 600;
+  font-size: var(--text-md);
+  background: var(--primary-tint);
+  color: var(--primary-ink);
   padding: 0.35rem 0.7rem;
-  border-radius: var(--radius-sm);
+  border-radius: var(--r-sm);
 }
 
-.fatal {
-  text-align: center;
-  padding: var(--space-6) var(--space-4);
-}
+.fatal { text-align: center; padding: var(--space-6) var(--space-4); }
 .fatal h1 { font-size: var(--text-xl); margin-bottom: var(--space-3); }
 .fatal p { color: var(--ink-3); }
 
 /* ---------------------------------------------------------------------
-   12. Onboarding, sign-in, pairing — the redesigned first screens
+   15. Onboarding, sign-in, pairing
    --------------------------------------------------------------------- */
 
 .welcome {
@@ -980,29 +1317,29 @@ input:focus, select:focus, textarea:focus {
 }
 
 .welcome-logo {
-  width: 4.5rem;
-  height: 4.5rem;
-  margin: 0 auto var(--space-4);
-  border-radius: var(--radius-lg);
-  background: #ffffff;
-  box-shadow: 0 0 0 10px var(--primary-50), var(--shadow-md);
+  width: 3.875rem;
+  height: 3.875rem;
+  margin: 0 auto var(--space-5);
+  border-radius: var(--r-lg);
+  background: var(--primary);
+  color: var(--on-primary);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--primary); /* Optional: changes the pill icon inside to blue so it remains visible */
   animation: welcome-pop 700ms var(--ease-out);
 }
-.welcome-logo .icon { width: 2rem; height: 2rem; }
+.welcome-logo .icon { width: 1.875rem; height: 1.875rem; }
 
 .welcome-title {
   text-align: center;
-  font-size: var(--text-2xl);
-  font-weight: 800;
+  font-size: var(--text-xl);
+  font-weight: 600;
   letter-spacing: -0.02em;
 }
 .welcome-intro {
   text-align: center;
   color: var(--ink-3);
+  font-size: var(--text-sm);
   margin-bottom: var(--space-4);
 }
 
@@ -1012,32 +1349,32 @@ input:focus, select:focus, textarea:focus {
   gap: var(--space-4);
   background: var(--surface);
   border: 1px solid var(--line);
-  border-radius: var(--radius-lg);
+  border-radius: var(--r-lg);
   padding: var(--space-4);
-  box-shadow: var(--shadow-sm);
   cursor: pointer;
   text-align: left;
-  transition: transform var(--dur-fast) var(--ease-out), box-shadow var(--dur) var(--ease),
-    border-color var(--dur) var(--ease);
+  transition: transform var(--dur-fast) var(--ease-out), border-color var(--dur) var(--ease),
+    background var(--dur) var(--ease);
 }
-.role-btn:hover { box-shadow: var(--shadow-md); border-color: var(--primary-100); transform: translateY(-1px); }
+.role-btn:hover { border-color: var(--primary-line); background: var(--sunken); }
 .role-btn:active { transform: scale(0.98); }
 
 .role-icon {
-  width: 3rem;
-  height: 3rem;
+  width: 3.25rem;
+  height: 3.25rem;
   flex: none;
-  border-radius: var(--radius-pill);
-  background: var(--primary-50);
-  color: var(--primary);
+  border-radius: var(--r-md);
+  background: var(--primary);
+  color: var(--on-primary);
   display: flex;
   align-items: center;
   justify-content: center;
 }
-.role-icon-accent { background: var(--accent-50); color: var(--accent); }
+.role-icon .icon { width: 1.625rem; height: 1.625rem; }
+.role-icon-accent { background: var(--attn-tint); color: var(--attn); }
 
 .role-text { flex: 1; }
-.role-name { display: block; font-weight: 800; font-size: var(--text-md); }
+.role-name { display: block; font-weight: 600; font-size: var(--text-md); }
 .role-hint { display: block; color: var(--ink-3); font-size: var(--text-sm); margin-top: 0.15rem; }
 .role-chevron { color: var(--ink-3); font-size: var(--text-lg); }
 
@@ -1047,17 +1384,13 @@ input:focus, select:focus, textarea:focus {
   font-size: var(--text-sm);
   margin-top: var(--space-4);
 }
-a.welcome-foot { color: var(--primary); font-weight: 700; }
+a.welcome-foot { color: var(--primary); font-weight: 500; }
 
 /* ---------------------------------------------------------------------
-   13. Overlays — backdrop, dialog, sheet, photo viewer
+   16. Overlays — backdrop, dialog, sheet, photo viewer
    --------------------------------------------------------------------- */
 
-#overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 80;
-}
+#overlay { position: fixed; inset: 0; z-index: 80; }
 
 .overlay-layer {
   position: fixed;
@@ -1071,9 +1404,7 @@ a.welcome-foot { color: var(--primary); font-weight: 700; }
 .overlay-backdrop {
   position: absolute;
   inset: 0;
-  background: rgba(15, 18, 26, 0.5);
-  backdrop-filter: blur(2px);
-  -webkit-backdrop-filter: blur(2px);
+  background: var(--scrim);
   animation: fade-in var(--dur) var(--ease);
 }
 
@@ -1082,20 +1413,21 @@ body.overlay-open { overflow: hidden; }
 .dialog {
   position: relative;
   background: var(--surface);
-  border-radius: var(--radius-lg);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
   box-shadow: var(--shadow-lg);
   padding: var(--space-5);
   max-width: 24rem;
   width: 100%;
   animation: dialog-in var(--dur-slow) var(--ease-out);
 }
-.dialog-title { font-size: var(--text-lg); font-weight: 800; margin-bottom: var(--space-2); }
+.dialog-title { font-size: var(--text-lg); font-weight: 600; margin-bottom: var(--space-2); }
 .dialog-body { color: var(--ink-2); margin-bottom: var(--space-5); }
 .dialog-actions { display: flex; gap: var(--space-3); }
 .dialog-actions .btn { flex: 1; }
 
-/* Simple mode: the confirming action sits on top, so a big thumb cannot
-   land on the wrong button. */
+/* Simple mode: the confirming action sits on top, so a big thumb cannot land
+   on the wrong button. */
 body.mode-simple .dialog-actions { flex-direction: column-reverse; }
 
 .sheet-layer { align-items: center; }
@@ -1103,7 +1435,8 @@ body.mode-simple .dialog-actions { flex-direction: column-reverse; }
 .sheet {
   position: relative;
   background: var(--surface);
-  border-radius: var(--radius-lg);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
   box-shadow: var(--shadow-lg);
   width: 100%;
   max-width: 30rem;
@@ -1120,20 +1453,91 @@ body.mode-simple .dialog-actions { flex-direction: column-reverse; }
   padding: var(--space-4) var(--space-5);
   border-bottom: 1px solid var(--line);
 }
-.sheet-title { font-size: var(--text-lg); font-weight: 800; }
+.sheet-title { font-size: var(--text-lg); font-weight: 600; }
 .sheet-close {
   width: 2rem;
   height: 2rem;
-  border-radius: var(--radius-pill);
+  border-radius: var(--r-pill);
   border: none;
-  background: var(--surface-2);
+  background: var(--raised);
+  color: var(--ink-2);
   font-size: var(--text-lg);
   line-height: 1;
   cursor: pointer;
   transition: background var(--dur) var(--ease);
 }
-.sheet-close:hover { background: var(--surface-3); }
+.sheet-close:hover { background: var(--line); }
 .sheet-body { padding: var(--space-5); overflow-y: auto; }
+
+/* ---- medicine detail sheet ---- */
+
+/* Full sheet width and edge to edge: this is the identifying photo, and the
+   sheet's own padding would shrink the one thing the person came to look at.
+   Square rather than 16:9 -- a tablet photographed on a table is square. */
+.detail-photo {
+  display: block;
+  width: calc(100% + var(--space-5) * 2);
+  margin: calc(var(--space-5) * -1) calc(var(--space-5) * -1) var(--space-4);
+  aspect-ratio: 1;
+  max-height: 16rem;
+  border: none;
+  padding: 0;
+  background: var(--sunken);
+  cursor: zoom-in;
+  overflow: hidden;
+}
+.detail-photo img { width: 100%; height: 100%; object-fit: cover; }
+
+/* No photo: shrink to fit rather than holding a square of nothing open. */
+.detail-photo-none { aspect-ratio: auto; cursor: default; }
+
+.detail-photo-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: var(--space-5) 0;
+  color: var(--ink-3);
+  font-size: var(--text-sm);
+}
+
+.detail-hint {
+  text-align: center;
+  color: var(--ink-3);
+  font-size: var(--text-xs);
+  margin: calc(var(--space-3) * -1) 0 var(--space-4);
+}
+
+.detail-facts { display: flex; flex-direction: column; }
+.detail-fact {
+  display: flex;
+  gap: var(--space-4);
+  padding: var(--space-3) 0;
+  border-bottom: 1px solid var(--line);
+}
+.detail-fact:last-child { border-bottom: none; }
+.detail-fact-label { flex: none; width: 8rem; color: var(--ink-3); font-size: var(--text-sm); }
+.detail-fact-value { flex: 1; }
+
+.detail-heading {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--ink-3);
+  margin: var(--space-5) 0 var(--space-2);
+}
+.detail-times { display: flex; flex-direction: column; gap: var(--space-2); }
+.detail-time {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  background: var(--sunken);
+  border-radius: var(--r-sm);
+  padding: var(--space-2) var(--space-3);
+}
+.detail-time-label { font-weight: 500; }
+.detail-time-at { color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.detail-time-every { color: var(--ink-3); font-size: var(--text-sm); }
 
 .photoview-layer { padding: 0; background: #000; }
 .photoview {
@@ -1165,7 +1569,7 @@ body.mode-simple .dialog-actions { flex-direction: column-reverse; }
   background: linear-gradient(to top, rgba(0, 0, 0, 0.75), transparent);
   color: #fff;
 }
-.photoview-name { display: block; font-size: var(--text-lg); }
+.photoview-name { display: block; font-size: var(--text-lg); font-weight: 600; }
 .photoview-strength { color: rgba(255, 255, 255, 0.75); margin-left: var(--space-2); }
 .photoview-close {
   position: absolute;
@@ -1173,7 +1577,7 @@ body.mode-simple .dialog-actions { flex-direction: column-reverse; }
   right: var(--space-4);
   width: 2.75rem;
   height: 2.75rem;
-  border-radius: var(--radius-pill);
+  border-radius: var(--r-pill);
   border: none;
   background: rgba(255, 255, 255, 0.14);
   color: #fff;
@@ -1183,27 +1587,45 @@ body.mode-simple .dialog-actions { flex-direction: column-reverse; }
 }
 
 /* ---------------------------------------------------------------------
-   14. Toast
+   17. Toast
    --------------------------------------------------------------------- */
 
 #toast {
   position: fixed;
   left: 50%;
-  bottom: calc(var(--space-6) + env(safe-area-inset-bottom, 0));
+  bottom: calc(5.5rem + env(safe-area-inset-bottom, 0));
   transform: translate(-50%, 0.5rem);
   background: var(--ink);
-  color: #fff;
-  padding: 0.75rem 1.25rem;
-  border-radius: var(--radius-pill);
+  color: var(--canvas);
+  padding: 0.7rem 0.9rem 0.7rem 1.25rem;
+  border-radius: var(--r-pill);
   font-size: var(--text-sm);
-  font-weight: 600;
+  font-weight: 500;
   box-shadow: var(--shadow-md);
   opacity: 0;
   pointer-events: none;
   z-index: 90;
+  max-width: calc(100vw - 2rem);
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
   transition: opacity var(--dur) var(--ease), transform var(--dur) var(--ease-out);
 }
-body.mode-simple #toast { bottom: calc(5.5rem + env(safe-area-inset-bottom, 0)); }
+
+/* Reads on the dark toast, which is --ink in both modes, so this cannot use
+   --primary: that flips to a dark navy in light mode and vanishes. */
+.toast-action {
+  border: none;
+  background: none;
+  color: #85b7eb;
+  font-weight: 600;
+  font-size: var(--text-sm);
+  padding: 0.35rem 0.6rem;
+  border-radius: var(--r-pill);
+  cursor: pointer;
+  flex: none;
+}
+.toast-action:hover { background: rgba(255, 255, 255, 0.12); }
 #toast.toast-on {
   opacity: 1;
   transform: translate(-50%, 0);
@@ -1211,7 +1633,7 @@ body.mode-simple #toast { bottom: calc(5.5rem + env(safe-area-inset-bottom, 0));
 }
 
 /* ---------------------------------------------------------------------
-   15. Motion
+   18. Motion
    --------------------------------------------------------------------- */
 
 @keyframes fade-in {
@@ -1241,14 +1663,13 @@ body.mode-simple #toast { bottom: calc(5.5rem + env(safe-area-inset-bottom, 0));
 }
 
 /* ---------------------------------------------------------------------
-   16. Responsive — same one-column layout at every width; only spacing
-   and a couple of comfort tweaks change. No breakpoint changes the shape
-   of the page, per docs/ui.md.
+   19. Responsive — same one-column layout at every width; only spacing
+   changes. No breakpoint changes the shape of the page.
    --------------------------------------------------------------------- */
 
 @media (min-width: 48rem) {
   .row-btn, .card { padding-left: var(--space-5); padding-right: var(--space-5); }
-  .welcome-logo { width: 5rem; height: 5rem; }
+  .welcome-logo { width: 4.25rem; height: 4.25rem; }
 }
 
 @media (min-width: 80rem) {

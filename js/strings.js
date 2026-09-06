@@ -42,15 +42,42 @@ export const S = {
   todayNothing: 'No medicines yet',
   todayNothingSimple: 'Ask your helper to add your medicines. They will appear here as soon as they do.',
   todayNothingSupporter: 'Add a medicine to get started.',
+  // The elder's very first screen after signing in. Until a supporter has
+  // added something there is nothing to show, so the empty state carries the
+  // next step instead of describing the emptiness.
+  coldStartTitle: 'Almost ready',
+  coldStartBody: 'Show this code to whoever is helping you. Once they enter it on their phone, your medicines will appear here on their own.',
+  coldStartCodeLabel: 'Your code',
+  coldStartWaiting: 'Nothing to do until then.',
   done: 'Done',
   undo: 'Undo',
   allTaken: 'All taken',
   noPhoto: 'No photo',
+  // Passive marker on the slot whose time has most recently passed. It never
+  // reorders, hides or dims anything -- see docs/ui.md.
+  nowLabel: 'Now',
+  // Today only. Resets at midnight, never stored, and has no historical
+  // counterpart anywhere: orientation, not a score.
+  doneOfSlots: (done, total) => `${done} of ${total} done today`,
+  medicineCount: n => `${n} ${n === 1 ? 'medicine' : 'medicines'}`,
+  showMedicines: 'Show the medicines',
+  hideMedicines: 'Hide the medicines',
+
+  // Skipped is a recorded outcome, not a failure: amber, never red, and the
+  // word is never "Missed". See docs/ui.md.
+  skipped: 'Skipped',
+  allMarked: 'All marked',
+  skippedToast: name => `${name} marked as skipped`,
+  // The dose target cycles, so its label has to say what the NEXT tap does.
+  doseNotYet: name => `${name}: not marked. Tap to mark taken.`,
+  doseTaken: name => `${name}: taken. Tap to mark skipped.`,
+  doseSkipped: name => `${name}: skipped. Tap to clear.`,
   // Shown once at the top of the day rather than on every card: with six
   // medicines in a slot, six copies of the same hint is noise. Only rendered
   // once there is at least one medicine -- see js/views/today.js.
   tapForPhoto: 'Tap a medicine to see its photo.',
   closePhoto: 'Close',
+  seePhotoFull: 'Tap the photo to see it full screen',
 
   // ---- calendar ---------------------------------------------------------
   calendarTitle: 'Calendar',
@@ -61,6 +88,9 @@ export const S = {
   lockedBody: 'This day is from before your last update, so it is kept as a record and cannot be changed.',
   dayNothing: 'No medicines were due on this day.',
   ofDoses: (taken, expected) => `${taken} of ${expected} taken`,
+  ofSkipped: n => `${n} skipped`,
+  someSkipped: 'Some skipped',
+  nothingMarked: 'Nothing marked',
   weekdayShort: ['S', 'M', 'T', 'W', 'T', 'F', 'S'],
   monthNames: ['January', 'February', 'March', 'April', 'May', 'June', 'July',
     'August', 'September', 'October', 'November', 'December'],

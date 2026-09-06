@@ -151,10 +151,26 @@ export async function completionFor(dateStr) {
   ]);
   const expected = groups.reduce((n, g) => n + g.medicines.length, 0);
   const wanted = new Set(groups.flatMap(g => g.medicines.map(m => `${g.slotId}|${m.medicineId}`)));
-  // Count only rows still matching something expected, so a dose logged
-  // against a medicine later removed from the day cannot push taken > expected.
-  const taken = log.filter(r => wanted.has(`${r.slotId}|${r.medicineId}`)).length;
-  return { expected, taken };
+  return { expected, ...tally(log, wanted) };
+}
+
+/* Counts only rows still matching something expected, so a dose logged against
+ * a medicine later removed from the day cannot push the totals past `expected`.
+ *
+ * Taken and skipped are counted separately because the calendar needs both: a
+ * fully-skipped slot is neither complete nor untouched, and collapsing the two
+ * would make a day nobody engaged with look identical to one they worked
+ * through and decided against. Rows predating migration 0005 carry no status
+ * and are all takens. */
+function tally(rows, wanted) {
+  let taken = 0;
+  let skipped = 0;
+  for (const row of rows) {
+    if (!wanted.has(`${row.slotId}|${row.medicineId}`)) continue;
+    if (row.status === 'skipped') skipped += 1;
+    else taken += 1;
+  }
+  return { taken, skipped };
 }
 
 /** Completion for a whole month in one pass, so the grid is not N round trips. */
@@ -177,9 +193,7 @@ export async function completionForDates(dates) {
       : buildDay(date, { medicines, schedules, slots }));
     const expected = groups.reduce((n, g) => n + g.medicines.length, 0);
     const wanted = new Set(groups.flatMap(g => g.medicines.map(m => `${g.slotId}|${m.medicineId}`)));
-    const rows = logByDate.get(date) || [];
-    const taken = rows.filter(r => wanted.has(`${r.slotId}|${r.medicineId}`)).length;
-    out.set(date, { expected, taken });
+    out.set(date, { expected, ...tally(logByDate.get(date) || [], wanted) });
   }
   return out;
 }

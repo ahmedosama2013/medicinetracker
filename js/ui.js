@@ -59,6 +59,67 @@ export function clear(node) {
 
 export const icon = name => el('span.icon', { 'aria-hidden': 'true', dataset: { icon: name } });
 
+// ---- pill identity --------------------------------------------------------
+
+/* A medicine has exactly one visual identity -- its photo -- and it appears at
+ * every size, on every screen, in both roles. See css/app.css section 6.
+ *
+ * Only two glyphs exist so far: a pill and a droplet. The droplet earns its
+ * place because liquids and drops are the things that must NOT go in a weekly
+ * organiser, so the distinction is load-bearing later. Per-form glyphs for
+ * capsule, inhaler and injection are a later refinement, not a fake one now. */
+const FORM_ICON = {
+  liquid: 'drop',
+  drops: 'drop',
+};
+
+/** Stable 0-5 tone for a medicine, so its fallback tile looks the same
+ * everywhere. Not an attempt to guess the pill's real colour -- it cannot be
+ * known from a name, and anywhere the real colour would matter the UI counts
+ * instead. This is only a distinguishable, consistent marker. */
+export function tileTone(id) {
+  const text = String(id || '');
+  let hash = 0;
+  for (let i = 0; i < text.length; i += 1) hash = (hash * 31 + text.charCodeAt(i)) >>> 0;
+  return hash % 6;
+}
+
+/**
+ * pillTile({ id, url, form, alt, state, community, archived, size })
+ *   state     null | 'taken' | 'skipped'
+ *   community the photo came from the shared DRAP set, not this household
+ *   size      null (44px) | 'sm' (34px) | 'lg' (56px)
+ */
+export function pillTile({
+  id, url, form, alt = '', state = null,
+  community = false, archived = false, size = null,
+} = {}) {
+  const classes = ['ptile'];
+  if (size === 'sm') classes.push('ptile-sm');
+  if (size === 'lg') classes.push('ptile-lg');
+  if (archived) classes.push('ptile-archived');
+  else if (!url) classes.push('ptile-empty');
+
+  const node = el(`span.${classes.join('.')}`, {
+    // A photo brings its own colour; only the fallback needs a tone.
+    dataset: url || archived ? null : { tone: String(tileTone(id)) },
+  }, url
+    ? el('img', { src: url, alt })
+    : icon(archived ? 'box' : FORM_ICON[form] || 'pill'));
+
+  const kind = state === 'taken' || state === 'skipped'
+    ? state
+    : (community ? 'community' : null);
+
+  if (kind) {
+    node.appendChild(el('span.ptile-badge', {
+      'aria-hidden': 'true', dataset: { kind },
+    }, icon(kind === 'taken' ? 'check' : kind === 'skipped' ? 'minus' : 'people')));
+  }
+
+  return node;
+}
+
 // ---- overlays -------------------------------------------------------------
 
 const overlayHost = () => document.getElementById('overlay');
@@ -90,7 +151,14 @@ function mountOverlay(panel, { onDismiss, dismissible = true, className = '' } =
   const dismiss = () => { close(); onDismiss?.(); };
 
   function onKey(event) {
-    if (event.key === 'Escape' && dismissible) { event.preventDefault(); dismiss(); }
+    if (event.key !== 'Escape' || !dismissible) return;
+    /* Only the topmost overlay answers. Every layer adds its own listener to
+     * `document`, so without this one Escape dismisses the whole stack at
+     * once -- closing a medicine sheet would also close the calendar day
+     * sheet underneath it and drop the person back to the month grid. */
+    if (host.lastElementChild !== layer) return;
+    event.preventDefault();
+    dismiss();
   }
 
   if (dismissible) backdrop.addEventListener('click', dismiss);
@@ -192,16 +260,39 @@ export function openPhotoViewer({ url, name, strength, altText }) {
 
 let toastTimer = null;
 
-export function toast(message) {
+/**
+ * toast('Saved')
+ * toast('Ibuprofen skipped', { actionLabel: 'Undo', onAction })
+ *
+ * The action exists for the cycling dose target: tapping twice lands on
+ * "skipped", which a person can reach without meaning to, so that state has
+ * to announce itself and offer the way back. Never used for errors that need
+ * a decision -- those are a dialog.
+ */
+export function toast(message, { actionLabel = null, onAction = null } = {}) {
   const node = document.getElementById('toast');
-  node.textContent = message;
+  clear(node);
+  node.appendChild(el('span', { text: message }));
+
+  const hide = () => {
+    node.classList.remove('toast-on');
+    setTimeout(() => { node.hidden = true; }, 250);
+  };
+
+  if (actionLabel && onAction) {
+    node.appendChild(el('button.toast-action', {
+      type: 'button',
+      text: actionLabel,
+      onclick: () => { clearTimeout(toastTimer); hide(); onAction(); },
+    }));
+  }
+
   node.hidden = false;
   node.classList.add('toast-on');
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => {
-    node.classList.remove('toast-on');
-    setTimeout(() => { node.hidden = true; }, 250);
-  }, 2600);
+  // Longer with an action: three seconds is not enough to notice an
+  // unintended change, read it, and reach the button.
+  toastTimer = setTimeout(hide, actionLabel ? 6000 : 2600);
 }
 
 // ---- small building blocks ------------------------------------------------

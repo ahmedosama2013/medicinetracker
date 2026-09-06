@@ -19,6 +19,14 @@ import { settingsView, slotsView } from './views/settings.js';
 
 const PREAUTH_PATHS = ['#/welcome', '#/signin', '#/pair'];
 
+/* One bar, two tab sets. v2 gave the supporter sticky top tabs and the patient
+ * a bottom bar -- two navigation models to learn and maintain, and the reason
+ * the supporter had no room for a Calendar tab.
+ *
+ * The supporter's set does not include Today or Calendar yet: a supporter
+ * device has no local dose log (js/sync.js is never imported there), so those
+ * screens would render slots with controls that cannot write. They arrive in
+ * Phase 2 with the code-gated read/write RPCs -- see docs/v3-plan.md. */
 const NAV = {
   simple: [
     { path: '#/today', label: S.navToday, icon: 'today' },
@@ -32,40 +40,24 @@ const NAV = {
 };
 
 function drawNav(mode, activePath) {
-  const topbar = document.getElementById('topbar');
   const bottomnav = document.getElementById('bottomnav');
   const items = NAV[mode] || [];
 
   if (!items.length) {
-    topbar.hidden = true;
     bottomnav.hidden = true;
     return;
   }
 
-  const links = items.map(item => el('a.navlink', {
+  bottomnav.hidden = false;
+  clear(bottomnav);
+  bottomnav.appendChild(el('div.nav-inner', items.map(item => el('a.navlink', {
     href: item.path,
     'aria-current': activePath.startsWith(item.path) ? 'page' : null,
     dataset: { icon: item.icon },
   }, [
     el('span.navlink-icon', { 'aria-hidden': 'true' }),
     el('span.navlink-label', { text: item.label }),
-  ]));
-
-  // Simple mode gets a bottom bar with big targets; supporter gets top tabs.
-  if (mode === 'simple') {
-    topbar.hidden = true;
-    bottomnav.hidden = false;
-    clear(bottomnav);
-    bottomnav.appendChild(el('div.nav-inner', links));
-  } else {
-    bottomnav.hidden = true;
-    topbar.hidden = false;
-    clear(topbar);
-    topbar.appendChild(el('div.topbar-inner', [
-      el('span.topbar-brand', { text: S.appName }),
-      el('nav.tabs', links),
-    ]));
-  }
+  ]))));
 }
 
 function registerRoutes() {

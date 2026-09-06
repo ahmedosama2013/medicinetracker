@@ -139,13 +139,29 @@ async function handleSnapshotChange({ eventType, new: row, old: oldRow }) {
 
 // ---- dose-log offline outbox ----------------------------------------------
 
+/* Every per-medicine write is queued under this key rather than under the
+ * dose's uuid. Cycling a medicine taken -> skipped -> unmarked while offline
+ * therefore leaves exactly ONE pending item holding the final state, instead
+ * of three that have to be replayed in an order the outbox does not preserve
+ * (it flushes in IndexedDB key order, not insertion order). */
+const doseKey = (date, slotId, medicineId) => `dose:${date}:${slotId}:${medicineId}`;
+
 async function flushOutbox() {
   if (!navigator.onLine) return;
   const pending = await store.getOutbox();
   for (const item of pending) {
     try {
       if (item.op === 'log') {
-        await supabase().from('dose_log').upsert(item.payload, { onConflict: 'household_id,local_date,slot_id,medicine_id', ignoreDuplicates: true });
+        // ignoreDuplicates: false, so a status change to an already-logged
+        // dose actually lands. Needs the UPDATE policy added in migration
+        // 0005; before that this silently no-opped on conflict.
+        await supabase().from('dose_log').upsert(item.payload, { onConflict: 'household_id,local_date,slot_id,medicine_id', ignoreDuplicates: false });
+      } else if (item.op === 'undo-one') {
+        await supabase().from('dose_log').delete()
+          .eq('household_id', item.payload.household_id)
+          .eq('local_date', item.payload.local_date)
+          .eq('slot_id', item.payload.slot_id)
+          .eq('medicine_id', item.payload.medicine_id);
       } else {
         await supabase().from('dose_log').delete()
           .eq('household_id', item.payload.household_id)
@@ -168,10 +184,11 @@ export async function logSlot(householdId, date, slotId, medicineIds) {
   const rows = await store.logSlot(date, slotId, medicineIds);
   for (const row of rows) {
     await store.putOutboxItem({
-      id: row.id, op: 'log',
+      id: doseKey(date, slotId, row.medicineId), op: 'log',
       payload: {
         id: row.id, household_id: householdId, medicine_id: row.medicineId,
         slot_id: row.slotId, local_date: row.date, taken_at: row.takenAt,
+        status: row.status,
       },
     });
   }
@@ -179,10 +196,48 @@ export async function logSlot(householdId, date, slotId, medicineIds) {
   return rows;
 }
 
+/** One medicine, one state. `status` of null clears it back to unmarked. */
+export async function setDose(householdId, date, slotId, medicineId, status) {
+  if (status === null) {
+    await store.clearDose(date, slotId, medicineId);
+    await store.putOutboxItem({
+      id: doseKey(date, slotId, medicineId), op: 'undo-one',
+      payload: {
+        household_id: householdId, local_date: date,
+        slot_id: slotId, medicine_id: medicineId,
+      },
+    });
+    flushOutbox();
+    return null;
+  }
+
+  const row = await store.setDose(date, slotId, medicineId, status);
+  await store.putOutboxItem({
+    id: doseKey(date, slotId, medicineId), op: 'log',
+    payload: {
+      id: row.id, household_id: householdId, medicine_id: medicineId,
+      slot_id: slotId, local_date: date, taken_at: row.takenAt, status,
+    },
+  });
+  flushOutbox();
+  return row;
+}
+
 export async function undoSlot(householdId, date, slotId) {
   const n = await store.undoSlot(date, slotId);
+
+  /* Drop per-medicine writes still queued for this slot. They have been
+   * superseded, and left in place they would flush AFTER the slot delete --
+   * outbox order is IndexedDB key order -- and resurrect rows the person just
+   * cleared. Dropping them is safe: undoSlot already cleared the same rows
+   * locally, so nothing is lost that the person still expects to see. */
+  const prefix = `dose:${date}:${slotId}:`;
+  for (const item of await store.getOutbox()) {
+    if (String(item.id).startsWith(prefix)) await store.deleteOutboxItem(item.id);
+  }
+
   await store.putOutboxItem({
-    id: `undo-${date}-${slotId}`, op: 'undo',
+    id: `undo:${date}:${slotId}`, op: 'undo',
     payload: { household_id: householdId, local_date: date, slot_id: slotId },
   });
   flushOutbox();
