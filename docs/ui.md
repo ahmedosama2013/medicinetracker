@@ -340,7 +340,15 @@ column, not a document that happens to fit — someone is holding a tray with
 both hands, and scrolling to reach the grid or the Next button is the friction
 this screen exists to remove.
 
-The photos are **capped, not stretched**. Letting them absorb every spare pixel
+The photos are shown **at their own aspect ratio**, in a transparent frame
+with the border on the image rather than on a box around it. Real photos here
+run from 1.4:1 to nearly 4:1 — people crop tightly around a pill or shoot a
+whole strip — and fitting those into a fixed box left large slabs of tile
+background that read as part of the picture. The 44px `pillTile` keeps its
+letterbox on purpose: a grid of tiles needs uniform squares, and there the tone
+is a deliberate backdrop rather than an accident of the photo's shape.
+
+The photos are also **capped, not stretched**. Letting them absorb every spare pixel
 made a big phone look more crowded than a small one: the picture swelled and
 everything else stayed jammed against it. Capped at roughly 15vh, the leftover
 height becomes space *between* the blocks instead, so the screen gets calmer as

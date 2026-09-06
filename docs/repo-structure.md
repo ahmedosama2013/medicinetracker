@@ -122,6 +122,10 @@ Medicine Tracker/
   silently: the migration, `public.get_routine`, `public.upsert_medicine`,
   `app.compute_day`, `mapMedicine` in `js/sync.js`, the medicine form, and —
   if `supporter-photo` writes it — the column-level `service_role` grant.
+- **`--nav-h` must be the bar's exact height**, applied as `height` and not
+  `min-height`. The organiser's fit layout subtracts it to size itself, so a
+  declared height the content then exceeds makes that subtraction wrong — it
+  did, by 10px, and the buttons sat under the bar.
 - **Comments explain why, not what.** The ones worth reading are on the append-only rule, the service worker's `no-cache`, and the two-clock freeze design in `supabase/migrations/0001_init.sql`.
 
 ## Regenerating the icons

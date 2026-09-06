@@ -145,7 +145,12 @@
   --text-3xl: 2rem;       /* 32px */
 
   --target-min: 2.5rem;   /* 40px */
-  --nav-h: 4rem;          /* the bottom bar; subtracted by the organiser's fit layout */
+  /* The bottom bar's EXACT height. It is applied as `height`, not `min-height`,
+     because the organiser's fit layout subtracts it to size itself -- and a
+     min-height the content then exceeds makes that subtraction a lie. It did:
+     the bar measured 74px against a declared 64px, and the organiser's buttons
+     sat 2px underneath it. Must stay >= icon + gap + label + padding. */
+  --nav-h: 4.75rem;       /* 76px */
   --row-h: 3rem;          /* 48px */
   --tile: 2.75rem;        /* 44px — the pill identity tile */
 
@@ -314,7 +319,7 @@ body.mode-simple {
   --text-md: 1.0625rem;    /* 17px */
   --text-lg: 1.1875rem;    /* 19px */
   --target-min: 2.875rem;  /* 46px */
-  --nav-h: 4.5rem;
+  --nav-h: 5rem;          /* 80px -- simple mode's labels are 16px */
   --row-h: 3.625rem;       /* 58px — a 44px tile plus breathing room */
   --content-max: 28rem;
 }
@@ -495,7 +500,7 @@ body.mode-none #app {
   justify-content: center;
   gap: var(--space-1);
   padding: var(--space-2) 0;
-  min-height: var(--nav-h);
+  height: var(--nav-h);
   color: var(--ink-2);
   font-size: var(--text-sm);
   font-weight: 500;
@@ -2071,7 +2076,6 @@ body.mode-simple .dialog-actions { flex-direction: column-reverse; }
   margin-bottom: 0;
 }
 #app.og-fit .og-photo { min-height: 0; }
-#app.og-fit .og-photo-btn { flex: 1 1 auto; min-height: 0; height: auto; aspect-ratio: auto; max-height: none; }
 #app.og-fit .og-total { margin: 0; }
 #app.og-fit .og-actions { margin-top: 0; }
 #app.og-fit .og-checkintro { margin-bottom: 0; }
@@ -2100,21 +2104,44 @@ body.mode-simple .dialog-actions { flex-direction: column-reverse; }
    full-screen viewer, which is where identification really happens. */
 .og-photos { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-3); margin-bottom: var(--space-4); }
 .og-photos-one { grid-template-columns: 1fr; }
-.og-photo { margin: 0; display: flex; flex-direction: column; gap: var(--space-1); }
+.og-photo { margin: 0; display: flex; flex-direction: column; gap: var(--space-1); min-height: 0; }
+
+/* The photo at its own shape, not letterboxed into a fixed box.
+ *
+ * People crop tightly around a pill, so real photos here are anything from 2:1
+ * to portrait. Fitting those into a square tile left large slabs of the tile's
+ * background -- white in light mode, near-black in dark -- which read as part
+ * of the picture rather than as empty space around it.
+ *
+ * So the button is a transparent, centring frame and the image sizes itself
+ * inside it. The border and radius live on the IMAGE, so they hug the actual
+ * photo whatever its ratio; on the container they would have drawn the box we
+ * are trying to get rid of. That edge still matters -- a photo shot against a
+ * white worktop has no boundary of its own on a warm canvas.
+ *
+ * The 44px pillTile keeps its `contain` letterbox on purpose (see docs/ui.md):
+ * a grid of tiles needs uniform squares, and there the tone is a deliberate
+ * backdrop rather than an accident of the photo's shape. */
 .og-photo-btn {
-  display: block;
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   width: 100%;
-  aspect-ratio: 1;
-  max-height: 12rem;
-  border: 1px solid var(--line);
-  border-radius: var(--r-md);
+  border: none;
   padding: 0;
-  background: var(--sunken);
+  background: none;
   cursor: zoom-in;
-  overflow: hidden;
 }
-.og-photos-one .og-photo-btn { aspect-ratio: 4 / 3; }
-.og-photo-btn img { width: 100%; height: 100%; object-fit: contain; }
+.og-photo-btn img {
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  height: auto;
+  border-radius: var(--r-md);
+  border: 1px solid var(--line);
+}
 .og-photo-cap { text-align: center; color: var(--ink-3); font-size: var(--text-sm); }
 
 .og-photos-none {
