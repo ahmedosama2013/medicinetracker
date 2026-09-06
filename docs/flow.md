@@ -217,3 +217,4 @@ taken in a dark room.
 | Supporter's Today says *"Could not check for updates"* | Their phone cannot reach the server | It keeps showing the last information it had; it retries on its own. Check the connection if it persists |
 | Supporter taps a circle and gets an error | A supporter's marks need a connection — they are never queued for later | Try again once back online. Nothing was recorded |
 | *"Already sent"* when sending a reminder | One per hour, on purpose | Wait, or phone them |
+| Supporter's Today shows a different date to their own phone | Deliberate. The app always shows the **elder's** day, wherever the supporter is | Nothing. A line under the date says so when the two differ |

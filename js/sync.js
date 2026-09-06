@@ -11,6 +11,7 @@
 import { supabase } from './supabase.js';
 import * as store from './store.js';
 import { refresh } from './router.js';
+import { setTimezone } from './date.js';
 
 /* Enumerates columns explicitly, which is exactly why every new medicine
  * column has to be added here as well as to the migration -- a column missing
@@ -153,6 +154,7 @@ async function refetchHouseholdMeta(householdId) {
   if (!data) return false;
   const before = await store.getSettings();
   await store.saveSettings({ lockedThrough: data.locked_through, timezone: data.timezone });
+  setTimezone(data.timezone);
   // The lock line moves once a night, and moving it changes which past days
   // the calendar will still accept a correction on -- so it is worth a redraw,
   // and only then.

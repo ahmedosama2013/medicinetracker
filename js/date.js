@@ -14,6 +14,60 @@
 
 const pad = n => String(n).padStart(2, '0');
 
+/* ---- whose "today"? -------------------------------------------------------
+ *
+ * The household's, not the device's. A supporter in Chicago looking at an
+ * elder in Karachi must see the elder's day: at 8pm Sunday in Chicago it is
+ * already Monday morning where the medicines are, and showing Sunday would be
+ * showing a day that is over.
+ *
+ * This is also what the server already does. `local_date` on every dose row
+ * and `app.household_local_date` are computed in the household's timezone, so
+ * aligning both clients to it makes the three agree -- and it fixes the same
+ * problem for an elder who travels, whose device clock moves while their
+ * routine does not.
+ *
+ * Set once at boot from `settings.timezone`, and again whenever a sync brings
+ * a newer one. Null means "use this device", which is the correct answer
+ * before a household is known and the right fallback if the zone is unusable.
+ */
+let householdTz = null;
+
+export function setTimezone(tz) {
+  if (!tz) { householdTz = null; return; }
+  try {
+    // Throws on a zone this browser does not know; better to find out here
+    // than on every date read for the rest of the session.
+    new Intl.DateTimeFormat('en-US', { timeZone: tz }).format(new Date());
+    householdTz = tz;
+  } catch {
+    householdTz = null;
+  }
+}
+
+export const getTimezone = () => householdTz;
+
+/** Calendar parts of `dt` in the household's zone, or the device's. */
+function partsNow(dt = new Date()) {
+  if (!householdTz) {
+    return {
+      y: dt.getFullYear(), m: dt.getMonth() + 1, d: dt.getDate(),
+      hh: dt.getHours(), mm: dt.getMinutes(), ss: dt.getSeconds(),
+    };
+  }
+  const parts = {};
+  for (const p of new Intl.DateTimeFormat('en-US', {
+    timeZone: householdTz, hour12: false,
+    year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit', second: '2-digit',
+  }).formatToParts(dt)) parts[p.type] = p.value;
+  return {
+    y: Number(parts.year), m: Number(parts.month), d: Number(parts.day),
+    // Some engines render midnight as hour 24 rather than 00.
+    hh: Number(parts.hour) % 24, mm: Number(parts.minute), ss: Number(parts.second),
+  };
+}
+
 /** "YYYY-MM-DD" -> { y, m, d } with m being 1-12. */
 export function parse(str) {
   const [y, m, d] = String(str).split('-').map(Number);
@@ -39,7 +93,8 @@ export function toDate(str) {
 }
 
 export function todayStr() {
-  return toStr(new Date());
+  const { y, m, d } = partsNow();
+  return `${y}-${pad(m)}-${pad(d)}`;
 }
 
 /**
@@ -51,19 +106,36 @@ export function todayStr() {
  * on the same date it started on.
  */
 export function msUntilTomorrow() {
-  const now = new Date();
-  const next = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 5, 0);
-  return Math.max(1000, next.getTime() - now.getTime());
+  if (!householdTz) {
+    const now = new Date();
+    const next = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 5, 0);
+    return Math.max(1000, next.getTime() - now.getTime());
+  }
+  /* Counted from the household's wall clock rather than constructed as a
+   * local Date, because the target midnight is in another zone. A DST shift
+   * there can make this an hour out; that is tolerable because the timer only
+   * asks "has the date changed?" and js/main.js re-asks on every wake and
+   * focus anyway. Capped at six hours so a wrong answer is re-checked rather
+   * than believed until tomorrow. */
+  const { hh, mm, ss } = partsNow();
+  const elapsed = ((hh * 60 + mm) * 60 + ss) * 1000;
+  return Math.min(6 * 3600_000, Math.max(1000, 86_400_000 - elapsed + 5000));
 }
 
 export function nowIso() {
   return new Date().toISOString();
 }
 
-/** Current wall clock as "HH:MM". */
+/** Current wall clock as "HH:MM", in the household's zone. */
 export function nowTime() {
-  const dt = new Date();
-  return `${pad(dt.getHours())}:${pad(dt.getMinutes())}`;
+  const { hh, mm } = partsNow();
+  return `${pad(hh)}:${pad(mm)}`;
+}
+
+/** Minutes since the household's midnight. Used for the `Now` marker. */
+export function nowMinutes() {
+  const { hh, mm } = partsNow();
+  return hh * 60 + mm;
 }
 
 export function addDays(str, n) {

@@ -11,8 +11,8 @@ import * as schedule from '../schedule.js';
 import * as supporterSync from '../supporter-sync.js';
 import { S } from '../strings.js';
 import * as supporter from '../supporter.js';
-import { el, clear, emptyState, toast } from '../ui.js';
-import { todayStr, formatLong } from '../date.js';
+import { el, append, clear, emptyState, toast } from '../ui.js';
+import { todayStr, formatLong, getTimezone } from '../date.js';
 import { refresh } from '../router.js';
 import { renderDay } from './day.js';
 
@@ -44,6 +44,23 @@ async function progressRail(date) {
     el('div.rail', states.map(on => el(`span.rail-seg${on ? '.is-on' : ''}`))),
     el('p.rail-count', { text: S.doneOfSlots(done, states.length) }),
   ]);
+}
+
+/* The supporter's phone may be on a different date to the household.
+ *
+ * todayStr() answers with the household's day now (js/date.js), which is the
+ * only correct answer -- but it means the screen can say Monday while the
+ * phone it is running on says Sunday. Said out loud, and only when the two
+ * actually differ, so it is an explanation exactly when one is needed and
+ * absent the rest of the time.
+ */
+function otherDayLine(date) {
+  const tz = getTimezone();
+  if (!tz) return null;
+  const deviceDate = `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}-${String(new Date().getDate()).padStart(2, '0')}`;
+  if (deviceDate === date) return null;
+  const place = tz.split('/').pop().replace(/_/g, ' ');
+  return el('p.freshness', { text: S.theirDay(place) });
 }
 
 /* How stale the supporter's copy is. They poll rather than receive Realtime
@@ -197,6 +214,7 @@ export async function todayView({ app, isCurrent = () => true }) {
     app.appendChild(el('p.page-sub', { text: S.tapForPhoto }));
 
     if (settings.role === 'supporter') {
+      append(app, otherDayLine(date));
       app.appendChild(freshnessLine());
       app.appendChild(nudgeButton(settings));
     }

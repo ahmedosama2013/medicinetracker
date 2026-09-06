@@ -81,6 +81,11 @@ export const S = {
   // difference between "nothing new" and "we stopped being able to check".
   updatedJustNow: 'Updated just now',
   updatedAgo: mins => `Updated ${mins} minute${mins === 1 ? '' : 's'} ago`,
+  /* Shown on the supporter's Today only when their phone's date differs from
+   * the household's. The screen is deliberately showing a date that is not
+   * theirs, and a date that silently disagrees with the phone it is on is the
+   * kind of thing someone only questions at the worst moment. */
+  theirDay: place => `Their day in ${place}, which is not the same date as yours.`,
   updatedNever: 'Could not check for updates',
 
   // Marking a dose for the person you are helping. Asked once per session,

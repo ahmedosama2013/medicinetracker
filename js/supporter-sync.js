@@ -19,7 +19,7 @@
 
 import * as store from './store.js';
 import * as supporter from './supporter.js';
-import { todayStr, addDays } from './date.js';
+import { todayStr, addDays, setTimezone } from './date.js';
 
 /* Enough history for Today plus a couple of months of calendar paging without
  * a second round trip. Anything older is fetched by ensureRange when the
@@ -139,6 +139,17 @@ async function pullRoutine(code) {
     time: s.time, active: s.active, frequency: s.frequency,
   })));
   if (routine.slots?.length) await store.saveSettings({ slots: routine.slots });
+
+  /* get_routine has always returned this and nothing ever read it. Without it
+   * the supporter's device answers "what day is it?" with its own clock, so a
+   * supporter in Chicago saw Sunday while the elder in Karachi was already
+   * most of the way through Monday -- a whole day of doses shown as not yet
+   * due. See js/date.js. */
+  const timezone = routine.household?.timezone;
+  if (timezone) {
+    await store.saveSettings({ timezone });
+    setTimezone(timezone);
+  }
 
   await cachePhotos(code, medicines, previousPaths);
   return routine;

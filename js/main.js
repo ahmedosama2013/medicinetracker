@@ -8,7 +8,7 @@ import * as sync from './sync.js';
 import * as supporterSync from './supporter-sync.js';
 import { S } from './strings.js';
 import { el, clear, applyTheme } from './ui.js';
-import { todayStr, msUntilTomorrow } from './date.js';
+import { todayStr, msUntilTomorrow, setTimezone } from './date.js';
 
 import { welcomeView } from './views/onboarding.js';
 import { signInView } from './views/auth.js';
@@ -175,6 +175,9 @@ async function boot() {
   applyTheme(settings.theme);
 
   const mode = settings.role;
+  /* Before the first render, and before anything asks what day it is. Both
+   * devices run on the household's clock -- see js/date.js. */
+  setTimezone(settings.timezone);
   document.body.classList.add(mode ? `mode-${mode}` : 'mode-none');
   router.setMode(mode);
 

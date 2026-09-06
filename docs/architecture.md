@@ -141,6 +141,30 @@ The wake lock is module-level, released only when `currentPath()` is no longer
 `#/organiser` — the router runs a view's cleanup *after* the hash has changed,
 which is what makes a step change distinguishable from leaving.
 
+### Whose day is it?
+
+**The household's, on both devices.** `js/date.js` holds the household's
+timezone (`setTimezone`, from `settings.timezone`) and `todayStr`, `nowTime`,
+`nowMinutes` and `msUntilTomorrow` all answer in it. Null means "use this
+device", which is right before a household is known and is also the fallback
+for a zone the browser cannot parse.
+
+Without this a supporter's device answered with its own clock: at 8pm Sunday
+in Chicago it is already Monday morning in Karachi, so the supporter saw a day
+that was over and a full day of doses shown as not yet due. It cuts both ways —
+an elder behind the supporter had the mirror-image problem — and it also fixes
+an elder who travels, whose device clock moves while their routine does not.
+
+This aligns the clients with the server, which already worked this way:
+`local_date` on every dose row and `app.household_local_date` are computed in
+the household's timezone.
+
+Set before the first render in `js/main.js`, and refreshed whenever
+`refetchHouseholdMeta` (elder) or `pullRoutine` (supporter) brings a newer one.
+When a supporter's own date differs from the household's, their Today says so —
+a date that silently disagrees with the phone it is on is questioned only at
+the worst possible moment.
+
 ### Today has to mean today
 
 Every screen used to compute the date once, at mount. An installed PWA left on

@@ -13,7 +13,7 @@ import * as schedule from '../schedule.js';
 import * as photos from '../photos.js';
 import { S } from '../strings.js';
 import { el, icon, pillTile, emptyState, toast, confirmDialog, doseText } from '../ui.js';
-import { formatTime, todayStr, timeToMinutes } from '../date.js';
+import { formatTime, todayStr, timeToMinutes, nowMinutes } from '../date.js';
 import { openMedicineSheet } from './medicine-sheet.js';
 
 /* Marking a dose for someone else, confirmed once per session.
@@ -94,9 +94,9 @@ export async function renderDay({
    * are, which is the one thing it costs the person to work out themselves. */
   let nowSlotId = null;
   if (date === todayStr()) {
-    const nowMinutes = new Date().getHours() * 60 + new Date().getMinutes();
+    const nowMins = nowMinutes();
     for (const group of groups) {
-      if (timeToMinutes(group.time) <= nowMinutes) nowSlotId = group.slotId;
+      if (timeToMinutes(group.time) <= nowMins) nowSlotId = group.slotId;
     }
   }
 
