@@ -440,6 +440,41 @@ No pass/fail, no tick, no score. The screen shows what should be in each
 compartment; the person compares. An app that cannot see the tray must not claim
 the tray is correct.
 
+### 20 done, and four changes from use
+
+Item 20 arrived early, because the first thing asked for after using the step
+screen was "tell me how many tablets each slot should have at the end" — which
+is the check screen. Four changes came out of that first real sitting:
+
+**Both photos on a step, not just the packet.** The screen loaded only
+`packet`, so a medicine with a perfectly good pill photo showed a fallback
+tile. They answer different questions and someone filling a tray asks both
+within seconds — the pill is "is this the right tablet?" held against what is
+in their hand, the packet is "which box do I reach for?" scanning a shelf.
+Side by side rather than stacked, because stacking pushes the grid off screen
+and the grid is what they are about to act on. Each opens the full-screen
+viewer, the same one-tap-deeper pattern the medicine sheet uses.
+
+**The way in moved from Today to Settings**, under Pill box, next to the
+setting that decides the box's shape. Today's only subject is today; a card
+there is something everyone looks past every day.
+
+**The check screen has no verdict.** It shows compartment totals and the
+person compares. There is no tick and no "looks right", because the app cannot
+see the tray — and one that claimed the tray was correct would be claiming
+something it has no way to know. Tapping a compartment lists what belongs in
+it **with the real pill photos**, loaded on demand, because "the count is
+wrong" is only useful if you can then work out *which* one is missing, and you
+answer that by looking at pills rather than reading names.
+
+**The type went up one step, then partly back down.** Everything on both
+screens moved up a size and the grid dot went 28px → 32px. That fits 375px
+with a couple of pixels spare — and overflows a 320px phone by 14px, clipping
+Saturday off the right edge. Caught by measuring rather than looking, since
+the pane was 375px wide. Below 360px the grid returns to its old size; the
+rest of the screen keeps the larger type. A grid you have to scroll sideways
+is worthless for checking against a tray you can see all of at once.
+
 ---
 
 ## 21 — Wake lock

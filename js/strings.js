@@ -259,6 +259,7 @@ export const S = {
    * called -- someone looking at Today is not looking for a feature. */
   organiserCardBody: 'One medicine at a time, so each box is only opened once.',
   organiserResume: n => `Carry on \u2014 ${n} left`,
+  organiserSettingsHint: 'Work through the week one medicine at a time.',
   organiserWeekLabel: 'Week beginning',
   organiserWeekHint: 'Seven days from this date.',
   organiserCount: n => `${n} ${n === 1 ? 'medicine goes' : 'medicines go'} in the box.`,
@@ -286,6 +287,23 @@ export const S = {
   /* Said once, on the start screen. Filling a tray is not taking a medicine,
    * and someone who thinks this screen marks doses would stop marking them. */
   organiserNotDoses: 'This does not mark anything as taken. It is only for filling the box.',
+  /* Captions under the two photos on a step. Both are shown when both exist,
+   * because they answer different questions -- which tablet, and which box --
+   * and someone filling a tray asks both within a few seconds of each other. */
+  organiserPhotoPill: 'The pill',
+  organiserPhotoPacket: 'The packet',
+  organiserNoPhotos: 'No photos yet. Ask whoever adds the medicines to take one.',
+
+  // ---- the check screen ------------------------------------------------
+  organiserCheckTitle: 'Check the box',
+  /* The app cannot see the tray, so it must not claim the tray is right. It
+   * shows what should be in each compartment; the person compares. */
+  organiserCheckIntro: 'What should now be in each compartment. Count them against the tray.',
+  organiserCheckTap: 'Tap a compartment to see what belongs in it.',
+  organiserCheckDone: 'Done',
+  organiserCompartment: (label, date) => `${label}, ${date}`,
+  organiserCompartmentEmpty: 'Nothing goes in this one.',
+  organiserTotalForWeek: 'Whole week',
 
   // ---- slots -----------------------------------------------------------
   slotsTitle: 'Times of day',

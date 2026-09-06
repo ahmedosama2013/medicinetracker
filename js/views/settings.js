@@ -128,7 +128,7 @@ const THEMES = [
  * on a round trip before moving reads as a tap that did not register, which is
  * the same mistake the dose target made before Phase 2.5's S5.
  */
-function pillBoxSection(settings, code) {
+function pillBoxSection(settings, code, organiser) {
   const slots = [...(settings.slots || [])]
     .sort((a, b) => timeToMinutes(a.time) - timeToMinutes(b.time));
 
@@ -166,10 +166,25 @@ function pillBoxSection(settings, code) {
 
   redrawShape();
 
+  /* The way in to organiser mode. It lives here rather than on Today because
+   * filling the box is a weekly job at most, and Today's only subject is
+   * today -- a card there would be something everyone looks past every day.
+   * Under Pill box specifically, next to the setting that decides its shape. */
+  const total = organiser?.plan?.steps?.length || 0;
+  const remaining = total - (organiser?.done?.length || 0);
+  const midSitting = total > 0 && remaining > 0 && remaining < total;
+
   return section(S.settingsPillBox, [
     el('p.setting-hint', { text: S.pillBoxIntro, style: 'margin-bottom: 0.75rem;' }),
     slots.length ? chips : el('p.setting-hint', { text: S.pillBoxNoSlots }),
     slots.length ? shape : null,
+    slots.some(s => s.inBox) ? actionRow({
+      label: S.organiserOpen,
+      hint: midSitting ? S.organiserResume(remaining) : S.organiserSettingsHint,
+      buttonLabel: midSitting ? S.organiserResume(remaining) : S.organiserStart,
+      primary: true,
+      onClick: () => go('#/organiser'),
+    }) : null,
   ]);
 }
 
@@ -192,7 +207,9 @@ function appearanceSection(current) {
 }
 
 export async function settingsView({ app, isCurrent = () => true }) {
-  const settings = await store.getSettings();
+  const [settings, organiser] = await Promise.all([
+    store.getSettings(), store.getOrganiser(),
+  ]);
   if (!isCurrent()) return;
   const role = settings.role;
 
@@ -275,7 +292,7 @@ export async function settingsView({ app, isCurrent = () => true }) {
   /* Above Appearance and below each role's own sections: it is routine setup
    * about the household, not a preference of this device. */
   const code = role === 'simple' ? settings.shareCode : settings.supporterCode;
-  if (code) app.appendChild(pillBoxSection(settings, code));
+  if (code) app.appendChild(pillBoxSection(settings, code, organiser));
 
   app.appendChild(appearanceSection(settings.theme));
 

@@ -27,7 +27,8 @@ import * as photos from '../photos.js';
 import { planWeek } from '../organiser.js';
 import { S } from '../strings.js';
 import {
-  el, append, clear, section, emptyState, pillTile, doseText, doseAmount, toast,
+  el, append, clear, section, emptyState, pillTile, doseText, doseAmount,
+  openPhotoViewer, openSheet,
 } from '../ui.js';
 import { todayStr, formatLong, formatTime, dayOfWeek } from '../date.js';
 import { go, refresh, currentPath } from '../router.js';
@@ -185,18 +186,51 @@ function startScreen({ app, session, plan, weekStart, onStart, onPick }) {
   append(app, outOfBoxStrip(plan.outOfBox));
 }
 
-function stepScreen({ app, plan, step, index, done, packetUrl, onToggle }) {
+/**
+ * Both photos, when both exist.
+ *
+ * They answer two different questions and someone filling a tray asks both
+ * within seconds of each other: the pill is "is this the right tablet?", held
+ * up against what is in their hand; the packet is "which box do I reach for?",
+ * scanning a shelf. Everywhere else in the app only the pill matters, which is
+ * why only the pill has a tile -- here they are equals.
+ *
+ * Side by side rather than stacked, because stacking pushes the grid off the
+ * screen and the grid is what the person is about to act on. Each opens the
+ * full-screen viewer, which is where identification actually happens -- the
+ * same one-tap-deeper pattern the medicine sheet uses.
+ */
+function stepPhotos(step, urls) {
+  const shown = [
+    { url: urls.pill, caption: S.organiserPhotoPill },
+    { url: urls.packet, caption: S.organiserPhotoPacket },
+  ].filter(p => p.url);
+
+  if (!shown.length) {
+    return el('div.og-photos.og-photos-none', [
+      pillTile({ id: step.medicineId, form: step.form, size: 'lg' }),
+      el('p.og-nophoto', { text: S.organiserNoPhotos }),
+    ]);
+  }
+
+  const alt = `${step.name} ${step.strength || ''}`.trim();
+  return el(`div.og-photos${shown.length === 1 ? '.og-photos-one' : ''}`,
+    shown.map(photo => el('figure.og-photo', [
+      el('button.og-photo-btn', {
+        type: 'button',
+        'aria-label': `${photo.caption}: ${S.seePhotoFull}`,
+        onclick: () => openPhotoViewer({
+          url: photo.url, name: step.name, strength: step.strength, altText: alt,
+        }),
+      }, el('img', { src: photo.url, alt: '' })),
+      el('figcaption.og-photo-cap', { text: photo.caption }),
+    ])));
+}
+
+function stepScreen({ app, plan, step, index, done, photoUrls, onToggle }) {
   app.appendChild(el('p.og-progress', { text: S.organiserStep(index + 1, plan.steps.length) }));
 
-  /* The packet, big, because the question at this moment is "which box do I
-   * reach for?" -- not "which tablet is this?", which is what the pill tile
-   * answers everywhere else in the app. With no packet photo the pill tile is
-   * the honest fallback rather than a hole in the layout. */
-  app.appendChild(packetUrl
-    ? el('div.og-packet', el('img', { src: packetUrl, alt: '' }))
-    : el('div.og-packet.og-packet-none', pillTile({
-      id: step.medicineId, form: step.form, size: 'lg',
-    })));
+  app.appendChild(stepPhotos(step, photoUrls));
 
   app.appendChild(el('h2.og-name', [
     el('span', { text: step.name }),
@@ -237,6 +271,105 @@ function stepScreen({ app, plan, step, index, done, packetUrl, onToggle }) {
   }
 }
 
+/**
+ * The tray, checked by counting.
+ *
+ * Counting is how a filled organiser is actually verified. Colour cannot do
+ * it: real photos of white tablets are grey, and ui.md is explicit that the
+ * fallback tile's tone is a stable marker and not a guess at the pill's real
+ * colour -- so anywhere the true identity would matter, the UI counts instead.
+ * This is that place, which is why the dots carry compartment totals here and
+ * per-medicine amounts on the step screens.
+ *
+ * There is no tick, no pass, no "looks right". The app cannot see the tray. It
+ * says what should be in each compartment and the person compares -- and an
+ * app that claimed the tray was correct would be claiming something it has no
+ * way to know.
+ */
+function checkScreen({ app, plan }) {
+  app.appendChild(el('p.og-checkintro', { text: S.organiserCheckIntro }));
+
+  const grid = el('div.og-grid.og-grid-check', [
+    gridHead(plan.dates),
+    ...plan.compartments.map(row => el('div.og-row', [
+      el('span.og-rowlabel', [
+        el('span.og-rowname', { text: row.label }),
+        el('span.og-rowtime', { text: formatTime(row.time) }),
+      ]),
+      ...row.days.map(day => el('span.og-cell', day.total
+        ? el('button.og-dot.og-dot-btn', {
+          type: 'button',
+          'aria-label': S.organiserCompartment(row.label, day.date),
+          text: doseAmount(day.total),
+          onclick: () => openCompartment(row, day),
+        })
+        : el('span.og-dash', { 'aria-hidden': 'true' }, '\u2013'))),
+    ])),
+  ]);
+
+  app.appendChild(grid);
+  app.appendChild(el('p.og-checktap', { text: S.organiserCheckTap }));
+
+  app.appendChild(el('div.og-actions', [
+    el('button.btn.btn-quiet', {
+      type: 'button', text: S.organiserBack,
+      onclick: () => go(`#/organiser?step=${plan.steps.length}`),
+    }),
+    el('button.btn.btn-primary', {
+      type: 'button', text: S.organiserCheckDone, onclick: () => go('#/today'),
+    }),
+  ]));
+}
+
+/* What belongs in one compartment -- because a count that does not match is
+ * only useful if you can then work out WHICH medicine is missing, and that is
+ * a question you answer by looking at the pills, not by reading names.
+ *
+ * So the real photos are loaded here rather than settling for fallback tiles.
+ * On demand and per compartment: a whole week of them up front would be
+ * dozens of object URLs for a sheet that may never be opened. The sheet owns
+ * its tokens and releases them on close, the same contract every view follows.
+ */
+function openCompartment(row, day) {
+  const rows = new Map();
+  const tokens = [];
+
+  const sheet = openSheet({
+    title: S.organiserCompartment(row.label, formatLong(day.date, S.monthNames, S.weekdayNames)),
+    content: day.items.length
+      ? el('div.og-comp', day.items.map(item => {
+        const node = el('div.og-comprow', [
+          pillTile({ id: item.medicineId, form: item.form }),
+          el('span.og-compname', { text: item.name }),
+          el('span.og-compqty', {
+            text: doseText({ doseQty: item.qty, form: item.form }),
+          }),
+        ]);
+        rows.set(item.medicineId, { node, item });
+        return node;
+      }))
+      : el('p', { text: S.organiserCompartmentEmpty }),
+    onClose: () => photos.releaseAll(tokens.splice(0)),
+  });
+
+  for (const [medicineId, { node, item }] of rows) {
+    store.getPhotoBlob(medicineId, 'pill')
+      .then(blob => {
+        // Closed again while the read was in flight: onClose has already run,
+        // so a URL created now would never be revoked.
+        if (!blob || !node.isConnected) return;
+        const { url, token } = photos.objectUrl(blob);
+        tokens.push(token);
+        node.firstChild.replaceWith(pillTile({
+          id: medicineId, url, form: item.form, alt: item.name,
+        }));
+      })
+      .catch(() => { /* the fallback tile is already there */ });
+  }
+
+  return sheet;
+}
+
 // ---- the view -------------------------------------------------------------
 
 export async function organiserView({ app, query, isCurrent = () => true }) {
@@ -254,8 +387,15 @@ export async function organiserView({ app, query, isCurrent = () => true }) {
   acquireWakeLock();
   document.addEventListener('visibilitychange', onVisibility);
 
-  const stepParam = Number(query?.get('step'));
-  const wanted = Number.isInteger(stepParam) && stepParam > 0 ? stepParam : 0;
+  /* `?step=` is 0 (or absent) for the start screen, 1..N for the medicines,
+   * and the literal "check" for the tray check at the end. A string rather
+   * than N+1 so the check screen keeps its identity when the routine changes
+   * size between sittings -- a bookmarked "step=10" is meaningless, "check"
+   * is not. */
+  const raw = query?.get('step') || '';
+  const checking = raw === 'check';
+  const stepParam = Number(raw);
+  const wanted = !checking && Number.isInteger(stepParam) && stepParam > 0 ? stepParam : 0;
 
   const [settings, session] = await Promise.all([store.getSettings(), store.getOrganiser()]);
   if (!isCurrent()) return cleanup;
@@ -284,26 +424,40 @@ export async function organiserView({ app, query, isCurrent = () => true }) {
     go('#/organiser', { replace: true });
     return cleanup;
   }
+  // Nothing to check if nothing was planned.
+  if (checking && !plan.steps.length) {
+    go('#/organiser', { replace: true });
+    return cleanup;
+  }
 
-  /* The packet photo is read here rather than for every medicine up front:
-   * one step is on screen at a time, and holding nine blobs live to show one
-   * is nine object URLs doing nothing. */
-  let packetUrl = null;
+  /* Both photos, read here rather than for every medicine up front: one step
+   * is on screen at a time, and holding a dozen blobs live to show two is a
+   * dozen object URLs doing nothing. */
+  const photoUrls = { pill: null, packet: null };
   if (step) {
-    const blob = await store.getPhotoBlob(step.medicineId, 'packet').catch(() => null);
+    const [pill, packet] = await Promise.all([
+      store.getPhotoBlob(step.medicineId, 'pill').catch(() => null),
+      store.getPhotoBlob(step.medicineId, 'packet').catch(() => null),
+    ]);
     if (!isCurrent()) return cleanup;
-    if (blob) {
+    for (const [kind, blob] of [['pill', pill], ['packet', packet]]) {
+      if (!blob) continue;
       const { url, token } = photos.objectUrl(blob);
       tokens.push(token);
-      packetUrl = url;
+      photoUrls[kind] = url;
     }
   }
 
   clear(app);
-  app.appendChild(el('h1.page-title', { text: S.organiserTitle }));
+  app.appendChild(el('h1.page-title', { text: checking ? S.organiserCheckTitle : S.organiserTitle }));
   app.appendChild(el('p.og-week', {
     text: `${formatLong(plan.dates[0], S.monthNames, S.weekdayNames)} – ${formatLong(plan.dates[6], S.monthNames, S.weekdayNames)}`,
   }));
+
+  if (checking) {
+    checkScreen({ app, plan });
+    return cleanup;
+  }
 
   if (!step) {
     startScreen({
@@ -332,14 +486,13 @@ export async function organiserView({ app, query, isCurrent = () => true }) {
   }
 
   stepScreen({
-    app, plan, step, index, packetUrl,
+    app, plan, step, index, photoUrls,
     done: done.has(step.medicineId),
     onToggle: async filled => {
       await store.setOrganiserStepDone(step.medicineId, filled);
       if (!filled) { refresh(); return; }
       if (index === plan.steps.length - 1) {
-        toast(S.organiserDone);
-        go('#/today');
+        go('#/organiser?step=check');
         return;
       }
       go(`#/organiser?step=${wanted + 1}`);
