@@ -42,6 +42,20 @@ export function todayStr() {
   return toStr(new Date());
 }
 
+/**
+ * Milliseconds until just after the next local midnight.
+ *
+ * Built with the (year, month, day) constructor and a day added by `setDate`,
+ * so it is right across a DST boundary where "24 hours from now" is not. The
+ * few seconds of margin keep a timer that fires a hair early from waking up
+ * on the same date it started on.
+ */
+export function msUntilTomorrow() {
+  const now = new Date();
+  const next = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 5, 0);
+  return Math.max(1000, next.getTime() - now.getTime());
+}
+
 export function nowIso() {
   return new Date().toISOString();
 }

@@ -8,6 +8,7 @@ import * as sync from './sync.js';
 import * as supporterSync from './supporter-sync.js';
 import { S } from './strings.js';
 import { el, clear, applyTheme } from './ui.js';
+import { todayStr, msUntilTomorrow } from './date.js';
 
 import { welcomeView } from './views/onboarding.js';
 import { signInView } from './views/auth.js';
@@ -98,6 +99,45 @@ async function completeSimpleSignIn(session) {
   await store.saveSettings({ role: 'simple', householdId: household.id, shareCode: household.share_code });
 }
 
+/* Today has to actually mean today.
+ *
+ * Every screen worked out the date once, when it was first drawn, and nothing
+ * ever revisited it. An installed PWA left on the Today screen overnight --
+ * which is the normal case, not an edge one -- showed yesterday in the morning,
+ * and every dose marked went to yesterday's local_date.
+ *
+ * That is worse than a wrong heading. Once the nightly freeze has advanced
+ * locked_through past that date the write is rejected, the outbox cannot tell a
+ * rejection from being offline, and it retries forever: the person sees a tick
+ * that never syncs and has no way to find out why.
+ *
+ * Both triggers are needed. The timer covers a phone left awake; the visibility
+ * check covers one that was asleep, where timers are throttled or never ran. */
+function watchTheDate() {
+  let day = todayStr();
+  let timer = null;
+
+  const schedule = () => {
+    clearTimeout(timer);
+    timer = setTimeout(check, msUntilTomorrow());
+  };
+
+  function check() {
+    const now = todayStr();
+    if (now !== day) {
+      day = now;
+      router.refresh();
+    }
+    schedule();
+  }
+
+  schedule();
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') check();
+  });
+  window.addEventListener('focus', check);
+}
+
 async function boot() {
   registerRoutes();
   registerServiceWorker();
@@ -155,6 +195,8 @@ async function boot() {
   }
 
   await router.start();
+
+  watchTheDate();
 
   if (mode === 'simple' && settings.householdId) {
     sync.startRealtime(settings.householdId);

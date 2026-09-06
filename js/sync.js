@@ -169,8 +169,35 @@ function scheduleRoutineRefetch(householdId) {
   }, BURST_MS);
 }
 
+/* Everything missed while the socket was down.
+ *
+ * refetchHistory() ran once, at boot. The Supabase client reconnects on its
+ * own, but events that happened while the phone was asleep are never replayed
+ * -- so an elder whose phone slept all night saw nothing the supporter had
+ * changed until the app was restarted. And subscribe() was called with no
+ * status callback, so a channel that failed to rejoin at all was invisible. */
+let backfilling = false;
+
+async function backfill(householdId) {
+  if (backfilling) return;
+  backfilling = true;
+  try {
+    await Promise.all([
+      refetchRoutine(householdId).catch(() => {}),
+      refetchHistory(householdId).catch(() => {}),
+      refetchHouseholdMeta(householdId).catch(() => {}),
+    ]);
+    scheduleRefresh();
+  } finally {
+    backfilling = false;
+  }
+}
+
 export function startRealtime(householdId) {
   const client = supabase();
+  /* The first SUBSCRIBED arrives moments after subscribe() and the boot
+   * refetches below already cover it. Every later one is a reconnection. */
+  let subscribedBefore = false;
   const channel = client
     .channel(`household-${householdId}`)
     .on('postgres_changes', { event: '*', schema: 'public', table: 'medicines', filter: `household_id=eq.${householdId}` },
@@ -185,14 +212,29 @@ export function startRealtime(householdId) {
       payload => handleSnapshotChange(payload).then(scheduleRefresh))
     .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'households', filter: `id=eq.${householdId}` },
       () => refetchHouseholdMeta(householdId).then(scheduleRefresh))
-    .subscribe();
+    .subscribe(status => {
+      if (status !== 'SUBSCRIBED') return;
+      if (!subscribedBefore) { subscribedBefore = true; return; }
+      backfill(householdId);
+      flushOutbox();
+    });
+
+  const onVisible = () => {
+    if (document.visibilityState !== 'visible') return;
+    backfill(householdId);
+    flushOutbox();
+  };
+  document.addEventListener('visibilitychange', onVisible);
 
   refetchRoutine(householdId);
   refetchHistory(householdId);
   refetchHouseholdMeta(householdId);
   flushOutbox();
 
-  return () => client.removeChannel(channel);
+  return () => {
+    document.removeEventListener('visibilitychange', onVisible);
+    client.removeChannel(channel);
+  };
 }
 
 /** Mirrors the row, and reports whether the screen needs redrawing for it. */

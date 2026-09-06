@@ -52,9 +52,14 @@ function ring({ taken = 0, skipped = 0, expected = 0 }) {
 }
 
 export async function calendarView({ app, isCurrent = () => true }) {
-  const today = todayStr();
   const settings = await store.getSettings();
-  const locked = settings.lockedThrough;
+
+  /* Both are re-read on every draw, not captured once. A calendar left open
+   * overnight would otherwise keep treating yesterday as today -- and go on
+   * offering to edit it -- and would miss the nightly freeze advancing the
+   * lock line underneath it. */
+  let today = todayStr();
+  let locked = settings.lockedThrough;
 
   let cursor = parse(today);          // { y, m } of the visible month
   let sheetCleanup = null;
@@ -95,6 +100,9 @@ export async function calendarView({ app, isCurrent = () => true }) {
    * month's data is two awaits away and clearing first left an empty page
    * behind, or, with two draws in flight, two grids. */
   async function draw() {
+    today = todayStr();
+    locked = (await store.getSettings()).lockedThrough;
+
     const cells = monthGrid(cursor.y, cursor.m);
 
     /* A supporter's history is fetched a range at a time rather than mirrored
