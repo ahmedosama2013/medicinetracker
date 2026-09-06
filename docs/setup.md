@@ -193,12 +193,14 @@ Two sides to this: a Google Cloud OAuth client, and telling Supabase about it.
 
    | | Who can sign in | Cost to you |
    |---|---|---|
-   | **Testing** (default) | Only accounts listed under **Audience → Test users**, max 100. Everyone else gets a generic "access blocked" that does not explain itself | One entry per person, added by you |
+   | **Testing** (default) | Accounts listed under **Audience → Test users**, max 100 — *plus anyone with an owner or editor role on the Google Cloud project*. Everyone else gets `403 access_denied` | One entry per person, added by you |
    | **In production** | Anyone with a Google account | Every sign-in creates a household in *your* Supabase project |
+
+   **That owner/editor exception is worth knowing before you conclude anything from testing.** Your own accounts probably have a role on the Cloud project, so they sign in whatever the publishing status is — which makes Testing look open when it is not. Check the status on the **Audience** page rather than inferring it from whether you personally can sign in.
 
    **Publishing does not require Google's verification review.** That is only for sensitive scopes — Gmail, Drive, contacts. Supabase's Google provider asks for `email`, `profile` and `openid`, which are not sensitive, so "Publish App" is the whole step. (Confirm in the console; Google moves these rules around.)
 
-   Testing is the better default for a family-scale deployment: nobody else knows the URL, and an open sign-up on a free-tier project means strangers' photos counting against your 1 GB of storage. Publish when you actually want that.
+   Which to pick is a real choice, not a formality. **In production** is right as soon as anyone outside your Cloud project needs to sign in — a relative, a second household, a collaborator — and it saves adding each one by hand. **Testing** only buys you a gate against strangers finding the URL, and the thing that gate protects is free-tier storage, which photos are the only meaningful consumer of.
 
    One Testing-mode caveat that sounds alarming and is not: Google expires *its* refresh tokens after 7 days. It does not sign anyone out, because Supabase issues its own session tokens after the initial sign-in and never returns to Google to refresh them.
 3. Go to **APIs & Services > Credentials > Create Credentials > OAuth client ID** (`console.cloud.google.com/auth/clients/create`).
