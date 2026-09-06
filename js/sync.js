@@ -37,7 +37,10 @@ function mapSchedule(row) {
 }
 
 function mapSlot(row) {
-  return { id: row.id, label: row.label, time: row.time, order: row.sort_order, builtIn: row.built_in };
+  return {
+    id: row.id, label: row.label, time: row.time, order: row.sort_order,
+    builtIn: row.built_in, inBox: row.in_box,
+  };
 }
 
 function mapDose(row) {

@@ -32,11 +32,15 @@ import { nowIso, timeToMinutes } from './date.js';
 
 const SETTINGS_KEY = 'app';
 
+/* `inBox` is which times of day go in the weekly pill box. Morning and night
+ * by default, matching the 7x2 tray most households have -- see
+ * supabase/migrations/0012_pill_box_slots.sql for why this is a flag per slot
+ * rather than a compartment count. */
 export const DEFAULT_SLOTS = [
-  { id: 'morning', label: 'Morning', time: '08:00', order: 1, builtIn: true },
-  { id: 'afternoon', label: 'Afternoon', time: '13:00', order: 2, builtIn: true },
-  { id: 'evening', label: 'Evening', time: '18:00', order: 3, builtIn: true },
-  { id: 'night', label: 'Night', time: '21:00', order: 4, builtIn: true },
+  { id: 'morning', label: 'Morning', time: '08:00', order: 1, builtIn: true, inBox: true },
+  { id: 'afternoon', label: 'Afternoon', time: '13:00', order: 2, builtIn: true, inBox: false },
+  { id: 'evening', label: 'Evening', time: '18:00', order: 3, builtIn: true, inBox: false },
+  { id: 'night', label: 'Night', time: '21:00', order: 4, builtIn: true, inBox: true },
 ];
 
 export const MEDICINE_FORMS = ['tablet', 'capsule', 'liquid', 'drops', 'injection', 'inhaler', 'other'];
@@ -69,6 +73,11 @@ export async function saveSettings(patch) {
 export async function getSlots() {
   const { slots } = await getSettings();
   return [...slots].sort((a, b) => timeToMinutes(a.time) - timeToMinutes(b.time));
+}
+
+/** The times of day that go in the weekly pill box, in the same order. */
+export async function getBoxSlots() {
+  return (await getSlots()).filter(s => s.inBox);
 }
 
 // ---- medicines ----------------------------------------------------------------

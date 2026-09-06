@@ -51,7 +51,7 @@ function signatureOf(routine, rows) {
   const schedules = (routine?.schedules || [])
     .map(s => `${s.id}:${s.slotId}:${s.time}:${s.active}:${JSON.stringify(s.frequency)}`)
     .sort().join('|');
-  const slots = (routine?.slots || []).map(s => `${s.id}:${s.label}:${s.time}`).sort().join('|');
+  const slots = (routine?.slots || []).map(s => `${s.id}:${s.label}:${s.time}:${s.inBox}`).sort().join('|');
   const doses = (rows || []).map(r => `${r.id}:${r.status}:${r.loggedBy}`).sort().join('|');
   return `${meds}#${schedules}#${slots}#${doses}`;
 }

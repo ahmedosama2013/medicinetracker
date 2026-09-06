@@ -25,6 +25,13 @@ export const replaceSchedules = (code, medicineId, schedules) =>
 export const saveSlots = (code, slots) =>
   call('save_slots', { p_code: code, p_slots: slots });
 
+/* Called from BOTH roles' Settings -- the elder's device holds the household's
+ * share code too, so a code-gated function reaches it without needing a
+ * session. Deliberately narrower than save_slots, which can also archive a
+ * slot; see the migration header. */
+export const setSlotInBox = (code, slotId, inBox) =>
+  call('set_slot_in_box', { p_code: code, p_slot_id: slotId, p_in_box: inBox });
+
 // ---- history (see supabase/migrations/0006_supporter_parity.sql) -----------
 
 export const loadDoseLog = (code, from, to) =>

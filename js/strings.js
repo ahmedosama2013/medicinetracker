@@ -240,6 +240,18 @@ export const S = {
   // saved fine but the photo step itself failed -- see js/views/medicine-form.js.
   savedMedicineNoPhoto: 'Saved, but the photo could not be uploaded. Try adding it again from the medicine\u2019s page.',
 
+  // ---- pill box --------------------------------------------------------
+  settingsPillBox: 'Pill box',
+  /* Says what the choice is FOR. Someone opening this section has a plastic
+   * tray in front of them, not a data model. */
+  pillBoxIntro: 'Which times of day go in the weekly box. Anything else is taken from its packet on the day.',
+  /* Ties the setting back to the object on the table: two ticked is the 7 x 2
+   * tray most people own, and seeing "7 x 2" is how you know you got it
+   * right without counting the chips. */
+  pillBoxShape: n => `That is a 7 \u00d7 ${n} box \u2014 seven days, ${n} ${n === 1 ? 'compartment' : 'compartments'} a day.`,
+  pillBoxNone: 'Nothing goes in a box, so filling one is not offered.',
+  pillBoxNoSlots: 'No times of day are set up yet.',
+
   // ---- slots -----------------------------------------------------------
   slotsTitle: 'Times of day',
   slotsIntro: 'These are the default times. A single medicine can be given its own time.',

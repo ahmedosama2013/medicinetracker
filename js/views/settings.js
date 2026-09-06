@@ -119,6 +119,60 @@ const THEMES = [
   { value: 'dark', label: () => S.themeDark },
 ];
 
+/* Shown in both roles, because whoever is holding the tray fills it -- the
+ * supporter when they visit, the elder the rest of the time. It writes through
+ * a code-gated RPC either way: the elder's device has the household's share
+ * code as well as a session, so one function serves both.
+ *
+ * The chips update optimistically and roll back on failure. A tick that waits
+ * on a round trip before moving reads as a tap that did not register, which is
+ * the same mistake the dose target made before Phase 2.5's S5.
+ */
+function pillBoxSection(settings, code) {
+  const slots = [...(settings.slots || [])]
+    .sort((a, b) => timeToMinutes(a.time) - timeToMinutes(b.time));
+
+  const shape = el('p.setting-hint');
+  const redrawShape = () => {
+    const n = slots.filter(s => s.inBox).length;
+    shape.textContent = n ? S.pillBoxShape(n) : S.pillBoxNone;
+  };
+
+  const chips = el('div.chips', slots.map(slot => {
+    const chip = el('button.chip', {
+      type: 'button',
+      text: slot.label,
+      'aria-pressed': String(!!slot.inBox),
+      onclick: async () => {
+        const next = !slot.inBox;
+        chip.disabled = true;
+        slot.inBox = next;
+        chip.setAttribute('aria-pressed', String(next));
+        redrawShape();
+        try {
+          await supporter.setSlotInBox(code, slot.id, next);
+          await store.saveSettings({ slots });
+        } catch {
+          slot.inBox = !next;
+          chip.setAttribute('aria-pressed', String(!next));
+          redrawShape();
+          toast(S.errGeneric);
+        }
+        chip.disabled = false;
+      },
+    });
+    return chip;
+  }));
+
+  redrawShape();
+
+  return section(S.settingsPillBox, [
+    el('p.setting-hint', { text: S.pillBoxIntro, style: 'margin-bottom: 0.75rem;' }),
+    slots.length ? chips : el('p.setting-hint', { text: S.pillBoxNoSlots }),
+    slots.length ? shape : null,
+  ]);
+}
+
 function appearanceSection(current) {
   const chips = el('div.chips', THEMES.map(t => el('button.chip', {
     type: 'button',
@@ -217,6 +271,11 @@ export async function settingsView({ app, isCurrent = () => true }) {
       }),
     ]));
   }
+
+  /* Above Appearance and below each role's own sections: it is routine setup
+   * about the household, not a preference of this device. */
+  const code = role === 'simple' ? settings.shareCode : settings.supporterCode;
+  if (code) app.appendChild(pillBoxSection(settings, code));
 
   app.appendChild(appearanceSection(settings.theme));
 

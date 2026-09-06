@@ -230,6 +230,33 @@ The UI is a checklist of the household's slots in a new **Pill box** section in
 Settings, visible in both roles. Unticking everything is allowed and means "we
 do not use a pill box" — the organiser entry card disappears.
 
+### 18a done
+
+Migration `0012_pill_box_slots.sql`: one boolean per slot, seeded true for the
+built-ins at `sort_order` 1 and 4, plus `set_slot_in_box` and `inBox` on
+`get_routine`'s slots. The **Pill box** section sits in Settings in both roles,
+between each role's own sections and Appearance.
+
+Two things worth recording:
+
+**`save_slots` did not need changing, and that is load-bearing.** It upserts
+label, time, sort order and archived, and never mentions `in_box` — so editing
+slot times leaves the box alone, and a newly added time of day starts outside
+it. Both are the behaviour we want, and both come free from not touching it.
+
+**The shape line is the point of the section.** The chips alone are an abstract
+choice; "That is a 7 × 2 box — seven days, 2 compartments a day" is the tray on
+the table. It updates on every tap and turns into "Nothing goes in a box, so
+filling one is not offered" at zero, which is how the organiser's absence gets
+explained where the decision was made rather than by the entry card silently
+not being there.
+
+Verified against a seeded cache: ticking a slot fires exactly one RPC with the
+right arguments, persists, and moves the shape line; unticking everything
+reaches the no-box state; and a failing write rolls the chip back, says so,
+re-enables itself, and succeeds on retry. The chip moves on the tap rather than
+on the round trip — same reasoning as the dose target in Phase 2.5's S5.
+
 ---
 
 ## 18b — The week plan
