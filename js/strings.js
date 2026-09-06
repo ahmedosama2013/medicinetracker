@@ -72,6 +72,30 @@ export const S = {
   doseNotYet: name => `${name}: not marked. Tap to mark taken.`,
   doseTaken: name => `${name}: taken. Tap to mark skipped.`,
   doseSkipped: name => `${name}: skipped. Tap to clear.`,
+  // Read-only equivalents: the supporter's Today and the elder's frozen days.
+  stateTaken: name => `${name}: taken`,
+  stateSkipped: name => `${name}: skipped`,
+  stateUnmarked: name => `${name}: not marked`,
+
+  // Supporter's Today. Their copy is polled, not live -- saying so is the
+  // difference between "nothing new" and "we stopped being able to check".
+  updatedJustNow: 'Updated just now',
+  updatedAgo: mins => `Updated ${mins} minute${mins === 1 ? '' : 's'} ago`,
+  updatedNever: 'Could not check for updates',
+
+  // Marking a dose for the person you are helping. Asked once per session,
+  // and every row it writes records that the supporter wrote it.
+  markOnBehalfTitle: 'Mark for them?',
+  markOnBehalfBody: 'This records the dose on their phone too, and their screen will show that you marked it rather than them. You will not be asked again while the app is open.',
+  markOnBehalfConfirm: 'Yes, mark for them',
+  markedByHelper: 'Marked by your helper',
+
+  // The supporter's nudge. Replaces phoning to ask "have you taken them?".
+  nudge: 'Send a reminder',
+  nudgeHint: 'Their phone will buzz. It does not say which medicine.',
+  nudgeSent: 'Reminder sent',
+  nudgeWait: mins => `Already sent. You can send another in ${mins} minute${mins === 1 ? '' : 's'}.`,
+  nudgeNoSubscription: 'They have not turned reminders on yet, so nothing was sent.',
   // Shown once at the top of the day rather than on every card: with six
   // medicines in a slot, six copies of the same hint is noise. Only rendered
   // once there is at least one medicine -- see js/views/today.js.
@@ -178,6 +202,12 @@ export const S = {
   settingsTitle: 'Settings',
   settingsSlots: 'Times of day',
   settingsVersion: 'App version',
+  settingsAppearance: 'Appearance',
+  settingsAppearanceHint: 'Dark colours are easier at night, when the last medicines are usually due.',
+  themeSystem: 'Match my phone',
+  themeLight: 'Light',
+  themeDark: 'Dark',
+  settingsAbout: 'About',
   settingsStorage: 'Storage',
   storagePersisted: 'This phone has been asked to keep your data safely.',
   storageNotPersisted: 'Keep a saved copy of your information, just in case.',

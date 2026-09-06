@@ -25,6 +25,37 @@ export const replaceSchedules = (code, medicineId, schedules) =>
 export const saveSlots = (code, slots) =>
   call('save_slots', { p_code: code, p_slots: slots });
 
+// ---- history (see supabase/migrations/0006_supporter_parity.sql) -----------
+
+export const loadDoseLog = (code, from, to) =>
+  call('get_dose_log', { p_code: code, p_from: from, p_to: to });
+
+export const loadHistory = (code, from, to) =>
+  call('get_history', { p_code: code, p_from: from, p_to: to });
+
+/** One medicine, one state. `status` of null clears it back to unmarked. */
+export const logDose = (code, date, slotId, medicineId, status) =>
+  call('log_dose', {
+    p_code: code, p_date: date, p_slot_id: slotId,
+    p_medicine_id: medicineId, p_status: status,
+  });
+
+export const unlogSlot = (code, date, slotId) =>
+  call('unlog_slot', { p_code: code, p_date: date, p_slot_id: slotId });
+
+/** Ask the elder's phone to buzz. Rate limited server-side; see the function. */
+export async function nudge(code) {
+  const { data, error } = await supabase().functions.invoke('nudge', { body: { code } });
+  // A 429 arrives as an error with the body attached, so the cooldown has to
+  // be read out of it rather than treated as a failure.
+  if (error) {
+    const detail = await error.context?.json?.().catch(() => null);
+    if (detail?.retryInMinutes) return { sent: 0, retryInMinutes: detail.retryInMinutes };
+    throw new Error('That could not be sent.');
+  }
+  return data;
+}
+
 async function photoAction(action, body) {
   const { data, error } = await supabase().functions.invoke('supporter-photo', {
     body: { action, ...body },

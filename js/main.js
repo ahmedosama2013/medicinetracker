@@ -5,8 +5,9 @@ import * as store from './store.js';
 import * as router from './router.js';
 import * as auth from './auth.js';
 import * as sync from './sync.js';
+import * as supporterSync from './supporter-sync.js';
 import { S } from './strings.js';
-import { el, clear } from './ui.js';
+import { el, clear, applyTheme } from './ui.js';
 
 import { welcomeView } from './views/onboarding.js';
 import { signInView } from './views/auth.js';
@@ -21,12 +22,7 @@ const PREAUTH_PATHS = ['#/welcome', '#/signin', '#/pair'];
 
 /* One bar, two tab sets. v2 gave the supporter sticky top tabs and the patient
  * a bottom bar -- two navigation models to learn and maintain, and the reason
- * the supporter had no room for a Calendar tab.
- *
- * The supporter's set does not include Today or Calendar yet: a supporter
- * device has no local dose log (js/sync.js is never imported there), so those
- * screens would render slots with controls that cannot write. They arrive in
- * Phase 2 with the code-gated read/write RPCs -- see docs/v3-plan.md. */
+ * the supporter had no room for a Calendar tab. */
 const NAV = {
   simple: [
     { path: '#/today', label: S.navToday, icon: 'today' },
@@ -34,6 +30,8 @@ const NAV = {
     { path: '#/settings', label: S.navSettings, icon: 'settings' },
   ],
   supporter: [
+    { path: '#/today', label: S.navToday, icon: 'today' },
+    { path: '#/calendar', label: S.navCalendar, icon: 'calendar' },
     { path: '#/medicines', label: S.navMedicines, icon: 'pill' },
     { path: '#/settings', label: S.navSettings, icon: 'settings' },
   ],
@@ -68,7 +66,7 @@ function registerRoutes() {
   router.register('#/signin', { view: signInView, modes: [null] });
   router.register('#/pair', { view: pairView, modes: [null] });
   router.register('#/today', { view: todayView, modes: ['simple', 'supporter'] });
-  router.register('#/calendar', { view: calendarView, modes: ['simple'] });
+  router.register('#/calendar', { view: calendarView, modes: ['simple', 'supporter'] });
   router.register('#/medicines', { view: medicinesView, modes: ['supporter'] });
   router.register('#/medicine', { view: medicineFormView, modes: ['supporter'] });
   router.register('#/settings', { view: settingsView, modes: ['simple', 'supporter'] });
@@ -126,6 +124,11 @@ async function boot() {
     }
   }
 
+  /* Before the first render, so an explicit dark choice never flashes light.
+   * Absent or 'system' leaves the OS preference in charge, which is the
+   * default and stays the default. */
+  applyTheme(settings.theme);
+
   const mode = settings.role;
   document.body.classList.add(mode ? `mode-${mode}` : 'mode-none');
   router.setMode(mode);
@@ -142,10 +145,26 @@ async function boot() {
     window.location.replace(router.HOME[mode]);
   }
 
+  /* The supporter's cache is filled before the first render, not after: their
+   * Today and Calendar read the same IndexedDB stores the elder's do, and
+   * those are empty on a fresh supporter install. Rendering first would show
+   * "No medicines yet" for a second on every cold start. Failure is not fatal
+   * -- the views fall back to whatever the last session cached. */
+  if (mode === 'supporter' && settings.supporterCode) {
+    await supporterSync.hydrate(settings.supporterCode).catch(() => {});
+  }
+
   await router.start();
 
   if (mode === 'simple' && settings.householdId) {
     sync.startRealtime(settings.householdId);
+  }
+
+  /* No Realtime for a supporter: it respects RLS and a supporter has no
+   * session, so it would match no rows and deliver nothing. Polling instead,
+   * and the screens say when they last refreshed rather than implying live. */
+  if (mode === 'supporter' && settings.supporterCode) {
+    supporterSync.startPolling(settings.supporterCode, () => router.refresh());
   }
 
   // Ask for durable storage once the app is actually in use. Chrome grants it

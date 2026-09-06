@@ -11,21 +11,51 @@ index.html
           │
           ├── js/router.js ────── hash routes (#/today), guarded by role
           ├── js/auth.js ───────── simple-only: Google sign-in, household create/resume
-          ├── js/supporter.js ──── code-gated Supabase calls, no local cache, no session
+          ├── js/supporter.js ──── code-gated Supabase calls, no session
+          ├── js/supporter-sync.js  supporter-only: polls those calls into the same cache
           ├── js/sync.js ───────── simple-only: realtime mirror into IndexedDB + dose-log offline outbox
+          ├── js/doses.js ──────── one dose-writing facade over both of the above
           ├── js/store.js ──────── the only module that touches the local IndexedDB cache
           │      └── js/db.js ─── IndexedDB promise wrapper
           ├── js/schedule.js ──── what is due on a date (also ported into Postgres, `app.compute_day`/`app.is_due`)
           └── js/views/* ──────── one module per screen
 ```
 
-The **simple device**: Supabase Postgres is the source of truth; IndexedDB is a write-through cache kept fresh by `js/sync.js`'s Realtime subscription, plus a small `outbox` store so Done/Undo taps queue and replay if the connection drops — the one action that must never silently fail. Medicines, schedules and slots are read-only here; editing them has only ever lived in supporter-mode screens.
+The **simple device**: Supabase Postgres is the source of truth; IndexedDB is a write-through cache kept fresh by `js/sync.js`'s Realtime subscription, plus a small `outbox` store so dose taps queue and replay if the connection drops — the one action that must never silently fail. Medicines, schedules and slots are read-only here; editing them has only ever lived in supporter-mode screens.
 
-The **supporter device**: no local cache at all. Every screen calls `js/supporter.js`, which round-trips to Supabase on every load and every save. This requires connectivity, which is fine — routine edits are not the time-critical path.
+The **supporter device**: also has a local cache now, filled by `js/supporter-sync.js` through the code-gated RPCs. This reverses the original "no local cache at all", and the reversal is deliberate — see below.
+
+### Why the supporter gained a cache (v3)
+
+Until v3 a supporter had no screen that rendered a day, so every screen could
+round-trip on load and hold nothing. Giving them Today and Calendar changed
+that: those screens are `js/schedule.js` + `js/views/day.js`, which read from
+`js/store.js`. The alternative was parameterising every read path by role,
+which is far more code and gives two ways for one screen to be wrong.
+
+So `js/supporter-sync.js` fills the same IndexedDB stores the elder's device
+uses. **The reason behind the old rule still holds and still shapes the file:
+the cache is read-only on that side.** Supporter writes never enter
+`js/sync.js`'s outbox — nothing on a supporter device would ever flush it, so a
+queued write would sit there looking saved forever. They go straight out
+through the RPCs in `js/supporter.js` and are mirrored into the cache
+afterwards. `js/doses.js` is the seam: one facade, those two routes underneath.
+
+The consequence is intended: a supporter write needs connectivity and reports
+failure, rather than deferring silently. Marking a dose on someone else's
+behalf is not something to queue.
+
+**Realtime is not available to a supporter.** It respects RLS, and with no
+session they match no rows, so no events can ever arrive. `supporter-sync`
+polls while the app is visible instead, and the UI says when it last reached
+the server rather than implying it is live. History is fetched a range at a
+time — 75 days on open, then `ensureRange` pulls a month the first time the
+calendar pages to it, because hollow rings do not read as "not loaded", they
+read as "they took nothing that month".
 
 A nightly Postgres cron job (`app.run_daily_freeze`) replaces the old file-import-time freeze: it computes and stores "what was due" for each household's local yesterday, then advances a read-only lock line that trails the freeze by a couple of days, so the offline dose-log outbox always has slack to catch up into. Reminders are Web Push (VAPID), sent by a `pg_cron`-scheduled Edge Function querying "due, unlogged, unnotified" slots — see the schema for the exact query.
 
-The rest of this document describes the parts that are unchanged from the original local-only design: the append-only dose log rule, local-date arithmetic, and photo compression all still apply exactly as written below, just enforced in Postgres (constraints, triggers) as well as in `js/store.js`. The **"Import merges, it never replaces"** section further down describes the retired file-based sync model; it's kept for historical context, since the same asymmetry (routine vs. history have different owners) is what the RLS/function design above encodes, just as database policy instead of merge rules.
+The rest of this document describes the parts unchanged from the original local-only design: the append-only dose log rule, local-date arithmetic, and photo compression all still apply, now enforced in Postgres (constraints, triggers, RLS) as well as in `js/store.js`.
 
 ## Shape of it (local cache layer)
 
@@ -48,9 +78,10 @@ Six IndexedDB object stores plus an `outbox`, database `medtrack` version 2. Def
 | `medicines` | `id` | name, strength, dosage, form, notes, `archived` |
 | `photos` | `medicineId` | one compressed JPEG `Blob`. Optional |
 | `schedules` | `id` | one row per medicine-and-slot pairing, plus frequency |
-| `doseLog` | `id` | one row per medicine per slot per day, when marked done |
+| `doseLog` | `id` | one row per medicine per slot per day: `status` (`taken`/`skipped`) and `loggedBy` |
 | `daySnapshots` | `date` | what was expected on a frozen past day |
-| `settings` | `"app"` | single row: role, slot definitions, `lockedThrough` |
+| `settings` | `"app"` | single row: role, slot definitions, `lockedThrough`, `theme` |
+| `outbox` | `id` | elder-only: dose writes queued while offline |
 
 ### Slots
 
@@ -78,32 +109,46 @@ A schedule points at a slot by `slotId` and may override its time (`time: '06:30
 
 Editing, archiving or deleting a medicine, a schedule or a slot must **never** touch an existing `doseLog` row. History records what happened, not what the current routine says should have happened. Removing a schedule deactivates it (`active: false`) rather than deleting it, so old log rows still resolve.
 
-There is exactly **one** sanctioned deletion, `undoSlot` in [js/store.js](../js/store.js): an explicit Undo tap removes the rows for that `(date, slotId)`. That is a person correcting a mis-tap, not code rewriting history. Nothing else may delete from this store.
+There is exactly **one** sanctioned deletion, `undoSlot` in [js/store.js](../js/store.js): an explicit Undo tap removes the rows for that `(date, slotId)`. That is a person correcting a mis-tap, not code rewriting history. Nothing else may delete from this store. Since v3 a person can also clear one medicine by cycling its target past `skipped`, which is the same thing at a finer grain.
+
+A dose row now carries `status` (`taken` or `skipped`) and `loggedBy`
+(`patient` or `supporter`, null on rows predating migration 0006). Moving a row
+between states is an **update**, not a delete-and-insert: migration 0005 adds
+the UPDATE policy that 0001 deliberately omitted, because expressing a state
+change as two queued operations lets the offline outbox flush them in the wrong
+order and erase a dose the person recorded. See the migration header.
 
 ### 2. Dates are local strings, never timestamps
 
 All date maths goes through [js/date.js](../js/date.js) on `"YYYY-MM-DD"` strings. Never `new Date("2026-08-30")` — a bare date string parses as UTC and lands on the previous day west of Greenwich. Never add `86400000` to a timestamp — DST makes some local days 23 or 25 hours long. Day counting treats the local calendar parts as UTC, which makes every day exactly 24 hours without implying a timezone.
 
-### 3. Import merges, it never replaces
+### 3. Retired: the file-based hand-off
 
-The supporter's device is the source of truth for the routine. The other device is the source of truth for what was actually taken. So:
+v1 and v2 moved data between the two phones as a JSON file, and this document
+used to describe the merge rules and export format at length. Both are gone —
+Supabase is the transport now, and `js/merge.js` no longer exists.
 
-| Store | Rule |
-|---|---|
-| `medicines`, `schedules`, `slots` | The file wins. Dropped schedules are deactivated, not deleted |
-| `doseLog` | **Union by id. Never overwritten, never deleted** |
-| `daySnapshots` | Union by date, local wins — a local snapshot is what that device actually saw |
-| `role` | Never imported. It is a property of the device |
+The asymmetry those rules encoded is still the design, just expressed as
+database policy instead: **the supporter's device is the source of truth for
+the routine, the elder's for what was actually taken.** That is what the RLS
+policies and the code-gated function surface in
+`supabase/migrations/0001_init.sql` enforce, and it is why the dose log is
+append-only above while medicines and schedules are replaced wholesale.
 
-The whole merge is one IndexedDB transaction, so a half-merged database is impossible. [js/merge.js](../js/merge.js) is pure functions over plain arrays — no database, no DOM — so the rules can be exercised from the browser console.
+### 4. Past days are frozen server-side
 
-### 4. Past days are frozen at import time
+Calendar rings need to know what was *expected* on a past day. Recomputing from
+the current routine would silently rewrite last month every time the supporter
+changed something.
 
-Calendar rings need to know what was *expected* on a past day. Recomputing from the current routine would silently rewrite last month every time the supporter changes something.
+A `pg_cron` job (`app.run_daily_freeze`, every 15 minutes) computes each
+household's local yesterday against the routine as it stands and writes it to
+`day_snapshots`, then advances `locked_through` — a read-only line trailing the
+freeze by `lock_lag_days` (default 2), so the offline outbox always has slack
+to catch up into. Days on or before that line are read-only on both devices.
 
-So on import, before anything is written, every day from the last import up to yesterday is computed against the **pre-import** routine and written to `daySnapshots`; `lockedThrough` advances to yesterday. Frozen days are read only.
-
-Consequences, both intended: corrections only reach back to the last import, and a device that never imports never freezes anything — correct, because nothing changed.
+This replaced the v1 behaviour of freezing at import time, whose consequence
+was that a device which never imported never froze anything.
 
 ### 5. Photos are compressed before storage, and never in localStorage
 
@@ -112,22 +157,3 @@ Capture, then draw to a canvas at 800px on the longest edge and encode JPEG at 0
 localStorage is out entirely: ~5 MB, strings only, and base64 adds a third on top.
 
 Every `URL.createObjectURL` in the app is created and revoked in [js/photos.js](../js/photos.js). Views collect tokens and release them on unmount; nothing else may create an object URL.
-
-## Export format
-
-One JSON file, photos base64 inline. Roughly 1–2 MB with fifteen photos, which sends fine over WhatsApp.
-
-```js
-{
-  schemaVersion: 4,
-  exportedAt, slots, medicines, schedules,
-  doseLog,        // empty from supporter mode
-  daySnapshots,   // empty from supporter mode
-  lockedThrough,  // null from supporter mode
-  photos: [ { medicineId, dataUrl } ]
-}
-```
-
-One shape serves both directions; a supporter export simply has no history in it. Filenames differ on purpose — `medtrack-medicines-<date>.json` versus `medtrack-mycopy-<date>.json` — so two files arriving on the same day are not indistinguishable in the Files app.
-
-Three checks run before the confirmation dialog: shape, a `schemaVersion` higher than the app's (which means this install is stale, not that the file is bad), and that every schedule's `slotId` exists in the file's slots. That last one matters because slots are replaced wholesale, so an orphan schedule would be invisible on every screen with no way for either person to notice a medicine had gone missing.

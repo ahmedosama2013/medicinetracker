@@ -8,8 +8,10 @@
 
 import * as store from '../store.js';
 import * as schedule from '../schedule.js';
+import * as supporterSync from '../supporter-sync.js';
 import { S } from '../strings.js';
-import { el, clear, emptyState } from '../ui.js';
+import * as supporter from '../supporter.js';
+import { el, clear, emptyState, toast } from '../ui.js';
 import { todayStr, formatLong } from '../date.js';
 import { renderDay } from './day.js';
 
@@ -41,6 +43,47 @@ async function progressRail(date) {
     el('div.rail', states.map(on => el(`span.rail-seg${on ? '.is-on' : ''}`))),
     el('p.rail-count', { text: S.doneOfSlots(done, states.length) }),
   ]);
+}
+
+/* How stale the supporter's copy is. They poll rather than receive Realtime
+ * (see js/supporter-sync.js), so a screen that looked live would quietly turn
+ * into a lie the moment the connection dropped -- and "they haven't marked
+ * anything" is exactly the wrong thing to be wrong about. */
+function freshnessLine() {
+  const at = supporterSync.lastSync();
+  if (!at) return el('p.freshness.freshness-stale', { text: S.updatedNever });
+  const mins = Math.floor((Date.now() - at) / 60000);
+  return el('p.freshness', { text: mins < 1 ? S.updatedJustNow : S.updatedAgo(mins) });
+}
+
+/* One button in place of a phone call, which is the actual current behaviour
+ * when a supporter wants to know whether the medicines were taken.
+ *
+ * Disabled while in flight and after a send: the rate limit is enforced on the
+ * server (a client-side one is a suggestion), but a button that stays tappable
+ * invites the tapping the server is there to absorb. */
+function nudgeButton(settings) {
+  const button = el('button.btn.btn-block.nudge', {
+    type: 'button',
+    text: S.nudge,
+    onclick: async () => {
+      button.disabled = true;
+      try {
+        const result = await supporter.nudge(settings.supporterCode);
+        if (result?.retryInMinutes) toast(S.nudgeWait(result.retryInMinutes));
+        else if (result?.reason === 'no-subscriptions') toast(S.nudgeNoSubscription);
+        else toast(S.nudgeSent);
+      } catch {
+        toast(S.errGeneric);
+        button.disabled = false;
+        return;
+      }
+      // Left disabled on purpose after any outcome: nothing about tapping it
+      // again in the next few seconds can help.
+    },
+  });
+
+  return el('div.nudge-wrap', [button, el('p.nudge-hint', { text: S.nudgeHint })]);
 }
 
 export async function todayView({ app }) {
@@ -94,6 +137,11 @@ export async function todayView({ app }) {
     if (rail) app.appendChild(rail);
 
     app.appendChild(el('p.page-sub', { text: S.tapForPhoto }));
+
+    if (settings.role === 'supporter') {
+      app.appendChild(freshnessLine());
+      app.appendChild(nudgeButton(settings));
+    }
 
     // onChange swaps the rail and nothing else. renderDay already replaced the
     // tapped slot in place, and redrawing the day here would re-read the

@@ -2,7 +2,15 @@
 
 Everything deliberately deferred from v1. Ordered roughly by value. Nothing here blocks the v1 build.
 
-> **§1 (Reminders) and §2 (Two-way sync) are done.** Both shipped together as the online-sync rearchitecture — see [docs/architecture.md](architecture.md) and `supabase/migrations/0001_init.sql`. Left below for the historical reasoning (the ntfy-can't-reach-a-phone diagnosis and the snapshot/doseLog asymmetry both still explain *why* the shipped design looks the way it does).
+> **Done: §1 (Reminders), §2 (Two-way sync), §3 (Skip and partial doses).**
+>
+> §1 and §2 shipped together as the online-sync rearchitecture — see
+> [architecture.md](architecture.md) and `supabase/migrations/0001_init.sql`.
+> §3 shipped in v3 — see below and [v3-plan.md](v3-plan.md).
+>
+> All three are left in place for the reasoning, not the plan: the
+> ntfy-can't-reach-a-phone diagnosis and the snapshot/doseLog asymmetry still
+> explain *why* the shipped design looks the way it does.
 
 ---
 
@@ -58,19 +66,25 @@ Depends on: restoring Today and Calendar to supporter mode, which were cut from 
 
 ---
 
-## 3. Skip and partial doses
+## 3. Skip and partial doses — DONE (v3)
 
-Cut from v1 to keep logging binary. Restoring it means:
+Shipped in migration `0005_skipped_doses.sql` and the v3 Today screen. How the
+open questions were answered:
 
-- `doseLog.status` widens from `"taken"` to `"taken" | "skipped"`.
-- A small Skip toggle per medicine card on Today, logging that medicine immediately.
-- Done then logs `taken` for every medicine in the slot not already logged.
-- Decide explicitly whether Undo on a slot also removes skip rows created before Done was tapped, and whether a skip can be reversed on its own.
-- Calendar rings need a third state, since a fully-skipped slot is neither complete nor untouched.
+- Not a Skip toggle but a **cycling target**: unmarked → taken → skipped →
+  unmarked. One tap for the common case.
+- **Done marks only what is unmarked**, so a deliberate skip survives it.
+- **Undo on a slot does clear skips** — it means "put this back to untouched",
+  and leaving amber behind would make the button depend on invisible history.
+- **A skip can be reversed on its own**, by cycling, and reaching `skipped`
+  raises a toast offering the way straight back.
+- **Calendar's third state** is arc colour, not arc length: a skipped dose
+  fills the ring as a taken one does, and the ring turns amber. Shortening it
+  would read as a mark against the person.
 
 ---
 
-## 4. Pakistani medicine autocomplete
+## 4. Pakistani medicine autocomplete — planned for v3 Phase 4
 
 The thing that would make the app meaningfully local rather than a generic tracker.
 
@@ -91,9 +105,9 @@ Consider: right-to-left layout, whether numerals should be Urdu or Latin, and wh
 ## 6. Smaller items
 
 - **PRN and as-needed medicines.** No fixed schedule, logged when taken. Needs a separate section on Today, since it does not belong to any slot.
-- **Refill and stock tracking.** Count down remaining doses, warn the supporter when a medicine is running low.
+- **Refill and stock tracking.** Corrected in v3 planning: the warning goes to the **elder**, not the supporter — supporters are often abroad and cannot buy medicine locally. And counting down doses is the wrong model; the moment the information actually exists is while filling the organiser and finding you are short. See Phase 3 in [v3-plan.md](v3-plan.md).
 - **Multiple patients per supporter install.** For a caregiver looking after two parents.
-- **Editing a logged dose's timestamp.** Currently `takenAt` is whenever Done was tapped, which is wrong if the dose was taken earlier.
+- **Editing a logged dose's timestamp.** Currently `takenAt` is whenever the dose was marked, which is wrong if it was taken earlier. On a skipped row it means "when this was recorded", which the column name does not say.
 - **Unlocking older days.** v1 freezes everything on or before the last import, so an error more than one import old cannot be corrected. Consider a supporter-side override.
 - **Automated tests.** Browser-based, not Node, so the no-build-step and no-`package.json` constraint holds. Worth it if `js/schedule.js` grows beyond the three frequency types.
 - **Install prompt on Android.** If the user base ever extends past iOS, `beforeinstallprompt` gives a real install button instead of the manual Add to Home Screen walkthrough.
@@ -106,4 +120,5 @@ Recorded so these do not get reopened without a reason.
 
 - **Drug interaction checking or any clinical logic.** This is a memory aid. Anything that reads as medical advice changes the liability profile and the design entirely.
 - **Adherence scores, streaks, gamification.** The app must never read as judgement of an elderly person's behaviour.
-- **Accounts, login, cloud database.** The file-based hand-off is the architecture, not a limitation being worked around.
+- ~~**Accounts, login, cloud database.**~~ Reversed: this shipped. The file-based hand-off turned out to be the limitation, not the architecture — see [architecture.md](architecture.md).
+- **Adherence aggregates of any kind**, on either device. The supporter sees the same rings the elder does and nothing that sums them up. Parity makes this tempting to build; it is still a no.

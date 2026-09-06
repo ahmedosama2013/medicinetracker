@@ -8,13 +8,35 @@
  */
 
 import * as store from '../store.js';
-import * as sync from '../sync.js';
+import * as doses from '../doses.js';
 import * as schedule from '../schedule.js';
 import * as photos from '../photos.js';
 import { S } from '../strings.js';
-import { el, icon, pillTile, emptyState, toast } from '../ui.js';
+import { el, icon, pillTile, emptyState, toast, confirmDialog } from '../ui.js';
 import { formatTime, todayStr, timeToMinutes } from '../date.js';
 import { openMedicineSheet } from './medicine-sheet.js';
+
+/* Marking a dose for someone else, confirmed once per session.
+ *
+ * Two devices writing the same log silently would erode what the calendar
+ * means -- "taken" would stop being something the person themselves did. So
+ * the supporter is asked, and the row records who wrote it.
+ *
+ * Once per session, not once per tap: a supporter sitting with the person
+ * marks several in a row, and a dialog on every one is how you train someone
+ * to dismiss dialogs without reading them. */
+let behalfConfirmed = false;
+
+async function mayMark(settings) {
+  if (settings.role !== 'supporter' || behalfConfirmed) return true;
+  const ok = await confirmDialog({
+    title: S.markOnBehalfTitle,
+    body: S.markOnBehalfBody,
+    confirmLabel: S.markOnBehalfConfirm,
+  });
+  if (ok) behalfConfirmed = true;
+  return ok;
+}
 
 /**
  * @param {string} date          "YYYY-MM-DD"
@@ -30,8 +52,6 @@ export async function renderDay({ date, editable = true, lockReason = null, onCh
     store.getDoseLogForDate(date),
     store.getSettings(),
   ]);
-  const householdId = settings.householdId;
-
   const tokens = [];
   const cleanup = () => photos.releaseAll(tokens.splice(0));
 
@@ -55,6 +75,12 @@ export async function renderDay({ date, editable = true, lockReason = null, onCh
   const stateByKey = new Map(log.map(r => [`${r.slotId}|${r.medicineId}`, r.status || 'taken']));
   const keyOf = (slotId, medicineId) => `${slotId}|${medicineId}`;
   const stateOf = (slotId, medicineId) => stateByKey.get(keyOf(slotId, medicineId)) || null;
+
+  /* Who recorded each row. Only surfaced on the elder's own screen: on the
+   * supporter's it would be telling them what they already know, and the
+   * point of the attribution is that the person taking the medicines is never
+   * surprised by a mark they did not make. */
+  const byWhom = new Map(log.map(r => [`${r.slotId}|${r.medicineId}`, r.loggedBy || null]));
 
   /* The slot whose time has most recently passed, on today only. Purely a
    * label: the order below is still fixed, nothing is hidden and nothing is
@@ -96,11 +122,12 @@ export async function renderDay({ date, editable = true, lockReason = null, onCh
     group.medicines.every(m => stateByKey.has(keyOf(group.slotId, m.medicineId)));
 
   async function cycleDose(group, medicine) {
+    if (!await mayMark(settings)) return;
     const key = keyOf(group.slotId, medicine.medicineId);
     const next = NEXT_STATE[String(stateOf(group.slotId, medicine.medicineId))];
     const wasResolved = slotResolved(group);
     try {
-      await sync.setDose(householdId, date, group.slotId, medicine.medicineId, next);
+      await doses.setDose(settings, date, group.slotId, medicine.medicineId, next);
       if (next === null) stateByKey.delete(key); else stateByKey.set(key, next);
 
       /* Collapse only on the transition into resolved, so marking every
@@ -120,7 +147,7 @@ export async function renderDay({ date, editable = true, lockReason = null, onCh
           // one tap too many, and one tap too many lands you here from taken.
           onAction: async () => {
             try {
-              await sync.setDose(householdId, date, group.slotId, medicine.medicineId, 'taken');
+              await doses.setDose(settings, date, group.slotId, medicine.medicineId, 'taken');
               stateByKey.set(key, 'taken');
               redrawSlot(group, { expanded: true });
               onChange?.();
@@ -158,6 +185,9 @@ export async function renderDay({ date, editable = true, lockReason = null, onCh
             ? el('span.med-skip-note', { text: S.skipped })
             : (medicine.dosage ? el('span.med-dosage', { text: medicine.dosage }) : null),
           medicine.notes ? el('span.med-notes', { text: medicine.notes }) : null,
+          state && settings.role === 'simple' && byWhom.get(keyOf(group.slotId, medicine.medicineId)) === 'supporter'
+            ? el('span.med-bywhom', { text: S.markedByHelper })
+            : null,
         ]),
       ]),
     ]));
@@ -173,6 +203,18 @@ export async function renderDay({ date, editable = true, lockReason = null, onCh
         dataset: { state: state || 'none' },
         'aria-label': label,
         onclick: () => cycleDose(group, medicine),
+      }, state === 'taken' ? icon('check') : state === 'skipped' ? icon('minus') : null));
+    } else {
+      /* Read-only: the supporter's Today, and the elder's own frozen past
+       * days. Both used to show nothing per medicine, so a locked day could
+       * not tell you WHICH medicine went unmarked -- only that the slot was
+       * incomplete. Same shape as the control, minus the affordance. */
+      row.appendChild(el('span.dose.dose-static', {
+        dataset: { state: state || 'none' },
+        role: 'img',
+        'aria-label': state === 'taken' ? S.stateTaken(medicine.name)
+          : state === 'skipped' ? S.stateSkipped(medicine.name)
+            : S.stateUnmarked(medicine.name),
       }, state === 'taken' ? icon('check') : state === 'skipped' ? icon('minus') : null));
     }
 
@@ -250,18 +292,19 @@ export async function renderDay({ date, editable = true, lockReason = null, onCh
         type: 'button',
         text: resolved ? S.undo : S.done,
         onclick: async () => {
+          if (!await mayMark(settings)) return;
           button.disabled = true;
           const hadFocus = document.activeElement === button;
           try {
             if (resolved) {
-              await sync.undoSlot(householdId, date, group.slotId);
+              await doses.undoSlot(settings, date, group.slotId);
               for (const m of group.medicines) stateByKey.delete(keyOf(group.slotId, m.medicineId));
             } else {
               /* Marks only what is still unmarked. store.logSlot filters out
                * medicines that already have a row, so a deliberate skip
                * survives a subsequent Done -- the person said something about
                * that medicine and this button must not overrule it. */
-              await sync.logSlot(householdId, date, group.slotId, group.medicines.map(m => m.medicineId));
+              await doses.logSlot(settings, date, group.slotId, group.medicines.map(m => m.medicineId));
               for (const m of group.medicines) {
                 const key = keyOf(group.slotId, m.medicineId);
                 if (!stateByKey.has(key)) stateByKey.set(key, 'taken');
@@ -279,10 +322,11 @@ export async function renderDay({ date, editable = true, lockReason = null, onCh
       });
       action.appendChild(button);
       slotNode.appendChild(action);
-    } else if (resolved) {
-      slotNode.appendChild(el('div.slot-foot',
-        el('span.slot-tick', [icon('check'), allTaken ? S.allTaken : S.allMarked])));
     }
+    /* No read-only footer. v2 put a tick there as well as the tag in the head,
+     * which said the same thing twice; now that the head's tag distinguishes
+     * "All taken" from "All marked", the second copy is both redundant and
+     * wrong -- it was rendered in the taken colour regardless. */
 
     return slotNode;
   }

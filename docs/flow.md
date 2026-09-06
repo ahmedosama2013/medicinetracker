@@ -8,10 +8,10 @@ Everything the two people actually do, start to finish. This is the only file th
 
 | | **Supporter** — the person helping | **Simple** — the person taking the medicines |
 |---|---|---|
-| Their phone shows | Medicines, Settings | Today, Calendar, Settings |
+| Their phone shows | Today, Calendar, Medicines, Settings | Today, Calendar, Settings |
 | Account | None — just a code | Signs in with Google, once |
-| They do | Add medicines, photos and times | Mark doses done, check photos |
-| How often | Once at setup, then occasionally | Every day |
+| They do | Add medicines, photos and times; check what was taken | Mark doses taken or skipped, check photos |
+| How often | At setup, then whenever they want to check in | Every day |
 
 Two phones, two installs. Data moves **live**: anything the supporter adds or changes reaches the elder's phone within a few seconds, automatically. No file to export, send, or import.
 
@@ -35,7 +35,7 @@ Open in Safari  →  Add to Home Screen  →  "I take the medicines"  →  Sign 
 2. Tap **Share** — the square with an arrow pointing up, in the bottom toolbar.
 3. Scroll down, tap **Add to Home Screen**, then **Add**.
 4. Open the app from the home screen icon. It asks who uses this phone → **"I take the medicines"** → **Sign in with Google**.
-5. Once signed in, open **Settings**. **Your code** is shown there — a short one, like `4F7K2Q`. This is what the supporter will need next.
+5. Once signed in, the screen shows **your code** — a short one, like `4F7K2Q` — because until a supporter enters it there is nothing else to show. Read it out to whoever is helping you. It is also always in **Settings**.
 
 ## Flow 2 — Supporter connects (once, ~15 minutes)
 
@@ -65,20 +65,26 @@ That's it — nothing to send. Everything just added appears on the elder's **To
 Open the app  →  see the day  →  tap a medicine to check the photo  →  tap Done
 ```
 
-1. Open the app. **Today** shows the whole day, grouped by time of day, in the same order every day: morning at the top, night at the bottom. Nothing is hidden and nothing moves as the day goes on.
-2. To check a pill, tap it. The photo fills the screen with the name and strength. Tap anywhere to close.
-3. After taking everything in that group, tap **Done** once. The group turns green.
+1. Open the app. **Today** shows the whole day, grouped by time of day, in the same order every day: morning at the top, night at the bottom. Nothing is hidden and nothing moves as the day goes on. A small **Now** label marks whichever group's time has most recently passed.
+2. To check a pill, tap it. A panel opens with its photo, how much to take, any notes, and every time of day it is due. Tap the photo to see it full screen.
+3. Mark each medicine with the circle on its right, or tap **Done** once to mark the whole group. Either way the group turns green and folds up into a row of photos — tap that row to open it again.
 4. Tapped by mistake? The button now says **Undo**. Tap it.
 
+**Not taking one?** Tap its circle twice: once for taken, again for skipped. It turns amber and the name is crossed out, and a message offers to put it back. Skipping is recorded, not a failure — nothing in the app treats it as one. **Done** never overrides a medicine you have deliberately skipped.
+
 A group whose time has already passed is still there and can still be marked. Nothing expires at midday. This works even with no signal — see "What can go wrong" below.
+
+If your helper marked something for you, that medicine says **Marked by your helper**.
 
 ## Flow 4 — Filling a weekly pill organiser
 
 The photos exist for this.
 
 1. Open **Today**.
-2. For each medicine in a group, tap it to see the photo full screen, and match it against the packet in hand.
+2. For each medicine in a group, tap it, then tap the photo to fill the screen, and match it against the packet in hand.
 3. Close and move to the next.
+
+A screen built specifically for this — one medicine at a time, the whole week at once, so each box is only opened once — is planned. See Phase 3 in [v3-plan.md](v3-plan.md).
 
 ## Flow 5 — Turning on reminders
 
@@ -95,7 +101,7 @@ On iPhone this needs the app to have been added to the home screen (Flow 1, step
 
 ## Flow 6 — Checking the record
 
-1. Tap **Calendar**. Each day carries a ring: filled when everything was marked, part-filled for some, hollow for nothing, and no ring at all on a day with nothing due.
+1. Tap **Calendar**. Each day carries a ring: filled when everything was dealt with, part-filled for some, hollow for nothing, and no ring at all on a day with nothing due. The ring is amber instead of green if anything that day was skipped.
 2. Chevrons move a month at a time; tapping the month name jumps to any month and year.
 3. Tap a day to see what was due and mark anything missed.
 
@@ -123,6 +129,31 @@ The elder's Settings → **Get a new code**. Every device using the old code —
 
 Settings → **Change who uses this phone** isn't a single button anymore, since the two paths are different (an account vs. a code). Sign out (elder) or disconnect (supporter) from Settings, then go through Flow 1 or Flow 2 again with the correct answer. Nothing already set up is deleted.
 
+## Flow 11 — The supporter checks in
+
+Their **Today** shows the same day the elder sees, with what has been marked so
+far. Because a supporter's phone has no account, it cannot receive live
+updates the way the elder's can — it checks every minute or so while the app is
+open, and a line under the date says when it last managed to.
+
+Two things they can do from there:
+
+- **Send a reminder.** The elder's phone buzzes with "A quick check on your
+  medicines". It never names a medicine. Only one can be sent an hour, however
+  many times the button is pressed, and it only works if the elder has turned
+  reminders on (Flow 5) — the app says so if they have not.
+- **Mark a dose for them.** Useful when the supporter is sitting with them, or
+  filling the organiser together. The app asks once to confirm, then the
+  medicine is recorded exactly as if the elder had marked it, except that their
+  screen shows **Marked by your helper**. This needs a connection; if it fails,
+  nothing is recorded and the app says so rather than pretending.
+
+## Flow 12 — Dark colours
+
+**Settings → Appearance** on either phone: match the phone's own setting, or
+force light or dark. Worth knowing about for the night dose, which is usually
+taken in a dark room.
+
 ---
 
 ## What can go wrong
@@ -134,3 +165,6 @@ Settings → **Change who uses this phone** isn't a single button anymore, since
 | Tapped Done with no signal | It still works | The tap is saved on the phone immediately and sent to the server as soon as it reconnects — nothing is lost |
 | No reminders arriving | Not turned on yet, or permission was denied | Settings → Reminders → Turn on, and check the phone's own notification settings for the app |
 | Nothing on Today | No medicines yet, or none due today | Ask the supporter to add some, or check back later |
+| Supporter's Today says *"Could not check for updates"* | Their phone cannot reach the server | It keeps showing the last information it had; it retries on its own. Check the connection if it persists |
+| Supporter taps a circle and gets an error | A supporter's marks need a connection — they are never queued for later | Try again once back online. Nothing was recorded |
+| *"Already sent"* when sending a reminder | One per hour, on purpose | Wait, or phone them |

@@ -610,6 +610,12 @@ body.mode-none #app {
 
 body.mode-simple .dose { width: 2.125rem; height: 2.125rem; }
 
+/* Same shape without the affordance: a read-out, not a control. Unmarked is a
+   dashed outline rather than the solid one a tappable target gets, so "you
+   cannot change this here" is visible before anyone tries. */
+.dose-static { cursor: default; }
+.dose-static[data-state="none"] { border-style: dashed; }
+
 /* ---------------------------------------------------------------------
    8. Typography helpers
    --------------------------------------------------------------------- */
@@ -1096,16 +1102,6 @@ input:focus, select:focus, textarea:focus {
 .med-skipped .med-sub { color: var(--skip-ink); }
 
 .slot-foot { padding: var(--space-2) var(--space-4) var(--space-4); }
-.slot-tick {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  color: var(--taken-ink);
-  font-weight: 500;
-  font-size: var(--text-sm);
-  justify-content: center;
-  padding: var(--space-2) 0;
-}
 
 .empty {
   text-align: center;
@@ -1674,4 +1670,66 @@ body.mode-simple .dialog-actions { flex-direction: column-reverse; }
 
 @media (min-width: 80rem) {
   body { font-size: calc(var(--text-base) * 1.02); }
+}
+
+/* Supporter's Today: how stale their copy is. Quiet by default -- it is
+   reassurance, not a warning -- and only coloured when the app genuinely
+   could not reach the server. */
+.freshness {
+  text-align: center;
+  color: var(--ink-3);
+  font-size: var(--text-xs);
+  margin: calc(var(--space-2) * -1) 0 var(--space-4);
+}
+.freshness-stale { color: var(--attn); font-weight: 500; }
+
+/* Waiting on the network. Supporter screens go through code-gated RPCs and an
+   edge function that can cold-start, so this is a real wait, not a flicker. */
+.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  padding: var(--space-6) var(--space-4);
+  color: var(--ink-3);
+  font-size: var(--text-sm);
+}
+
+.spinner {
+  width: 1.125rem;
+  height: 1.125rem;
+  flex: none;
+  border-radius: var(--r-pill);
+  border: 2px solid var(--line-strong);
+  border-top-color: var(--primary);
+  animation: spin 700ms linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Reduced motion kills the rotation, so the ring alone would read as a static
+   dot. Pulse the opacity instead -- still says "working", without spinning. */
+@media (prefers-reduced-motion: reduce) {
+  .spinner {
+    animation: none !important;
+    border-top-color: var(--line-strong);
+    background: var(--primary);
+  }
+}
+
+/* "Marked by your helper", on the elder's rows only. Deliberately quiet: it is
+   there so a mark they did not make is never a surprise, not to draw attention
+   away from the medicine itself. */
+.med-bywhom { color: var(--ink-3); font-style: italic; }
+
+/* The supporter's nudge. Quiet, not primary: the primary action on this screen
+   is reading what happened, and a loud button invites tapping something whose
+   whole design is about not being tapped repeatedly. */
+.nudge-wrap { margin: 0 0 var(--space-4); }
+.nudge { background: var(--surface); border-color: var(--line-strong); }
+.nudge-hint {
+  text-align: center;
+  color: var(--ink-3);
+  font-size: var(--text-xs);
+  margin-top: var(--space-2);
 }

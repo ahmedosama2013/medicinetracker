@@ -1,8 +1,12 @@
 /* Simple-only: mirrors the household's Supabase tables into the local
  * IndexedDB cache (via js/store.js -- this module never touches db.js
- * directly), and queues dose-log writes so Done/Undo never silently fails
- * offline. Supporter devices never import this module -- see js/supporter.js,
- * which talks to Supabase directly with no local cache at all. */
+ * directly), and queues dose-log writes so a dose tap never silently fails
+ * offline.
+ *
+ * Supporter devices must never import this module. They do keep a cache now
+ * (js/supporter-sync.js), but they cannot use Realtime and must not use the
+ * outbox: with nothing here to flush it, a queued supporter write would sit
+ * there looking saved forever. Write through js/doses.js, never directly. */
 
 import { supabase } from './supabase.js';
 import * as store from './store.js';
@@ -32,7 +36,7 @@ function mapSlot(row) {
 }
 
 function mapDose(row) {
-  return { id: row.id, medicineId: row.medicine_id, slotId: row.slot_id, date: row.local_date, takenAt: row.taken_at, status: row.status };
+  return { id: row.id, medicineId: row.medicine_id, slotId: row.slot_id, date: row.local_date, takenAt: row.taken_at, status: row.status, loggedBy: row.logged_by };
 }
 
 function mapSnapshot(row) {

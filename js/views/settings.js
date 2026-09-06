@@ -1,8 +1,8 @@
 /* Settings, in both modes.
  *
- * Simple mode: account (email, share code, rotate, sign out) and
- * notifications. Supporter mode: which household this device is connected
- * to, slot times, and a way to disconnect.
+ * Simple mode: account (email, share code, rotate, sign out) and reminders.
+ * Supporter mode: which household this device is connected to, and slot times.
+ * Both get Appearance and About.
  *
  * Reached from the nav, not a hidden gesture.
  */
@@ -12,7 +12,7 @@ import * as auth from '../auth.js';
 import * as supporter from '../supporter.js';
 import * as pushLib from '../push.js';
 import { S, APP_VERSION } from '../strings.js';
-import { el, clear, section, toast, confirmDialog, field } from '../ui.js';
+import { el, clear, section, toast, confirmDialog, field, applyTheme } from '../ui.js';
 import { timeToMinutes } from '../date.js';
 import { go, refresh } from '../router.js';
 
@@ -87,6 +87,32 @@ async function toggleNotifications(householdId) {
 
 // ---- the view -------------------------------------------------------------
 
+/* Three states, not a switch: "match my phone" is the default and has to stay
+ * expressible, and a two-position toggle cannot say it. */
+const THEMES = [
+  { value: 'system', label: () => S.themeSystem },
+  { value: 'light', label: () => S.themeLight },
+  { value: 'dark', label: () => S.themeDark },
+];
+
+function appearanceSection(current) {
+  const chips = el('div.chips', THEMES.map(t => el('button.chip', {
+    type: 'button',
+    text: t.label(),
+    'aria-pressed': String((current || 'system') === t.value),
+    onclick: async () => {
+      await store.saveSettings({ theme: t.value });
+      applyTheme(t.value);
+      refresh();
+    },
+  })));
+
+  return section(S.settingsAppearance, [
+    el('p.setting-hint', { text: S.settingsAppearanceHint, style: 'margin-bottom: 0.75rem;' }),
+    chips,
+  ]);
+}
+
 export async function settingsView({ app }) {
   const settings = await store.getSettings();
   const role = settings.role;
@@ -133,21 +159,29 @@ export async function settingsView({ app }) {
         control: el('span.setting-value', { text: settings.supporterHouseholdName || '' }),
       }),
       actionRow({
-        label: S.settingsSlots,
-        hint: S.slotsIntro,
-        buttonLabel: S.settingsSlots,
-        onClick: () => go('#/slots'),
-      }),
-      actionRow({
         label: S.settingsDisconnect,
         hint: S.settingsDisconnectHint,
         buttonLabel: S.settingsDisconnect,
         onClick: disconnect,
       }),
     ]));
+
+    /* Its own section rather than buried under Connection: changing what
+     * "Morning" means is routine setup, and disconnecting the device is not.
+     * They do not belong in the same card. */
+    app.appendChild(section(S.settingsSlots, [
+      actionRow({
+        label: S.settingsSlots,
+        hint: S.slotsIntro,
+        buttonLabel: S.settingsSlots,
+        onClick: () => go('#/slots'),
+      }),
+    ]));
   }
 
-  app.appendChild(section(null, [
+  app.appendChild(appearanceSection(settings.theme));
+
+  app.appendChild(section(S.settingsAbout, [
     settingRow({
       label: S.settingsVersion,
       control: el('span.setting-value', { text: APP_VERSION }),

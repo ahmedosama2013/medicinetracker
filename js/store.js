@@ -15,8 +15,14 @@
  *
  * On the elder's ("simple") device this is a write-through cache kept fresh by
  * js/sync.js's Supabase Realtime subscription -- see the "cache writers"
- * section below. A supporter device never touches this file for medicines,
- * schedules or slots; see js/supporter.js, which has no local cache at all.
+ * section below.
+ *
+ * A supporter device caches the same things, filled by js/supporter-sync.js
+ * (Realtime cannot reach a device with no session). The difference that
+ * matters: on that side the cache is READ-ONLY. Supporter writes never enter
+ * the outbox below, because nothing on a supporter device flushes it -- they
+ * go out through the code-gated RPCs in js/supporter.js and are mirrored back
+ * in afterwards. js/doses.js is the only module that knows which is which.
  * ---------------------------------------------------------------------------
  */
 

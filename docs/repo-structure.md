@@ -19,7 +19,9 @@ Medicine Tracker/
 │   ├── config.js              public Supabase URL / anon key / VAPID public key
 │   ├── supabase.js            memoized Supabase client (CDN ESM import)
 │   ├── auth.js                simple-only: Google sign-in, household create/resume
-│   ├── supporter.js           code-gated Supabase calls for a supporter device, no local cache
+│   ├── supporter.js           code-gated Supabase calls for a supporter device, no session
+│   ├── supporter-sync.js      supporter-only: polls those calls into the same local cache
+│   ├── doses.js               one dose-writing facade; picks outbox or RPC by role
 │   ├── sync.js                simple-only: Realtime mirror into the local cache, dose-log offline outbox
 │   ├── push.js                simple-only: Web Push subscribe/unsubscribe
 │   ├── db.js                  IndexedDB promise wrapper, schema, upgrade
@@ -36,15 +38,23 @@ Medicine Tracker/
 │       ├── today.js           the Today screen
 │       ├── day.js             one day's slots — shared by Today and Calendar
 │       ├── calendar.js        month grid, rings, day sheet
+│       ├── medicine-sheet.js  one medicine, everything known about it
 │       ├── medicines.js       supporter: the medicine list, fetched live via the share code
 │       ├── medicine-form.js   supporter: medicine + schedules in one form
 │       └── settings.js        both modes, plus the slot-times screen
 │
 ├── supabase/
 │   ├── README.md               one-time backend setup steps
-│   ├── migrations/0001_init.sql   tables, RLS, the code-gated function surface, freeze + reminder jobs
+│   ├── migrations/
+│   │   ├── 0001_init.sql      tables, RLS, the code-gated function surface, freeze + reminder jobs
+│   │   ├── 0002 / 0003        service-role photo grants; Realtime
+│   │   ├── 0004_second_reminder.sql   one follow-up if a slot is still unmarked
+│   │   ├── 0005_skipped_doses.sql     widens dose_log.status, adds the UPDATE policy
+│   │   ├── 0006_supporter_parity.sql  logged_by + four code-gated read/write functions
+│   │   └── 0007_nudge.sql             last_nudge_at, the nudge rate limit
 │   └── functions/
 │       ├── send-reminders/    Edge Function: Web Push delivery, cron-triggered
+│       ├── nudge/             Edge Function: the supporter's "have you taken them?" push
 │       └── supporter-photo/   Edge Function: photo upload/delete/signed-URL for code-gated devices
 │
 ├── icons/
@@ -56,8 +66,9 @@ Medicine Tracker/
     ├── repo-structure.md
     ├── ui.md
     ├── flow.md
+    ├── v3-plan.md                     the v3 overhaul: phases, decisions, what is left
     ├── medicine-tracker-plan-v3.md    the original local-only build spec, superseded
-    └── next-steps.md                  everything deferred (reminders and two-way sync are now done)
+    └── next-steps.md                  everything deferred
 ```
 
 ## What each module is responsible for
@@ -67,18 +78,21 @@ Medicine Tracker/
 | `js/db.js` | `open`, `get`, `getAll`, `getAllFromIndex`, `put`, `putMany`, `del`, `delMany`, `clear`, `uuid`. Stands in for the `idb` library |
 | `js/store.js` | Reads used by every view (`getMedicines`, `getDoseLogForDate`, ...), the dose-log append-only rule, and a small set of cache-writer/outbox functions used only by `js/sync.js` |
 | `js/auth.js` | Google sign-in, household create/resume, share-code rotation — simple-only |
-| `js/supporter.js` | `loadRoutine`, `saveMedicine`, `replaceSchedules`, `saveSlots`, `uploadPhoto`/`deletePhoto`/`getPhotoUrl` — every one code-gated, no session |
-| `js/sync.js` | Supabase Realtime subscription that mirrors a household's tables into the local cache, plus the dose-log offline outbox (`logSlot`/`undoSlot`) |
+| `js/supporter.js` | `loadRoutine`, `saveMedicine`, `replaceSchedules`, `saveSlots`, photo actions, `loadDoseLog`/`loadHistory`/`logDose`/`unlogSlot`, `nudge` — every one code-gated, no session |
+| `js/supporter-sync.js` | `hydrate`, `ensureRange`, `refresh`, `startPolling`, `lastSync`. Fills the same cache `js/sync.js` does, but by polling — Realtime cannot reach a sessionless device |
+| `js/doses.js` | `setDose`, `logSlot`, `undoSlot`. The one place that knows the elder writes through the outbox and the supporter writes through RPCs |
+| `js/sync.js` | Supabase Realtime subscription that mirrors a household's tables into the local cache, plus the dose-log offline outbox |
 | `js/date.js` | `todayStr`, `addDays`, `daysBetween`, `dayOfWeek`, `monthGrid`, `formatTime`, `formatLong`. No UTC anywhere |
 | `js/schedule.js` | `isDueOn`, `buildDay`, `dueOn`, `expectedFor`, `completionForDates`. The pure functions take plain arrays and can be called from the console; `isDueOn` is also ported into Postgres as `app.is_due` |
 | `js/photos.js` | `compress`, `objectUrl`/`release`, `blobToDataUrl`/`dataUrlToBlob` |
-| `js/ui.js` | `el()` for DOM building, plus `confirmDialog`, `alertDialog`, `openSheet`, `openPhotoViewer`, `toast`, `pickFile` |
+| `js/ui.js` | `el()` for DOM building, plus `confirmDialog`, `alertDialog`, `openSheet`, `openPhotoViewer`, `toast`, `pickFile`, `pillTile`, `loadingState`, `applyTheme` |
 | `js/views/day.js` | The shared day renderer, so a past day is corrected with the same controls as today |
 
 ## Conventions
 
 - **One module owns the local cache.** Views call `store.*`, never `db.*`. `js/sync.js` is the one exception permitted to write through `store.*`'s cache-writer functions.
-- **A supporter device has no local cache.** Every supporter screen calls `js/supporter.js` live, on every load — see `docs/architecture.md`.
+- **The supporter's cache is read-only.** Since v3 a supporter device does cache the routine and history (`js/supporter-sync.js`), so Today and Calendar can render. But supporter *writes* never touch the outbox — nothing there would flush it — they go out through `js/supporter.js` and are mirrored in afterwards. `js/doses.js` is the only module that knows this.
+- **Writes go through `js/doses.js`, not `js/sync.js`.** A view that calls `sync.*` directly works on the elder's device and silently does nothing useful on the supporter's.
 - **No text outside `strings.js`.** Views reference `S.something`. This is what makes an Urdu translation a data change rather than a refactor.
 - **No HTML strings with data in them.** Everything goes through `el()` and `textContent`, so a medicine named `<img onerror=…>` is just a medicine with a silly name.
 - **Views return their cleanup.** A view that creates photo object URLs returns a function; the router calls it before rendering the next screen.

@@ -1,8 +1,17 @@
 # v3 plan — visual overhaul and supporter parity
 
-The plan for the redesign discussed in September 2026. It supersedes nothing yet:
-[ui.md](ui.md) still describes v2 and stays the source of truth until Phase 1 lands,
-at which point it gets rewritten rather than amended.
+> Unrelated to [medicine-tracker-plan-v3.md](medicine-tracker-plan-v3.md),
+> which is the third revision of the original build spec and long superseded.
+> The shared "v3" is a coincidence of numbering.
+
+The plan for the redesign discussed in September 2026, and the running record of
+what each phase actually did — including where it departed from the plan and why.
+
+**This is not a description of the app.** [ui.md](ui.md) describes what the
+screens are and the rules they obey; [architecture.md](architecture.md)
+describes how the two devices work; [flow.md](flow.md) describes what the two
+people do. This file is the reasoning and the remaining work. Phases 0–2 are
+done and folded into those three; Phases 3–4 are still ahead.
 
 This file exists because the interesting part of this work is not the CSS. It is
 that four of the wanted features are blocked on the same architectural fact —
@@ -236,6 +245,93 @@ from reading the code:
     visible, tappable prompt rather than an invisible gap.
 17. **Settings split** into Account, Reminders, Times of day, About — for both
     roles. The current single Reminders toggle cannot express what Phase 4 needs.
+
+### Phase 2a done — reads, and the supporter's day
+
+Migration `0006_supporter_parity.sql` adds `logged_by` and four code-gated
+functions: `get_dose_log`, `get_history`, `log_dose`, `unlog_slot`. The write
+pair exists but nothing calls it yet — item 14 needs the confirmation UI in
+front of it, and shipping the capability before the guardrail is the wrong
+order.
+
+The architectural decision worth recording: **the supporter now has a local
+cache**, filled through those RPCs by `js/supporter-sync.js` into the same
+IndexedDB stores the elder uses. That reverses `js/store.js`'s header note
+("a supporter device never touches this file for medicines, schedules or
+slots"), which was written when the supporter had no screen that rendered a
+day. The alternative was parameterising every read path in `schedule.js`,
+`day.js` and `calendar.js` by role, which is far more code and two ways for
+the same screen to be wrong. The reason behind the old note still holds and
+still shapes the file: **the cache is read-only on that side.** Supporter
+writes will never go through `sync.js`'s outbox — nothing on that device
+flushes it — they go straight out through the RPCs and are followed by a
+refresh.
+
+Realtime is not available to a supporter: it respects RLS, and with no session
+they match no rows, so no events ever arrive. Hence polling, and hence the
+freshness line on their Today. That line is not decoration — polled data
+presenting itself as live is a lie the person only discovers when it matters,
+and "they haven't marked anything" is precisely the wrong thing to be wrong
+about.
+
+History is fetched a range at a time rather than all at once: 75 days on open,
+and `ensureRange` pulls a month the first time the calendar pages to it.
+Without that, paging back would render hollow rings, which do not read as "not
+loaded" — they read as "they took nothing that month".
+
+Also landed, because it fell out of the same work: **read-only days now show
+per-medicine state.** The elder's own frozen past days previously showed
+nothing per row, so a locked day could tell you the slot was incomplete but
+not which medicine went unmarked. And the read-only footer tick is gone — v2
+rendered it alongside the head's tag, saying the same thing twice, in the
+taken colour regardless of whether anything was skipped.
+
+**Not verified against a live database.** These RPCs have never been called
+with a real share code; the UI was exercised against a seeded local cache with
+the network failing, which is how the "Could not check for updates" state got
+tested but is not the same as knowing the SQL is right.
+
+### Phase 2 done
+
+Items 14–17 landed together. What is worth carrying forward:
+
+**`js/doses.js` is the seam between the two roles.** One facade, two routes:
+the elder writes locally then queues through `sync.js`'s outbox; the supporter
+writes straight out through the RPCs and mirrors into the cache afterwards. A
+supporter write must never enter the outbox, because nothing on that device
+flushes it and the write would sit there looking saved. The consequence is
+deliberate and verified: a supporter write that cannot reach the server leaves
+the dose unmarked and says so, rather than appearing to succeed. Marking a
+dose for someone else is not something to silently defer.
+
+**Mark-on-behalf is confirmed once per session, not per tap.** A supporter
+sitting with the person marks several in a row, and a dialog on each one is
+how you train someone to dismiss dialogs unread. Attribution carries the
+weight instead: every such row is `logged_by = 'supporter'`, and the elder's
+rows show "Marked by your helper" so a mark they did not make is never a
+surprise. That note is absent on the supporter's own screen, where it would
+only state the obvious.
+
+**Appearance closed a gap left open in Phase 0.** The dark tokens shipped with
+`[data-theme]` support that nothing ever wrote, so dark mode only followed the
+OS. Three states rather than a switch, because "match my phone" is the default
+and a two-position toggle cannot express it.
+
+**The nudge is rate limited on the server, not in the UI.** A worried relative
+tapping four times must not produce four buzzes on an elderly person's phone,
+and a client-side limit is a suggestion. It never names a medicine — same
+reason `send-reminders` doesn't, since the body passes through a third-party
+push service onto a lock screen — and it distinguishes "nobody is subscribed"
+from "sent", because silence would otherwise read as being ignored.
+
+`last_nudge_at` is a column rather than a table on purpose. If a log of nudges
+is ever wanted it should be designed deliberately: a record of how often
+someone needed chasing is exactly the kind of thing this app has decided not
+to keep.
+
+**Still unverified against a live database.** `log_dose`, `unlog_slot`,
+`get_dose_log` and `get_history` have been exercised only through their
+failure paths locally. The nudge function has never run at all.
 
 ## Phase 3 — Organiser mode
 

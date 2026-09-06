@@ -13,6 +13,7 @@
 
 import * as store from '../store.js';
 import * as scheduleLib from '../schedule.js';
+import * as supporterSync from '../supporter-sync.js';
 import { S } from '../strings.js';
 import { el, clear, openSheet, alertDialog } from '../ui.js';
 import { todayStr, monthGrid, parse, formatLong, isAfter } from '../date.js';
@@ -94,6 +95,17 @@ export async function calendarView({ app }) {
     clear(app);
 
     const cells = monthGrid(cursor.y, cursor.m);
+
+    /* A supporter's history is fetched a range at a time rather than mirrored
+     * live, so paging to a month nobody has looked at yet has to go and get
+     * it. Without this the rings would silently render hollow -- which does
+     * not read as "not loaded", it reads as "they took nothing all month". */
+    if (settings.role === 'supporter' && settings.supporterCode) {
+      await supporterSync
+        .ensureRange(settings.supporterCode, cells[0].date, cells[cells.length - 1].date)
+        .catch(() => {});
+    }
+
     const completion = await scheduleLib.completionForDates(cells.map(c => c.date));
 
     app.appendChild(el('div.cal-head', [

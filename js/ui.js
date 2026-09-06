@@ -59,6 +59,37 @@ export function clear(node) {
 
 export const icon = name => el('span.icon', { 'aria-hidden': 'true', dataset: { icon: name } });
 
+/**
+ * Light, dark, or whatever the phone says.
+ *
+ * css/app.css defines the dark tokens twice: once behind the OS media query,
+ * once behind [data-theme="dark"]. This is the only thing that writes that
+ * attribute. Removing it entirely rather than setting "system" matters --
+ * the media-query block is guarded on :not([data-theme="light"]), so an empty
+ * attribute would still be honoured but a stray value would not.
+ */
+export function applyTheme(theme) {
+  const root = document.documentElement;
+  if (theme === 'light' || theme === 'dark') root.dataset.theme = theme;
+  else delete root.dataset.theme;
+}
+
+/**
+ * Shown while a screen waits on the network.
+ *
+ * Supporter screens go through code-gated RPCs and, for photos, an edge
+ * function that can cold-start -- so "tapped a row, nothing happened yet" is a
+ * real second or more. Without this the app looked frozen and people tapped
+ * again. `aria-busy` and the live region matter as much as the spinner: a
+ * screen reader gets silence otherwise.
+ */
+export function loadingState(message = S.loading) {
+  return el('div.loading', { role: 'status', 'aria-busy': 'true' }, [
+    el('span.spinner', { 'aria-hidden': 'true' }),
+    el('span', { text: message }),
+  ]);
+}
+
 // ---- pill identity --------------------------------------------------------
 
 /* A medicine has exactly one visual identity -- its photo -- and it appears at

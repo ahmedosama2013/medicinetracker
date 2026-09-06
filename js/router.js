@@ -12,7 +12,11 @@ let currentMode = null;
 let onRender = null;
 let activeCleanup = null;
 
-export const HOME = { simple: '#/today', supporter: '#/medicines' };
+/* Both roles land on Today. The supporter's used to be Medicines, because
+ * that was the only screen they had; now that they can see the day, opening on
+ * "did they take it?" rather than on a config list matches why they open the
+ * app at all. */
+export const HOME = { simple: '#/today', supporter: '#/today' };
 
 export function register(path, { view, modes, title }) {
   routes.set(path, { view, modes, title });

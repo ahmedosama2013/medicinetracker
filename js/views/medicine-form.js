@@ -14,7 +14,7 @@ import * as store from '../store.js';
 import * as supporter from '../supporter.js';
 import * as photosLib from '../photos.js';
 import { S } from '../strings.js';
-import { el, clear, field, section, toast } from '../ui.js';
+import { el, clear, loadingState, field, section, toast } from '../ui.js';
 import { todayStr, formatTime } from '../date.js';
 import { go } from '../router.js';
 import { archiveMedicine } from './medicines.js';
@@ -40,9 +40,25 @@ export async function medicineFormView({ app, query }) {
   const settings = await store.getSettings();
   const code = settings.supporterCode;
 
+  /* Something on screen before the network is touched. This view costs a
+   * routine fetch plus, for an existing medicine, a signed URL from an edge
+   * function that can cold-start -- so tapping a row used to sit on the old
+   * screen for a second or more with no sign anything had happened, and people
+   * tapped again. */
+  clear(app);
+  app.appendChild(el('h1.page-title', { text: id ? S.editMedicine : S.newMedicine }));
+  app.appendChild(loadingState());
+
+  /* In parallel, not in sequence: the photo is keyed on the id from the URL,
+   * so it never needed the routine to come back first. That was one avoidable
+   * round trip on the slowest screen in the app. */
   let routine;
+  let loadedPhotoUrl = null;
   try {
-    routine = await supporter.loadRoutine(code);
+    [routine, loadedPhotoUrl] = await Promise.all([
+      supporter.loadRoutine(code),
+      id ? supporter.getPhotoUrl(code, id).catch(() => null) : Promise.resolve(null),
+    ]);
   } catch {
     clear(app);
     app.appendChild(el('p.note', { text: S.pairCodeInvalid }));
@@ -64,10 +80,8 @@ export async function medicineFormView({ app, query }) {
     archived: existing?.archived || false,
   };
 
-  let photoUrl = null;
-  if (existing?.photoPath) {
-    photoUrl = await supporter.getPhotoUrl(code, existing.id).catch(() => null);
-  }
+  // Fetched above, alongside the routine.
+  let photoUrl = existing?.photoPath ? loadedPhotoUrl : null;
   let photoBlob = null;      // a freshly picked, not-yet-saved photo
   let photoDirty = false;
 
