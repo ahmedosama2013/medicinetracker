@@ -9,13 +9,49 @@ const supabase = createClient(
   Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
 )
 
-webpush.setVapidDetails(
-  `mailto:${Deno.env.get('VAPID_CONTACT_EMAIL')}`,
-  Deno.env.get('VAPID_PUBLIC_KEY')!,
-  Deno.env.get('VAPID_PRIVATE_KEY')!,
-)
+/* VAPID is configured on first use, not at module load. See the same block
+ * in ../nudge/index.ts.
+ *
+ * This used to be a bare setVapidDetails() at the top level. When it throws --
+ * a missing secret, a malformed key -- the whole worker dies before it can
+ * answer anything, including the CORS preflight. From a browser that is
+ * indistinguishable from the function not existing, and from cron it is a
+ * silent no-op. A configuration problem should produce a message, not a
+ * disappearance. */
+let vapidReady: boolean | string = false
+
+function ensureVapid(): string | null {
+  if (vapidReady === true) return null
+  if (typeof vapidReady === 'string') return vapidReady
+
+  const email = Deno.env.get('VAPID_CONTACT_EMAIL')
+  const pub = Deno.env.get('VAPID_PUBLIC_KEY')
+  const priv = Deno.env.get('VAPID_PRIVATE_KEY')
+
+  const missing = [
+    !email && 'VAPID_CONTACT_EMAIL',
+    !pub && 'VAPID_PUBLIC_KEY',
+    !priv && 'VAPID_PRIVATE_KEY',
+  ].filter(Boolean)
+  if (missing.length) {
+    vapidReady = `missing secrets: ${missing.join(', ')}`
+    return vapidReady as string
+  }
+
+  try {
+    webpush.setVapidDetails(`mailto:${email}`, pub!, priv!)
+    vapidReady = true
+    return null
+  } catch (err) {
+    vapidReady = `VAPID keys rejected: ${String((err as Error)?.message ?? err)}`
+    return vapidReady as string
+  }
+}
 
 Deno.serve(async () => {
+  const vapidError = ensureVapid()
+  if (vapidError) return new Response(`push not configured: ${vapidError}`, { status: 500 })
+
   const { data, error } = await supabase.rpc('claim_due_notifications')
   if (error) return new Response(error.message, { status: 500 })
 

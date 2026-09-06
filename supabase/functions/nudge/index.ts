@@ -16,6 +16,12 @@
 //
 // A supporter device has no Supabase session, so the code is the only
 // credential -- validated the same way as supporter-photo does.
+//
+// DEPLOY WITH --no-verify-jwt. With verification on, Supabase's gateway
+// rejects the browser's CORS preflight (which never carries an Authorization
+// header) before this file runs, and the browser reports a bare "Failed to
+// fetch" that is indistinguishable from the function not existing -- while the
+// CLI still lists it as ACTIVE. See docs/setup.md.
 import { createClient } from 'npm:@supabase/supabase-js@2'
 import webpush from 'npm:web-push@3.6.7'
 
@@ -24,11 +30,43 @@ const supabase = createClient(
   Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
 )
 
-webpush.setVapidDetails(
-  `mailto:${Deno.env.get('VAPID_CONTACT_EMAIL')}`,
-  Deno.env.get('VAPID_PUBLIC_KEY')!,
-  Deno.env.get('VAPID_PRIVATE_KEY')!,
-)
+/* VAPID is configured on first use, not at module load.
+ *
+ * This used to be a bare setVapidDetails() at the top level. When it throws --
+ * a missing secret, a malformed key -- the whole worker dies before it can
+ * answer anything, including the CORS preflight. From a browser that is
+ * indistinguishable from the function not existing, and from cron it is a
+ * silent no-op. A configuration problem should produce a message, not a
+ * disappearance. */
+let vapidReady: boolean | string = false
+
+function ensureVapid(): string | null {
+  if (vapidReady === true) return null
+  if (typeof vapidReady === 'string') return vapidReady
+
+  const email = Deno.env.get('VAPID_CONTACT_EMAIL')
+  const pub = Deno.env.get('VAPID_PUBLIC_KEY')
+  const priv = Deno.env.get('VAPID_PRIVATE_KEY')
+
+  const missing = [
+    !email && 'VAPID_CONTACT_EMAIL',
+    !pub && 'VAPID_PUBLIC_KEY',
+    !priv && 'VAPID_PRIVATE_KEY',
+  ].filter(Boolean)
+  if (missing.length) {
+    vapidReady = `missing secrets: ${missing.join(', ')}`
+    return vapidReady as string
+  }
+
+  try {
+    webpush.setVapidDetails(`mailto:${email}`, pub!, priv!)
+    vapidReady = true
+    return null
+  } catch (err) {
+    vapidReady = `VAPID keys rejected: ${String((err as Error)?.message ?? err)}`
+    return vapidReady as string
+  }
+}
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -36,8 +74,14 @@ const corsHeaders = {
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 }
 
-/** One nudge per household per this many minutes, whatever the UI does. */
-const COOLDOWN_MINUTES = 60
+/* One nudge per household per this many minutes, whatever the UI does.
+ *
+ * Fifteen, not sixty. The thing worth preventing is a burst -- someone worried
+ * pressing the button four times in a minute, producing four buzzes on an
+ * elderly person's phone. An hour also blocked the legitimate case: nudge, no
+ * response, reasonably want to try once more twenty minutes later. Fifteen
+ * minutes absorbs the burst and permits the follow-up. */
+const COOLDOWN_MINUTES = 15
 
 async function householdIdForCode(code: string): Promise<string> {
   const normalized = (code ?? '').toUpperCase().replace(/[\s-]/g, '')
@@ -60,11 +104,15 @@ Deno.serve(async (req) => {
     /* The cooldown is recorded on the household row rather than in a new
      * table: there is exactly one value to keep and it has no history worth
      * having. `last_nudge_at` is added by migration 0007. */
-    const { data: household } = await supabase
+    const { data: household, error: householdErr } = await supabase
       .from('households')
       .select('last_nudge_at')
       .eq('id', householdId)
       .single()
+    if (householdErr) {
+      return Response.json({ sent: 0, reason: 'db-error', detail: householdErr.message },
+        { status: 500, headers: corsHeaders })
+    }
 
     const last = household?.last_nudge_at ? Date.parse(household.last_nudge_at) : 0
     const waitMs = COOLDOWN_MINUTES * 60_000 - (Date.now() - last)
@@ -75,12 +123,27 @@ Deno.serve(async (req) => {
       )
     }
 
-    const { data: subs } = await supabase
+    const vapidError = ensureVapid()
+    if (vapidError) {
+      return Response.json({ sent: 0, reason: 'push-not-configured', detail: vapidError },
+        { status: 500, headers: corsHeaders })
+    }
+
+    /* The error is checked, not discarded. Without a grant this query fails
+     * with "permission denied" rather than returning nothing, and swallowing
+     * that reported a household with two live subscriptions as having none --
+     * which is indistinguishable from reminders simply being off. See 0008. */
+    const { data: subs, error: subsErr } = await supabase
       .from('push_subscriptions')
       .select('id, endpoint, p256dh, auth_key')
       .eq('household_id', householdId)
       .eq('notify_due', true)
       .is('disabled_at', null)
+
+    if (subsErr) {
+      return Response.json({ sent: 0, reason: 'db-error', detail: subsErr.message },
+        { status: 500, headers: corsHeaders })
+    }
 
     if (!subs?.length) {
       // Distinguished from a delivered nudge on purpose: the supporter needs
@@ -90,6 +153,7 @@ Deno.serve(async (req) => {
     }
 
     let sent = 0
+    const failures: string[] = []
     for (const sub of subs) {
       try {
         await webpush.sendNotification(
@@ -104,8 +168,14 @@ Deno.serve(async (req) => {
         )
         sent += 1
       } catch (err) {
+        failures.push(String((err as { statusCode?: number; body?: string })?.body ?? (err as Error)?.message ?? err).slice(0, 120))
+        // A direct update, not rpc('disable_push_subscription'): that function
+        // lives in the `app` schema, which PostgREST does not expose, so the
+        // call could never have resolved.
         if (err.statusCode === 404 || err.statusCode === 410) {
-          await supabase.rpc('disable_push_subscription', { p_id: sub.id })
+          await supabase.from('push_subscriptions')
+            .update({ disabled_at: new Date().toISOString() })
+            .eq('id', sub.id)
         }
       }
     }
@@ -118,7 +188,11 @@ Deno.serve(async (req) => {
         .eq('id', householdId)
     }
 
-    return Response.json({ sent }, { headers: corsHeaders })
+    // `sent: 0` with no reason would be a silent failure all over again.
+    return Response.json(
+      failures.length ? { sent, reason: 'send-failed', detail: failures } : { sent },
+      { headers: corsHeaders },
+    )
   } catch (err) {
     return Response.json({ error: String(err?.message ?? err) }, { status: 400, headers: corsHeaders })
   }

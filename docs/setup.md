@@ -104,11 +104,26 @@ This prints a public and private key. Put the **public** one into `js/config.js`
 ```bash
 npx supabase secrets set VAPID_PUBLIC_KEY=... VAPID_PRIVATE_KEY=... VAPID_CONTACT_EMAIL=you@example.com
 npx supabase functions deploy send-reminders
-npx supabase functions deploy supporter-photo
+npx supabase functions deploy supporter-photo --no-verify-jwt
+npx supabase functions deploy nudge --no-verify-jwt
 ```
 
-- `send-reminders` sends the actual push notifications, cron-triggered (next step).
+- `send-reminders` sends the actual push notifications, cron-triggered (next step). It is called server-side by cron with the service-role key, so it keeps JWT verification.
 - `supporter-photo` handles photo upload/delete/viewing for a supporter's device, which has no login session to use Supabase Storage directly.
+- `nudge` sends the supporter's "have you taken them?" push.
+
+**`--no-verify-jwt` on the last two is load-bearing, not optional.** Both are
+called from a supporter's browser, which has no Supabase session — the share
+code is the credential, checked inside the function itself. With JWT
+verification on, Supabase's gateway rejects the browser's CORS *preflight*
+before the function ever runs, and a preflight never carries an `Authorization`
+header, so no amount of client-side auth helps.
+
+The failure is worth recognising because it does not look like what it is: the
+browser reports a bare "Failed to fetch", identical to the function not
+existing at all, while `npx supabase functions list` cheerfully shows it
+ACTIVE. If you hit that, check the preflight directly — a 401 with
+`UNAUTHORIZED_NO_AUTH_HEADER` on an `OPTIONS` request is this problem.
 
 Secrets set this way live only in Supabase's infrastructure — never in this repo.
 

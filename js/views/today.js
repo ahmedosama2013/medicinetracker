@@ -78,8 +78,9 @@ function nudgeButton(settings) {
         button.disabled = false;
         return;
       }
-      // Left disabled on purpose after any outcome: nothing about tapping it
-      // again in the next few seconds can help.
+      /* Left disabled after any outcome: nothing about tapping it again in the
+       * next few seconds can help, and the server's limit should be a
+       * backstop rather than something a person meets by accident. */
     },
   });
 
