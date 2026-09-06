@@ -6,6 +6,40 @@ For what the app *does* once it's running, see [flow.md](flow.md). For why it's 
 
 ---
 
+## Already have a project? Start here
+
+If your Supabase project predates v3, you need four things. **Do them in this
+order** — the functions read tables the migrations create.
+
+```bash
+git pull
+npx supabase db push
+npx supabase functions deploy send-reminders
+npx supabase functions deploy supporter-photo --no-verify-jwt
+npx supabase functions deploy nudge --no-verify-jwt
+```
+
+Then, once, **on the patient's phone**: Settings → Reminders → off, then on.
+Their push subscription is bound to your VAPID public key, and any subscription
+created before that key was last changed is dead.
+
+That's it if your project already had reminders working. If it didn't — and
+until v3 nobody's did, for reasons in "Why push looked broken" below — read
+that section before assuming your setup is at fault.
+
+What `db push` applies, if you want to know what changed:
+
+| Migration | What it does |
+|---|---|
+| `0005_skipped_doses` | Widens `dose_log.status` to allow `skipped`, adds the UPDATE policy `0001` omitted |
+| `0006_supporter_parity` | `logged_by`, plus four code-gated functions so a supporter can read history and mark doses |
+| `0007_nudge` | `last_nudge_at`, the nudge rate limit |
+| `0008_nudge_grants` | `service_role` grants the nudge function needs |
+| `0009_reminder_rpc_wrappers` | `public` wrappers so `send-reminders` can reach its `app.*` functions at all |
+
+Migrations are additive and safe to re-run; `db push` skips ones already
+applied.
+
 ## What you'll end up with
 
 - A free [Supabase](https://supabase.com) project: Postgres database, Google sign-in, Realtime, file storage, and two small serverless functions.
@@ -170,6 +204,49 @@ Push to `main`, then in the repo's GitHub settings go to **Settings > Pages** an
 
 
 
+## Why push looked broken (and how to tell what is wrong)
+
+Four separate faults sat between "the function is deployed" and "a notification
+arrives", and **every one of them failed silently**. They are all fixed in the
+code, but if you are setting up a fresh project and push does not work, this is
+the order to check — and the reason the errors are worth trusting now.
+
+**1. The function is ACTIVE but the browser says "Failed to fetch."**
+`supporter-photo` and `nudge` are called from a browser with no Supabase
+session. If they are deployed *without* `--no-verify-jwt`, the gateway rejects
+the CORS preflight — which never carries an `Authorization` header — before
+your code runs. This is indistinguishable from the function not existing.
+Confirm with an `OPTIONS` request: a `401 UNAUTHORIZED_NO_AUTH_HEADER` is this.
+
+**2. `WORKER_ERROR: Function exited due to an error.`**
+Something threw at module load. Most likely your VAPID keys. The functions now
+report this as `push-not-configured` with a detail string rather than dying,
+so you should get a readable message instead.
+
+**3. `{"sent": 0, "reason": "db-error", ...}`**
+A missing grant. `service_role` bypasses RLS but **still needs ordinary table
+grants**, and `0001` only granted table access to `anon` and `authenticated`.
+`0002` and `0008` exist entirely because of this. If you add a function that
+queries a new table with the service key, it needs a grant too.
+
+**4. `{"sent": 0, "reason": "no-subscriptions"}` when someone has reminders on.**
+Either their subscription predates your current VAPID key (toggle reminders off
+and on), or it is genuinely absent. The patient's Settings now reflects the
+*server's* state, not the browser's, so if it says off then the row is missing.
+
+### Checking a VAPID public key
+
+`setVapidDetails` rejects anything that is not 65 bytes decoded. The key in
+`js/config.js` must be byte-identical to the `VAPID_PUBLIC_KEY` secret:
+
+```bash
+node -e "const k=process.argv[1];const b=Buffer.from(k,'base64url');console.log(k.length+' chars ->',b.length,'bytes',b.length===65&&b[0]===4?'OK':'INVALID')" "$(grep -oP "VAPID_PUBLIC_KEY = '\K[^']+" js/config.js)"
+```
+
+**Changing VAPID keys invalidates every existing subscription.** Everyone with
+reminders on has to toggle them off and back on. There is no way around this;
+the subscription is cryptographically bound to the key it was created with.
+
 ## Verification checklist
 
 - [ ] Sign in with Google works and creates exactly one household per account.
@@ -180,6 +257,12 @@ Push to `main`, then in the repo's GitHub settings go to **Settings > Pages** an
 - [ ] A second reminder arrives ~45 minutes later if the slot is still unlogged, and stops entirely once the slot is marked done — test by lowering `p_followup`/`p_followup_grace` temporarily when calling `claim_due_notifications()` directly rather than waiting 45 real minutes.
 - [ ] Rotating the share code (Settings, elder) invalidates the old code immediately.
 - [ ] A direct query against `medicines`/`schedules`/`slots` using only the anon key (no session, no code) returns nothing — confirms the code-gated function surface is the only way in.
+- [ ] A supporter device shows the patient's Today with their marks on it, and the "Updated ..." line under the date changes as it polls.
+- [ ] The supporter's **Send a reminder** button buzzes the patient's phone, and pressing it again straight away says "Already sent" rather than buzzing twice.
+- [ ] A medicine marked from the supporter's phone shows "Marked by your helper" on the patient's.
+- [ ] Cycling a dose target twice records `status = 'skipped'` in `dose_log`, and tapping **Done** for that slot afterwards leaves the skip alone.
+- [ ] `select * from public.claim_due_notifications();` runs from the SQL editor — if it errors with "function does not exist", `0009` has not been applied and the reminder cron cannot work.
+- [ ] A direct call to `public.claim_due_notifications()` with **only the anon key** is refused. It returns push endpoints and their encryption keys, and must be `service_role` only.
 
 
 
@@ -190,7 +273,10 @@ Push to `main`, then in the repo's GitHub settings go to **Settings > Pages** an
 | -------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Google sign-in redirects to an error page                | The redirect URI in Google Cloud doesn't exactly match Supabase's callback URL (step 3), or the Site URL/Redirect URLs in Supabase (step 3b) don't include the origin you're testing from                                     |
 | `db push` fails with a permission or connection error    | Not logged in (`npx supabase login`) or not linked to the right project (`npx supabase link --project-ref ...`)                                                                                                               |
-| Push notifications never arrive                          | VAPID keys mismatched between `js/config.js` (public) and the function secrets (private) — regenerate and reset both together; also confirm the `medtrack-push` cron job exists (`select * from cron.job;` in the SQL editor) |
+| Push notifications never arrive                          | Work through "Why push looked broken" above — there are four distinct causes and they look alike. Confirm the `medtrack-push` cron exists (`select * from cron.job;`) and that `0009` is applied                                |
+| An Edge Function is ACTIVE but the browser says "Failed to fetch" | Deployed without `--no-verify-jwt`, so the gateway rejects the CORS preflight. Applies to `supporter-photo` and `nudge`, never to `send-reminders`                                                                       |
+| Reminders show "on" but nothing sends                    | A subscription created before the current VAPID key. Toggle reminders off and on. If it now shows "off", the server row was never written — the toggle reflects the server, not the browser                                    |
+| A new Edge Function query returns nothing, with no error | `service_role` needs an explicit table grant; `0001` granted only `anon`/`authenticated`. See `0002` and `0008`. Always check `error`, never just `data`                                                                        |
 | A Supabase project stops responding after being idle     | Free-tier projects pause after 7 days with zero activity — open the dashboard to un-pause it. The reminder cron running every 5 minutes should prevent this in practice; worth confirming rather than assuming                |
 | "That code is not valid" for a code you're sure is right | The code may have been rotated since it was shared, or was mistyped — codes exclude `0`, `O`, `1`, `I`, `L` on purpose to avoid exactly this confusion                                                                        |
 
