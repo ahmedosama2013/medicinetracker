@@ -325,6 +325,37 @@ export function openPhotoViewer({ url, name, strength, altText }) {
   return close;
 }
 
+/**
+ * A blocking "working on it" panel, for something too slow to leave unexplained.
+ *
+ * Deliberately not dismissible and deliberately in the way. A disabled Save
+ * button is honest but easy to miss -- it can be scrolled off screen entirely
+ * on a long form -- and it leaves every other field editable while their values
+ * are already on their way to the server.
+ *
+ * `setMessage` names the current step. The text is a live region, so the change
+ * is announced rather than only shown.
+ *
+ * Returns { setMessage, close }. The caller MUST close it on every path.
+ */
+export function busyOverlay(message) {
+  const text = el('p.busy-text', { text: message, 'aria-live': 'polite' });
+
+  const panel = el('div.busy', {
+    role: 'alertdialog', 'aria-modal': 'true', 'aria-busy': 'true', tabindex: '-1',
+  }, [
+    el('span.spinner.spinner-lg', { 'aria-hidden': 'true' }),
+    text,
+    el('p.busy-hint', { text: S.busyHint }),
+  ]);
+
+  const close = mountOverlay(panel, { dismissible: false, className: 'busy-layer' });
+  return {
+    setMessage: next => { text.textContent = next; },
+    close,
+  };
+}
+
 let toastTimer = null;
 let toastHideTimer = null;
 

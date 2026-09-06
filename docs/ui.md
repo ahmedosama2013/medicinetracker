@@ -356,6 +356,17 @@ All in [js/ui.js](../js/ui.js):
 - **Busy buttons** — anything that starts a round trip disables itself and
   shows a spinner in place of its label. This is not only politeness: two taps
   on Save used to create two medicines with the same name.
+- **Busy overlay** — for something slow enough that a disabled button is not
+  enough of an answer. Dims the screen, blocks input, and names the step it is
+  on. Not dismissible, because there is nothing to decide.
+
+  Saving a medicine is the only user of it so far, and it earns it: the
+  medicine, its schedule, a photo upload and a cache refresh, one after the
+  other. A busy Save button can be scrolled off a long form entirely, and it
+  left every other field editable while their values were already on their way
+  to the server. The step is named rather than shown as a bare spinner because
+  the photo is usually the long part, and a screen that has said nothing for
+  six seconds looks stuck rather than busy.
 
 Every overlay traps **Tab** as well as Escape, moves focus inside on open, and
 returns focus to whatever opened it on close. `aria-modal` tells a screen reader

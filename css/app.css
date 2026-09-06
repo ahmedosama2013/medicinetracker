@@ -1846,6 +1846,30 @@ body.mode-simple .dialog-actions { flex-direction: column-reverse; }
 
 @keyframes spin { to { transform: rotate(360deg); } }
 
+/* The blocking wait panel. Narrower and quieter than a dialog: it asks
+   nothing, so it should not look like a question. */
+.busy {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  text-align: center;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-lg);
+  padding: var(--space-6) var(--space-5);
+  max-width: 18rem;
+  width: 100%;
+  animation: dialog-in var(--dur-slow) var(--ease-out);
+}
+
+.spinner-lg { width: 2rem; height: 2rem; border-width: 3px; }
+
+.busy-text { font-size: var(--text-lg); font-weight: 500; }
+.busy-hint { font-size: var(--text-sm); color: var(--ink-3); }
+
 /* A button that is working. currentColor rather than the token pair, so the
    ring reads on a filled primary button as well as a quiet one -- the fixed
    --primary ring was invisible on its own background. */

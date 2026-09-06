@@ -15,7 +15,7 @@ import * as supporter from '../supporter.js';
 import * as supporterSync from '../supporter-sync.js';
 import * as photosLib from '../photos.js';
 import { S } from '../strings.js';
-import { el, clear, loadingState, field, section, toast } from '../ui.js';
+import { el, clear, loadingState, field, section, toast, busyOverlay } from '../ui.js';
 import { todayStr, formatTime } from '../date.js';
 import { go } from '../router.js';
 import { archiveMedicine } from './medicines.js';
@@ -475,6 +475,10 @@ export async function medicineFormView({ app, query, isCurrent = () => true }) {
     // these throws, nothing usable was written, so the person stays on the
     // form and sees the generic error -- there is nothing to navigate to yet.
     setSaveBusy(true);
+    /* The button alone was not enough. It can be scrolled off a long form
+     * entirely, and it left every field editable while their values were
+     * already on their way to the server. */
+    const busy = busyOverlay(existing ? S.busySavingChanges : S.busyAddingMedicine);
 
     let saved;
     try {
@@ -483,6 +487,7 @@ export async function medicineFormView({ app, query, isCurrent = () => true }) {
       const payload = schedules.map(s => ({ ...s, frequency: normalizeFrequency(s.frequency) }));
       await supporter.replaceSchedules(code, saved.id, payload);
     } catch {
+      busy.close();
       setSaveBusy(false);
       toast(S.errGeneric);
       return;
@@ -496,6 +501,7 @@ export async function medicineFormView({ app, query, isCurrent = () => true }) {
     // actually happened.
     let photoFailed = false;
     if (photoDirty) {
+      busy.setMessage(photoBlob ? S.busyUploadingPhoto : S.busyRemovingPhoto);
       try {
         if (photoBlob) await supporter.uploadPhoto(code, saved.id, photoBlob);
         else await supporter.deletePhoto(code, saved.id);
@@ -510,8 +516,10 @@ export async function medicineFormView({ app, query, isCurrent = () => true }) {
      * photo showed the fallback tile, for up to a minute. It costs a round trip
      * on a screen that has already done three, which is why the button is still
      * showing that it is working. */
+    busy.setMessage(S.busyFinishing);
     await supporterSync.refresh(code).catch(() => {});
 
+    busy.close();
     releasePreview();
     setSaveBusy(false);
     toast(photoFailed ? S.savedMedicineNoPhoto : S.savedMedicine);

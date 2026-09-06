@@ -92,7 +92,7 @@ Medicine Tracker/
 | `js/date.js` | `todayStr`, `addDays`, `daysBetween`, `dayOfWeek`, `monthGrid`, `formatTime`, `formatLong`, `msUntilTomorrow`. No UTC anywhere |
 | `js/schedule.js` | `isDueOn`, `buildDay`, `dueOn`, `expectedFor`, `completionForDates`. The pure functions take plain arrays and can be called from the console; `isDueOn` is also ported into Postgres as `app.is_due` |
 | `js/photos.js` | `compress`, `objectUrl`/`release`, `blobToDataUrl`/`dataUrlToBlob` |
-| `js/ui.js` | `el()` for DOM building, plus `confirmDialog`, `alertDialog`, `openSheet`, `openPhotoViewer`, `toast`, `pickFile`, `pillTile`, `loadingState`, `applyTheme` |
+| `js/ui.js` | `el()` for DOM building, plus `confirmDialog`, `alertDialog`, `openSheet`, `openPhotoViewer`, `busyOverlay`, `toast`, `pickFile`, `pillTile`, `loadingState`, `applyTheme` |
 | `js/views/day.js` | The shared day renderer, so a past day is corrected with the same controls as today |
 
 ## Conventions

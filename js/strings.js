@@ -184,6 +184,18 @@ export const S = {
   save: 'Save',
   saving: 'Saving',
   saved: 'Saved',
+
+  /* Saving a medicine is the slowest thing in the app -- the medicine, its
+   * schedule, a photo upload and a cache refresh, one after the other. The
+   * step is named rather than a bare spinner, because the photo is usually
+   * the long part and a screen that has said nothing for six seconds looks
+   * stuck rather than busy. */
+  busyAddingMedicine: 'Adding the medicine',
+  busySavingChanges: 'Saving the changes',
+  busyUploadingPhoto: 'Uploading the photo',
+  busyRemovingPhoto: 'Removing the photo',
+  busyFinishing: 'Nearly done',
+  busyHint: 'This can take a moment on a slow connection.',
   cancel: 'Cancel',
   back: 'Back',
   close: 'Close',
