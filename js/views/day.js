@@ -112,6 +112,19 @@ export async function renderDay({ date, editable = true, lockReason = null, onCh
     });
   }
 
+  /* Which part of the day a slot belongs to, from its TIME and never its
+   * label: labels are editable, and "Morning" will be a different word once
+   * there is an Urdu translation. Four bands rather than two so a household
+   * with four slots gets four distinguishable headers. */
+  const TIMES_OF_DAY = [
+    { until: 11 * 60, tod: 'morning', icon: 'sun' },
+    { until: 16 * 60, tod: 'midday', icon: 'sun' },
+    { until: 20 * 60, tod: 'evening', icon: 'sunset' },
+    { until: Infinity, tod: 'night', icon: 'moon' },
+  ];
+
+  const timeOfDay = time => TIMES_OF_DAY.find(b => timeToMinutes(time) < b.until);
+
   /* The dose target cycles unmarked -> taken -> skipped -> unmarked. One tap
    * covers the common case and the rest are deliberate. Two taps land on
    * "skipped", which is reachable by accident, so that state is loud -- amber
@@ -256,7 +269,9 @@ export async function renderDay({ date, editable = true, lockReason = null, onCh
     const slotNode = el(`div.slot${allTaken ? '.slot-done' : resolved ? '.slot-marked' : ''}`);
     nodeBySlot.set(group.slotId, slotNode);
 
-    slotNode.appendChild(el('div.slot-head', [
+    const band = timeOfDay(group.time);
+    slotNode.appendChild(el('div.slot-head', { dataset: { tod: band.tod } }, [
+      el('span.slot-glyph', { 'aria-hidden': 'true' }, icon(band.icon)),
       el('span.slot-name', { text: group.label }),
       el('span.slot-time', { text: formatTime(group.time) }),
       allTaken

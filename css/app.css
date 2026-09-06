@@ -32,12 +32,12 @@
 
   /* Surfaces. `sunken` is for insets (a schedule block inside a card);
      `raised` is the quiet-button fill. */
-  --canvas: #f3f1ea;
+  --canvas: #ebe6da;
   --surface: #ffffff;
-  --sunken: #f7f5ef;
-  --raised: #ebe8df;
-  --line: #e2dfd5;
-  --line-strong: #cfcbbe;
+  --sunken: #f6f3ec;
+  --raised: #e4dfd2;
+  --line: #ded8ca;
+  --line-strong: #c5bfae;
 
   --ink: #22211e;
   --ink-2: #57554e;
@@ -85,18 +85,41 @@
   --danger-ink: #791f1f;
   --on-danger: #ffffff;
 
+  /* Time of day. The slot's own identity, and the only colour on Today that
+     does not depend on something having been marked -- which is what made the
+     shipped v3 look grey next to its mockups: the mockups used tinted fallback
+     tiles, and real photos of white tablets are not colourful.
+
+     Derived from the slot's TIME, never its label: labels are editable and
+     will eventually be translated. Informational, not decorative. */
+  --tod-morning: #b26f10;
+  --tod-morning-bg: #fbf2e0;
+  --tod-midday: #1a6ba8;
+  --tod-midday-bg: #e7f2fa;
+  --tod-evening: #a8532c;
+  --tod-evening-bg: #fbeee6;
+  --tod-night: #4a45a8;
+  --tod-night-bg: #eeedfa;
+
   /* Decorative only — today's calendar ring, the supporter role chip. Never
      used for status, so it can never be mistaken for one. */
   --accent: #534ab7;
   --accent-tint: #eeedfe;
   --accent-ink: #3c3489;
 
-  --shadow-sm: 0 1px 2px rgba(34, 33, 30, 0.06);
-  --shadow: 0 2px 8px rgba(34, 33, 30, 0.07);
-  --shadow-md: 0 8px 22px rgba(34, 33, 30, 0.12);
-  --shadow-lg: 0 18px 40px rgba(34, 33, 30, 0.2);
+  /* Warm-tinted, not grey: a neutral shadow on a warm canvas reads as dirt.
+     Two layers -- a tight contact shadow plus a wide soft one -- because a
+     single blur at this opacity is the "flat card" look we are escaping. */
+  --shadow-sm: 0 1px 1px rgba(74, 62, 40, 0.05), 0 2px 6px rgba(74, 62, 40, 0.06);
+  --shadow: 0 1px 2px rgba(74, 62, 40, 0.06), 0 4px 14px rgba(74, 62, 40, 0.09);
+  --shadow-md: 0 2px 6px rgba(74, 62, 40, 0.08), 0 12px 28px rgba(74, 62, 40, 0.14);
+  --shadow-lg: 0 4px 10px rgba(74, 62, 40, 0.1), 0 22px 48px rgba(74, 62, 40, 0.22);
 
   --scrim: rgba(24, 22, 18, 0.55);
+
+  /* Light from above. The page heading is plain text on the canvas, so without
+     this the top third of every screen is the emptiest part of it. */
+  --wash: rgba(255, 253, 247, 0.9);
 
   --r-sm: 0.625rem;   /* 10px — inputs, small tiles */
   --r-md: 0.875rem;   /* 14px — pill tiles, rows */
@@ -148,12 +171,12 @@
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --canvas: #171613;
-    --surface: #201f1b;
-    --sunken: #2a2823;
-    --raised: #35332c;
-    --line: #35332c;
-    --line-strong: #4a473e;
+    --canvas: #14130f;
+    --surface: #221f1a;
+    --sunken: #2c2922;
+    --raised: #38342b;
+    --line: #37332b;
+    --line-strong: #4d4941;
 
     --ink: #f2f0e9;
     --ink-2: #b8b4a8;
@@ -193,6 +216,14 @@
     --danger-ink: #f7c1c1;
     --on-danger: #501313;
 
+    --tod-morning: #e0a93f;
+    --tod-morning-bg: #2b2114;
+    --tod-midday: #7fb0e0;
+    --tod-midday-bg: #132030;
+    --tod-evening: #d98e63;
+    --tod-evening-bg: #2b1c14;
+    --tod-night: #a5a0e8;
+    --tod-night-bg: #1d1b2f;
     --accent: #afa9ec;
     --accent-tint: #3c3489;
     --accent-ink: #cecbf6;
@@ -203,6 +234,7 @@
     --shadow-md: 0 8px 22px rgba(0, 0, 0, 0.5);
     --shadow-lg: 0 18px 40px rgba(0, 0, 0, 0.6);
 
+    --wash: rgba(92, 84, 66, 0.22);
     --scrim: rgba(0, 0, 0, 0.66);
   }
 }
@@ -210,12 +242,12 @@
 /* The same block again, for an explicit choice in Settings. Duplicated rather
    than shared because a media query cannot be re-scoped to an attribute. */
 :root[data-theme="dark"] {
-  --canvas: #171613;
-  --surface: #201f1b;
-  --sunken: #2a2823;
-  --raised: #35332c;
-  --line: #35332c;
-  --line-strong: #4a473e;
+  --canvas: #14130f;
+  --surface: #221f1a;
+  --sunken: #2c2922;
+  --raised: #38342b;
+  --line: #37332b;
+  --line-strong: #4d4941;
 
   --ink: #f2f0e9;
   --ink-2: #b8b4a8;
@@ -251,6 +283,14 @@
   --danger-ink: #f7c1c1;
   --on-danger: #501313;
 
+  --tod-morning: #e0a93f;
+  --tod-morning-bg: #2b2114;
+  --tod-midday: #7fb0e0;
+  --tod-midday-bg: #132030;
+  --tod-evening: #d98e63;
+  --tod-evening-bg: #2b1c14;
+  --tod-night: #a5a0e8;
+  --tod-night-bg: #1d1b2f;
   --accent: #afa9ec;
   --accent-tint: #3c3489;
   --accent-ink: #cecbf6;
@@ -260,6 +300,7 @@
   --shadow-md: 0 8px 22px rgba(0, 0, 0, 0.5);
   --shadow-lg: 0 18px 40px rgba(0, 0, 0, 0.6);
 
+  --wash: rgba(92, 84, 66, 0.22);
   --scrim: rgba(0, 0, 0, 0.66);
 }
 
@@ -296,6 +337,8 @@ body {
   margin: 0;
   min-height: 100dvh;
   background: var(--canvas);
+  background-image: radial-gradient(115% 55% at 50% -8%, var(--wash) 0%, transparent 62%);
+  background-attachment: fixed;
   color: var(--ink);
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
     Helvetica, Arial, sans-serif;
@@ -303,6 +346,35 @@ body {
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
 }
+
+/* Paper grain.
+ *
+ * The single thing most responsible for the app reading as "flat and white".
+ * A perfectly even fill has no surface; a very faint noise gives the canvas
+ * something to be. Generated by feTurbulence in a data URI -- no request, no
+ * asset, works offline, and small enough to sit in the stylesheet.
+ *
+ * Fixed rather than scrolling, pointer-events none, and behind everything.
+ * Kept far below the threshold where it reads as "texture" -- if you can point
+ * at it, it is too strong. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.055;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* On a dark canvas the same grain has to add light, not subtract it. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) body::before { opacity: 0.085; mix-blend-mode: screen; }
+}
+:root[data-theme="dark"] body::before { opacity: 0.085; mix-blend-mode: screen; }
+
+/* Everything real sits above the grain. */
+#app, #bottomnav, #overlay, #toast { position: relative; z-index: 1; }
 
 h1, h2, h3, p { margin: 0; }
 h1, h2, h3 { font-weight: 600; letter-spacing: -0.015em; }
@@ -457,6 +529,10 @@ body.mode-none #app {
   --icon-minus: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect x='5' y='11' width='14' height='2.4' rx='1.2'/%3E%3C/svg%3E");
   --icon-people: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='9' cy='8' r='3.4'/%3E%3Cpath d='M2.5 19c0-3.3 2.9-5.4 6.5-5.4s6.5 2.1 6.5 5.4z'/%3E%3Ccircle cx='17.5' cy='9' r='2.6'/%3E%3Cpath d='M17.5 13c2.8 0 4.5 1.6 4.5 4h-6.2c0-1.6-.5-2.9-1.3-3.8.9-.14 1.9-.2 3-.2z'/%3E%3C/svg%3E");
   --icon-box: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2 3 6.2v11.6L12 22l9-4.2V6.2zm0 2.2 6.4 3L12 10.2 5.6 7.2zM5 9l6 2.8v7.4L5 16.4zm8 10.2v-7.4L19 9v7.4z'/%3E%3C/svg%3E");
+  --icon-sun: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='4.6'/%3E%3Cg%3E%3Crect x='11' y='1' width='2' height='3.6' rx='1'/%3E%3Crect x='11' y='19.4' width='2' height='3.6' rx='1'/%3E%3Crect x='1' y='11' width='3.6' height='2' rx='1'/%3E%3Crect x='19.4' y='11' width='3.6' height='2' rx='1'/%3E%3Crect x='3.6' y='4.8' width='2' height='3.4' rx='1' transform='rotate(-45 4.6 6.5)'/%3E%3Crect x='18.4' y='15.8' width='2' height='3.4' rx='1' transform='rotate(-45 19.4 17.5)'/%3E%3Crect x='18.4' y='4.8' width='2' height='3.4' rx='1' transform='rotate(45 19.4 6.5)'/%3E%3Crect x='3.6' y='15.8' width='2' height='3.4' rx='1' transform='rotate(45 4.6 17.5)'/%3E%3C/g%3E%3C/svg%3E");
+  --icon-sunset: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 6.4a5.6 5.6 0 0 1 5.6 5.6H6.4A5.6 5.6 0 0 1 12 6.4z'/%3E%3Crect x='2' y='14' width='20' height='2' rx='1'/%3E%3Crect x='5' y='18' width='14' height='2' rx='1'/%3E%3Crect x='11' y='1' width='2' height='3.4' rx='1'/%3E%3C/svg%3E");
+  --icon-moon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M20.5 14.4A8.6 8.6 0 0 1 9.6 3.5a8.7 8.7 0 1 0 10.9 10.9z'/%3E%3C/svg%3E");
+  --icon-plus: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M11 4h2v7h7v2h-7v7h-2v-7H4v-2h7z'/%3E%3C/svg%3E");
   --icon-drop: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2.5c4 4.8 6.5 8.3 6.5 11.4A6.5 6.5 0 0 1 5.5 13.9c0-3.1 2.5-6.6 6.5-11.4z'/%3E%3C/svg%3E");
 }
 
@@ -484,6 +560,10 @@ body.mode-none #app {
 .icon[data-icon="people"] { -webkit-mask-image: var(--icon-people); mask-image: var(--icon-people); }
 .icon[data-icon="box"] { -webkit-mask-image: var(--icon-box); mask-image: var(--icon-box); }
 .icon[data-icon="drop"] { -webkit-mask-image: var(--icon-drop); mask-image: var(--icon-drop); }
+.icon[data-icon="plus"] { -webkit-mask-image: var(--icon-plus); mask-image: var(--icon-plus); }
+.icon[data-icon="sun"] { -webkit-mask-image: var(--icon-sun); mask-image: var(--icon-sun); }
+.icon[data-icon="sunset"] { -webkit-mask-image: var(--icon-sunset); mask-image: var(--icon-sunset); }
+.icon[data-icon="moon"] { -webkit-mask-image: var(--icon-moon); mask-image: var(--icon-moon); }
 
 /* ---------------------------------------------------------------------
    6. Pill identity
@@ -516,10 +596,20 @@ body.mode-none #app {
   justify-content: center;
 }
 
+/* `contain`, not `cover`.
+ *
+ * Real photos here are tightly cropped around the pill and often 2:1 wide,
+ * because that is the sensible way to photograph an oblong tablet. A square
+ * `cover` crop keeps the middle 50% and throws both ends away, which turns a
+ * perfectly good photo of a capsule into a beige smear at 44px.
+ *
+ * `contain` costs nothing for a square photo -- it still fills the tile -- and
+ * keeps a wide one whole. The letterboxing shows the tile's own tone, so it
+ * reads as intentional rather than as a broken image. */
 .ptile img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
   border-radius: inherit;
 }
 
@@ -853,7 +943,7 @@ input:focus, select:focus, textarea:focus {
   font-size: var(--text-sm);
   border: 1px dashed var(--line-strong);
 }
-.photo-preview img { width: 100%; height: 100%; object-fit: cover; }
+.photo-preview img { width: 100%; height: 100%; object-fit: contain; }
 
 .sched {
   border: 1px solid var(--line);
@@ -894,7 +984,7 @@ input:focus, select:focus, textarea:focus {
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: var(--r-md);
-  padding: var(--space-3) var(--space-4);
+  padding: var(--space-2) var(--space-4);
   min-height: var(--row-h);
   transition: transform var(--dur-fast) var(--ease-out), background var(--dur) var(--ease),
     border-color var(--dur) var(--ease);
@@ -959,12 +1049,44 @@ input:focus, select:focus, textarea:focus {
 .slot-marked .ptile-stack .ptile { box-shadow: 0 0 0 2px var(--sunken); }
 .slot-marked .ptile-badge { border-color: var(--sunken); }
 
+/* A tinted band rather than bare text on white. Morning, afternoon and night
+   now look different from each other before anything has been marked, which
+   is most of the time someone opens this screen. */
 .slot-head {
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  padding: var(--space-4) var(--space-4) var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--line);
 }
+
+.slot-glyph {
+  display: flex;
+  width: 1.75rem;
+  height: 1.75rem;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--r-pill);
+  background: var(--surface);
+}
+.slot-glyph .icon { width: 1.0625rem; height: 1.0625rem; }
+
+.slot-head[data-tod="morning"] { background: var(--tod-morning-bg); }
+.slot-head[data-tod="morning"] .slot-glyph { color: var(--tod-morning); }
+.slot-head[data-tod="midday"] { background: var(--tod-midday-bg); }
+.slot-head[data-tod="midday"] .slot-glyph { color: var(--tod-midday); }
+.slot-head[data-tod="evening"] { background: var(--tod-evening-bg); }
+.slot-head[data-tod="evening"] .slot-glyph { color: var(--tod-evening); }
+.slot-head[data-tod="night"] { background: var(--tod-night-bg); }
+.slot-head[data-tod="night"] .slot-glyph { color: var(--tod-night); }
+
+/* A resolved slot's own colour outranks the time of day: what happened
+   matters more than when it was due. */
+.slot-done .slot-head,
+.slot-marked .slot-head { background: transparent; border-bottom-color: transparent; }
+.slot-done .slot-glyph { background: var(--surface); color: var(--taken); }
+.slot-marked .slot-glyph { background: var(--surface); color: var(--ink-3); }
 .slot-name { font-weight: 600; font-size: var(--text-md); }
 .slot-done .slot-name { color: var(--taken-ink); }
 .slot-time { color: var(--ink-3); font-size: var(--text-sm); font-weight: 500; }
@@ -1012,7 +1134,7 @@ input:focus, select:focus, textarea:focus {
 }
 .slot-marked .btn-quiet:hover { background: transparent; border-color: var(--ink-3); }
 
-.slot-body { display: flex; flex-direction: column; }
+.slot-body { display: flex; flex-direction: column; padding-top: var(--space-2); }
 
 /* A completed slot's medicines, as a strip of photos rather than six rows.
    Still a button: the photos must not become unreachable just because the
@@ -1197,6 +1319,17 @@ input:focus, select:focus, textarea:focus {
 }
 .cal-title:hover { background: var(--sunken); }
 
+/* The month sits on a card like everything else. Before this it was 42 grey
+   rings floating on bare canvas, which is most of a screen with nothing on it. */
+.cal-sheet {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-sm);
+  padding: var(--space-4) var(--space-3) var(--space-3);
+  animation: rise-in var(--dur-slow) var(--ease-out);
+}
+
 .cal-weekdays {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
@@ -1207,7 +1340,7 @@ input:focus, select:focus, textarea:focus {
   margin-bottom: var(--space-2);
 }
 
-.cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 0.2rem; }
+.cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 0.15rem; }
 
 .cal-day {
   aspect-ratio: 1;
@@ -1242,14 +1375,17 @@ input:focus, select:focus, textarea:focus {
 
 .cal-legend {
   display: flex;
-  gap: var(--space-4);
+  gap: var(--space-3);
+  justify-content: center;
   margin-top: var(--space-4);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--line);
   font-size: var(--text-xs);
   color: var(--ink-3);
   flex-wrap: wrap;
 }
 .cal-legend-item { display: flex; align-items: center; gap: var(--space-2); }
-.cal-swatch { width: 0.9rem; height: 0.9rem; border-radius: var(--r-pill); display: inline-block; }
+.cal-swatch { width: 0.75rem; height: 0.75rem; border-radius: var(--r-pill); display: inline-block; flex: none; }
 
 .year-row {
   display: flex;
@@ -1482,7 +1618,10 @@ body.mode-simple .dialog-actions { flex-direction: column-reverse; }
   cursor: zoom-in;
   overflow: hidden;
 }
-.detail-photo img { width: 100%; height: 100%; object-fit: cover; }
+/* Same reasoning, and it matters more here: this is the view someone holds up
+   against the packet in their hand. Cropping the ends off is the one thing it
+   must not do. */
+.detail-photo img { width: 100%; height: 100%; object-fit: contain; }
 
 /* No photo: shrink to fit rather than holding a square of nothing open. */
 .detail-photo-none { aspect-ratio: auto; cursor: default; }

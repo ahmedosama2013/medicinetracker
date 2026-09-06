@@ -6,7 +6,7 @@ import * as store from '../store.js';
 import * as supporter from '../supporter.js';
 import { S } from '../strings.js';
 import * as photos from '../photos.js';
-import { el, clear, loadingState, emptyState, confirmDialog, toast, pillTile } from '../ui.js';
+import { el, clear, loadingState, emptyState, confirmDialog, toast, pillTile, icon } from '../ui.js';
 import { formatTime } from '../date.js';
 import { refresh } from '../router.js';
 
@@ -59,7 +59,13 @@ export async function medicinesView({ app }) {
   const archived = medicines.filter(m => m.archived);
   const visible = showArchived ? [...active, ...archived] : active;
 
-  app.appendChild(el('a.btn.btn-primary.btn-block', { href: '#/medicine', text: S.addMedicine }));
+  /* Primary only when there is nothing to look at yet. Once the list has
+   * medicines in it, the reason someone opens this screen is to check or edit
+   * one -- and a full-width saturated slab above the content was the heaviest
+   * thing on the page, competing with the list it sits on top of. */
+  app.appendChild(el(`a.btn.btn-block${visible.length ? '' : '.btn-primary'}`, {
+    href: '#/medicine',
+  }, [icon('plus'), el('span', { text: S.addMedicine })]));
 
   if (!visible.length) {
     app.appendChild(emptyState(S.medicinesEmpty, S.todayNothingSupporter));
@@ -84,12 +90,13 @@ export async function medicinesView({ app }) {
       rows.appendChild(el(`a.row-btn${medicine.archived ? '.row-archived' : ''}`, {
         href: `#/medicine?id=${encodeURIComponent(medicine.id)}`,
       }, [
+        // Full size, not 'sm'. This is the inventory: the photo IS the row's
+        // identity here, and at 34px a white tablet is unidentifiable.
         pillTile({
           id: medicine.id,
           url: urls.get(medicine.id),
           form: medicine.form,
           archived: medicine.archived,
-          size: 'sm',
         }),
         el('span.row-main', [
           el('span.row-title', {

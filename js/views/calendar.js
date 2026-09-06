@@ -39,7 +39,7 @@ function ring({ taken = 0, skipped = 0, expected = 0 }) {
 
   if (share === 0) {
     return el('span.cal-ring', {
-      style: 'border: 3px solid var(--line-strong); background: transparent;',
+      style: 'border: 2px solid var(--line); background: transparent;',
     });
   }
   if (share >= 1) {
@@ -124,7 +124,10 @@ export async function calendarView({ app }) {
       }, '›'),
     ]));
 
-    app.appendChild(el('div.cal-weekdays', S.weekdayShort.map((d, i) =>
+    const sheet = el('div.cal-sheet');
+    app.appendChild(sheet);
+
+    sheet.appendChild(el('div.cal-weekdays', S.weekdayShort.map((d, i) =>
       el('span', { text: d, 'aria-label': S.weekdayNames[i] }))));
 
     const grid = el('div.cal-grid');
@@ -151,9 +154,9 @@ export async function calendarView({ app }) {
         el('span.cal-day-num', { text: String(parse(cell.date).d) }),
       ]));
     }
-    app.appendChild(grid);
+    sheet.appendChild(grid);
 
-    app.appendChild(el('div.cal-legend', [
+    sheet.appendChild(el('div.cal-legend', [
       el('span.cal-legend-item', [
         el('span.cal-swatch', { style: 'background: var(--taken-line);' }),
         S.allTaken,
@@ -163,7 +166,7 @@ export async function calendarView({ app }) {
         S.someSkipped,
       ]),
       el('span.cal-legend-item', [
-        el('span.cal-swatch', { style: 'border: 3px solid var(--line-strong);' }),
+        el('span.cal-swatch', { style: 'border: 2px solid var(--line);' }),
         S.nothingMarked,
       ]),
     ]));

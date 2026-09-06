@@ -79,8 +79,35 @@ side margins, never a different arrangement.
 
 ## Visual language
 
-- **A warm canvas.** `#f3f1ea` paper rather than the cold `#f6f7fb` of v2, so a
-  white card reads as a card. Costs nothing and does most of the work.
+> **The mistake worth not repeating.** The first v3 build looked far greyer
+> than its mockups, and the reason was not the palette. The mockups used
+> *tinted fallback tiles* for every medicine, so the screen was full of colour.
+> Real photos replace those tiles — and real photos of white tablets are grey
+> and brown. **The app got less colourful the moment real data arrived.**
+>
+> So colour has to live in the chrome, not the content. That is what the
+> time-of-day bands below are for: they are the only colour on Today that does
+> not depend on something having been photographed or marked.
+
+- **A warm canvas.** `#ebe6da` paper rather than the cold `#f6f7fb` of v2, so a
+  white card reads as a card. The first attempt used `#f3f1ea`, about 4% off
+  white, which on a real phone was not a difference at all — cards merged into
+  the page instead of sitting on it.
+- **Paper grain.** A very faint `feTurbulence` noise, fixed behind everything,
+  as a data URI: no request, no asset, works offline. A perfectly even fill has
+  no surface. Kept below the threshold where it reads as texture — if you can
+  point at it, it is too strong.
+- **Light from above.** A soft radial wash at the top of the canvas. Page
+  headings are plain text on the background, so without it the top third of
+  every screen was its emptiest part.
+- **Shadows are warm and doubled.** A tight contact shadow plus a wide soft one.
+  A single 6%-opacity blur — what v3 first shipped — is invisible, and a
+  neutral grey shadow on a warm canvas reads as dirt rather than depth.
+- **Time of day is the slot's identity.** Morning amber, midday blue, evening
+  coral, night indigo: a tinted header band and a sun/sunset/moon glyph.
+  Derived from the slot's **time**, never its label, because labels are
+  editable and will be translated. Informational, not decorative — and it means
+  a day with nothing marked yet still has colour and structure.
 - **Brand blue is unchanged** (`#1a56a0`). It is baked into
   `icons/make-icons.py` and `theme-color`, so changing it would mean
   regenerating home-screen icons already installed on real phones.
@@ -131,6 +158,14 @@ sheet, overlapped in a stack when a slot is complete.
 
 A **rounded square, not a circle** — supporters photograph oblong tablets and
 blister strips, and a circular mask eats the ends of both.
+
+The image inside is `object-fit: contain`, not `cover`, for the same reason
+found the hard way against real data: people crop tightly around the pill, so
+real photos are often 2:1 wide. A square `cover` crop keeps the middle 50% and
+discards both ends, which turns a perfectly good photo of a capsule into a
+featureless smear at 44px. `contain` costs a square photo nothing — it still
+fills the tile — and keeps a wide one whole, letterboxed against the tile's own
+tone so it reads as intentional.
 
 With no photo it falls back to a tinted tile with a glyph, toned by a hash of
 the medicine id. That is **not an attempt to guess the pill's real colour**: it
@@ -213,6 +248,11 @@ full-screen view of nothing is a dead end, and a square of empty space pushes
 the actual information below the fold.
 
 ### Calendar
+
+The month sits on a card, like everything else. Before that it was 42 rings on
+bare canvas, which is most of a screen with nothing on it. The "nothing marked"
+ring is deliberately the quietest mark on the grid — it is the default state of
+most of a month, so it must not be the loudest thing there.
 
 One ring per day. Arc **length** is taken plus skipped over expected; arc
 **colour** is teal, or amber once anything that day was skipped. A skipped dose
