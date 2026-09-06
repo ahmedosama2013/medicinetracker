@@ -154,7 +154,7 @@ Two sides to this: a Google Cloud OAuth client, and telling Supabase about it.
 2. Go to **APIs & Services > OAuth consent screen** (`console.cloud.google.com/auth/overview`). Choose **External** as the user type, fill in the required fields (app name, support email), and save. You don't need to submit it for verification for this app's scale — a handful of named test users is fine, or leave it in "Testing" mode and add each household's Google account as a test user under **Audience**.
 3. Go to **APIs & Services > Credentials > Create Credentials > OAuth client ID** (`console.cloud.google.com/auth/clients/create`).
   - Application type: **Web application**.
-  - **Authorized JavaScript origins**: add where the app will be served from, e.g. `https://YOUR-GITHUB-USERNAME.github.io` and `http://localhost:8000` for local testing.
+  - **Authorized JavaScript origins**: the **origin only, no path** — e.g. `https://YOUR-GITHUB-USERNAME.github.io`, plus `http://localhost:8000` and `http://localhost:8848` for local testing.
   - **Authorized redirect URIs**: this has to match Supabase's callback URL exactly — get it from the Supabase side first (next step), then come back and paste it in here.
 4. Save. You'll get a **Client ID** and **Client Secret** — copy both.
 
@@ -165,7 +165,11 @@ Two sides to this: a Google Cloud OAuth client, and telling Supabase about it.
 1. In your Supabase project, go to **Authentication > Providers** and select **Google**.
 2. Toggle it on. The page shows a **Callback URL (for OAuth)** — it looks like `https://YOUR-PROJECT-REF.supabase.co/auth/v1/callback`. Copy this and paste it into the Google Cloud client's **Authorized redirect URIs** from step 3a (go back and add it there now, then save that Google Cloud page too).
 3. Paste the **Client ID** and **Client Secret** from Google Cloud into this Supabase provider page. Save.
-4. Go to **Authentication > URL Configuration** and set the **Site URL** to wherever the app is actually served (e.g. `https://YOUR-GITHUB-USERNAME.github.io/Medicine-Tracker/`), and add it under **Redirect URLs** too. Add `http://localhost:8000/`* as an additional redirect URL for local testing.
+4. Go to **Authentication > URL Configuration**.
+   - **Site URL** is a single field, not a list — it is only the fallback used when a request specifies no redirect. Set it to where the app is actually served, e.g. `https://YOUR-GITHUB-USERNAME.github.io/YOUR-REPO/`.
+   - **Redirect URLs** is the allow list that matters, because `js/auth.js` always sends an explicit `redirectTo` of `origin + pathname` — **with no `#/...` fragment**. An entry like `https://…/YOUR-REPO/#/today` will therefore never match. Add a wildcard instead:
+     - `https://YOUR-GITHUB-USERNAME.github.io/YOUR-REPO/*`
+     - `http://localhost:8000/*` and `http://localhost:8848/*` — the walkthrough below uses 8000, `.claude/launch.json` uses 8848, and only the ports listed here can sign in.
 
 
 
