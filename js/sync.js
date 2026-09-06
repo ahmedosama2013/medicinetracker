@@ -148,6 +148,13 @@ function markLocalWrite(id) {
   localWrites.set(id, Date.now() + ECHO_MS);
 }
 
+/* Routine tables use the same map. The elder's own Settings can now write to
+ * `slots` (the pill-box flags), and without this the realtime echo of that
+ * write re-rendered the whole Settings screen underneath the person's finger
+ * -- the chip had already moved itself, so the redraw was pure loss. Same rule
+ * as doses: mirror always, redraw only for changes this device did not make. */
+export const markRoutineWrite = markLocalWrite;
+
 /** True if this row is the echo of a write made on this device. Consumes it. */
 function isLocalEcho(id) {
   const until = localWrites.get(id);
@@ -162,22 +169,30 @@ function isLocalEcho(id) {
 const BURST_MS = 150;
 let refreshTimer = null;
 let routineTimer = null;
+let routineIds = [];
 
 function scheduleRefresh() {
   if (refreshTimer) return;
   refreshTimer = setTimeout(() => { refreshTimer = null; refresh(); }, BURST_MS);
 }
 
-function scheduleRoutineRefetch(householdId) {
+function scheduleRoutineRefetch(householdId, rowId) {
+  routineIds.push(rowId);
   if (routineTimer) return;
   routineTimer = setTimeout(async () => {
     routineTimer = null;
+    const ids = routineIds.splice(0);
     try {
       await refetchRoutine(householdId);
     } catch {
       // The cache keeps its last good copy; the next event tries again.
       return;
     }
+    /* Mapped before reducing, not `.every()`: isLocalEcho consumes, and
+     * short-circuiting would leave the rest of the burst's ids in the map to
+     * swallow somebody else's later change. */
+    const echoes = ids.map(id => isLocalEcho(id));
+    if (echoes.length && echoes.every(Boolean)) return;
     scheduleRefresh();
   }, BURST_MS);
 }
@@ -214,11 +229,14 @@ export function startRealtime(householdId) {
   const channel = client
     .channel(`household-${householdId}`)
     .on('postgres_changes', { event: '*', schema: 'public', table: 'medicines', filter: `household_id=eq.${householdId}` },
-      () => scheduleRoutineRefetch(householdId))
+      ({ eventType, new: row, old: oldRow }) =>
+        scheduleRoutineRefetch(householdId, eventType === 'DELETE' ? oldRow?.id : row?.id))
     .on('postgres_changes', { event: '*', schema: 'public', table: 'schedules', filter: `household_id=eq.${householdId}` },
-      () => scheduleRoutineRefetch(householdId))
+      ({ eventType, new: row, old: oldRow }) =>
+        scheduleRoutineRefetch(householdId, eventType === 'DELETE' ? oldRow?.id : row?.id))
     .on('postgres_changes', { event: '*', schema: 'public', table: 'slots', filter: `household_id=eq.${householdId}` },
-      () => scheduleRoutineRefetch(householdId))
+      ({ eventType, new: row, old: oldRow }) =>
+        scheduleRoutineRefetch(householdId, eventType === 'DELETE' ? oldRow?.id : row?.id))
     .on('postgres_changes', { event: '*', schema: 'public', table: 'dose_log', filter: `household_id=eq.${householdId}` },
       payload => handleDoseChange(payload).then(changed => { if (changed) scheduleRefresh(); }))
     .on('postgres_changes', { event: '*', schema: 'public', table: 'day_snapshots', filter: `household_id=eq.${householdId}` },

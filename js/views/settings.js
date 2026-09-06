@@ -150,6 +150,16 @@ function pillBoxSection(settings, code, organiser) {
         chip.setAttribute('aria-pressed', String(next));
         redrawShape();
         try {
+          /* Only the elder's device has Realtime, and its own write comes
+           * straight back as an event -- which used to re-render this whole
+           * screen underneath the finger that had just moved the chip. Mark
+           * it first, so the mirror still runs and only the redraw is
+           * skipped. Imported dynamically because a supporter device must
+           * never load js/sync.js at all (see docs/repo-structure.md). */
+          if (settings.role === 'simple') {
+            const sync = await import('../sync.js');
+            sync.markRoutineWrite(slot.id);
+          }
           await supporter.setSlotInBox(code, slot.id, next);
           await store.saveSettings({ slots });
         } catch {

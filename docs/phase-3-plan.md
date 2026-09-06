@@ -475,6 +475,43 @@ the pane was 375px wide. Below 360px the grid returns to its old size; the
 rest of the screen keeps the larger type. A grid you have to scroll sideways
 is worthless for checking against a tray you can see all of at once.
 
+### Three more from use
+
+**The plan is frozen for the sitting — except when the tray changes shape.**
+Ticking a new time of day did nothing to an organiser session already started:
+the plan was read back from the store, exactly as designed, and the grid kept
+showing the old two rows. The freeze exists so nobody's *edit* can move the
+grid under someone's hands, but changing which times of day go in the box is
+not an edit to the routine — it is a change to the physical tray being filled,
+and a plan made for a 7×2 tray is meaningless once the box is 7×4. So that one
+change ends the sitting instead of being ignored by it.
+
+Detected by comparing the session's `boxSlots` against the current ones on
+every render, rather than clearing the session from Settings, so it also
+catches the change being made on the other device. A deep link into a step of
+the discarded sitting bounces to the start screen.
+
+**Any number of times of day works, and always did.** 7×2 and 7×4 were both
+tested when the grid was built; more ticked slots is only more rows. Nothing
+caps it, including a household with custom times of day.
+
+**The elder's Settings was re-rendering itself on every chip tap.** The pill-box
+flags are the first thing the elder's own device writes to `slots`, and
+Postgres broadcasts that write straight back to the device that made it —
+which re-rendered the whole screen underneath the finger that had just moved
+the chip. Exactly the class Phase 2.5's S2a fixed for doses, in a place that
+did not exist then. The routine tables now use the same `localWrites` map,
+keyed on row id: the cache still absorbs every event, only the redraw is
+skipped, and only for rows this device wrote.
+
+The burst coalescing needed care — `isLocalEcho` consumes, so `.every()`
+short-circuiting would have left the rest of a burst's ids sitting in the map
+to swallow somebody else's later change. Mapped first, then reduced.
+
+> Verified locally that a chip tap no longer rebuilds the section (same node,
+> marker intact). **The realtime half is not verified here** — it needs a live
+> database, since the whole bug is a server round trip coming back.
+
 ---
 
 ## 21 — Wake lock

@@ -397,14 +397,30 @@ export async function organiserView({ app, query, isCurrent = () => true }) {
   const stepParam = Number(raw);
   const wanted = !checking && Number.isInteger(stepParam) && stepParam > 0 ? stepParam : 0;
 
-  const [settings, session] = await Promise.all([store.getSettings(), store.getOrganiser()]);
+  const [settings, stored, boxSlots] = await Promise.all([
+    store.getSettings(), store.getOrganiser(), store.getBoxSlots(),
+  ]);
   if (!isCurrent()) return cleanup;
+
+  /* The plan is frozen for a sitting so nobody's edit can move the grid under
+   * someone's hands -- but changing which times of day go in the box is not
+   * an edit to the routine, it is a change to the tray being filled. A plan
+   * made for a 7x2 tray is meaningless once the box is 7x4, so that one
+   * change ends the sitting rather than being ignored by it.
+   *
+   * Checked here rather than cleared from Settings, so it also catches the
+   * change being made on the other device. */
+  const boxIds = boxSlots.map(s => s.id).join('|');
+  const plannedBoxIds = (stored?.plan?.boxSlots || []).map(s => s.id).join('|');
+  const staleBox = !!stored && plannedBoxIds !== boxIds;
+  if (staleBox) await store.clearOrganiser();
+  const session = staleBox ? null : stored;
 
   const weekStart = session?.weekStart || todayStr();
 
   /* Read back from the session when there is one, so the grid cannot move
-   * under someone mid-sitting. Recomputed only for the start screen, where
-   * nothing has been committed to yet and the person is still choosing. */
+   * under someone mid-sitting. Recomputed otherwise -- on the start screen
+   * nothing has been committed to and the person is still choosing. */
   let plan = session?.plan;
   if (!plan || session.weekStart !== weekStart) {
     const [medicines, schedules, slots] = await Promise.all([
@@ -417,6 +433,13 @@ export async function organiserView({ app, query, isCurrent = () => true }) {
   const done = new Set(session?.done || []);
   const index = wanted - 1;
   const step = wanted > 0 ? plan.steps[index] : null;
+
+  // Back to the start whenever the sitting was just discarded: the step index
+  // referred to a plan that no longer exists.
+  if (staleBox && (wanted > 0 || checking)) {
+    go('#/organiser', { replace: true });
+    return cleanup;
+  }
 
   // A step number past the end of the plan -- a stale bookmark, or a routine
   // that shrank between sittings. Back to the start rather than a blank screen.
