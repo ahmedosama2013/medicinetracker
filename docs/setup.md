@@ -8,26 +8,57 @@ For what the app *does* once it's running, see [flow.md](flow.md). For why it's 
 
 ## Already have a project? Start here
 
-If your Supabase project predates v3, you need four things. **Do them in this
+If your Supabase project predates v3, run this from the repo root. **In this
 order** — the functions read tables the migrations create.
 
 ```bash
 git pull
+npx supabase link --project-ref YOUR-PROJECT-REF   # skip if already linked
 npx supabase db push
 npx supabase functions deploy send-reminders
 npx supabase functions deploy supporter-photo --no-verify-jwt
 npx supabase functions deploy nudge --no-verify-jwt
 ```
 
-Then, once, **on the patient's phone**: Settings → Reminders → off, then on.
-Their push subscription is bound to your VAPID public key, and any subscription
-created before that key was last changed is dead.
+`js/config.js` is committed and points at whichever project this repo is set up
+for. If you keep a local copy pointing somewhere else, `git pull` will not touch
+it and **your deployed site and your laptop will be talking to different
+databases** — which looks exactly like data going missing.
 
-That's it if your project already had reminders working. If it didn't — and
-until v3 nobody's did, for reasons in "Why push looked broken" below — read
-that section before assuming your setup is at fault.
+### Then check three things push depends on
 
-What `db push` applies, if you want to know what changed:
+None of these are done by the commands above, and **all three fail silently**.
+Until v3 nobody's reminders actually worked, so do not assume yours were fine
+before.
+
+**1. Your VAPID public key is valid and matches.** `js/config.js` must be
+byte-identical to the `VAPID_PUBLIC_KEY` secret, and the key must be 65 bytes
+decoded — a malformed one crashes the function on boot with no useful message.
+
+```bash
+node -e "const k=process.argv[1];const b=Buffer.from(k,'base64url');console.log(k.length+' chars ->',b.length,'bytes',b.length===65&&b[0]===4?'OK':'INVALID')" "$(grep -oP "VAPID_PUBLIC_KEY = '\K[^']+" js/config.js)"
+npx supabase secrets list   # VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, VAPID_CONTACT_EMAIL must all exist
+```
+
+If you have to regenerate them (step 5), **everyone with reminders on has to
+toggle them off and back on** — a subscription is bound to the key that created
+it. Do that anyway once, on the patient's phone, since any subscription older
+than your current key is dead.
+
+**2. The reminder cron exists.** `db push` schedules the nightly freeze but not
+this one, because it needs your `service_role` key. Check with
+`select * from cron.job;` in the SQL Editor — you want a `medtrack-push` row.
+If it is missing, do step 7.
+
+**3. The wrappers landed.** `select * from public.claim_due_notifications();`
+in the SQL Editor. "function does not exist" means `0009` did not apply, and
+the reminder cron cannot work no matter what else is right.
+
+Then work down the [verification checklist](#verification-checklist). If push
+still does not arrive, ["Why push looked broken"](#why-push-looked-broken-and-how-to-tell-what-is-wrong)
+lists the four causes and how to tell them apart.
+
+What `db push` applies:
 
 | Migration | What it does |
 |---|---|
@@ -36,6 +67,7 @@ What `db push` applies, if you want to know what changed:
 | `0007_nudge` | `last_nudge_at`, the nudge rate limit |
 | `0008_nudge_grants` | `service_role` grants the nudge function needs |
 | `0009_reminder_rpc_wrappers` | `public` wrappers so `send-reminders` can reach its `app.*` functions at all |
+| `0010_slot_time_in_snapshots` | Stops one medicine's own time relabelling its whole slot on frozen days |
 
 Migrations are additive and safe to re-run; `db push` skips ones already
 applied.
