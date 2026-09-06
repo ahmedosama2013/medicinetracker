@@ -2044,6 +2044,13 @@ body.mode-simple .dialog-actions { flex-direction: column-reverse; }
   padding-bottom: calc(var(--nav-h) + env(safe-area-inset-bottom, 0px) + var(--space-2));
   display: flex;
   flex-direction: column;
+  /* Leftover height becomes space BETWEEN the blocks, not more photo. Letting
+     the photo grow into every spare pixel is what made a big phone look more
+     crowded than a small one: the picture swelled and everything else stayed
+     jammed against it. Capped below, the slack turns into breathing room and
+     the screen gets calmer as the phone gets taller, which is the right way
+     round. */
+  justify-content: space-between;
   gap: var(--space-2);
   overflow: hidden;
   animation: none;
@@ -2051,17 +2058,29 @@ body.mode-simple .dialog-actions { flex-direction: column-reverse; }
 
 #app.og-fit > * { flex: 0 0 auto; }
 #app.og-fit .page-title { font-size: var(--text-xl); }
+
+/* Big enough to recognise a box on a shelf, small enough to leave the screen
+   uncrowded -- and it is one tap from filling the screen, which is where
+   actually comparing a tablet against a strip happens. Shrinks below the cap
+   on short phones; never grows past it on tall ones. */
 #app.og-fit .og-photos,
-#app.og-fit .og-photos-none { flex: 1 1 auto; min-height: 0; margin-bottom: 0; }
+#app.og-fit .og-photos-none {
+  flex: 0 1 auto;
+  min-height: 0;
+  max-height: clamp(3.5rem, 15vh, 8rem);
+  margin-bottom: 0;
+}
 #app.og-fit .og-photo { min-height: 0; }
 #app.og-fit .og-photo-btn { flex: 1 1 auto; min-height: 0; height: auto; aspect-ratio: auto; max-height: none; }
 #app.og-fit .og-total { margin: 0; }
 #app.og-fit .og-actions { margin-top: 0; }
 #app.og-fit .og-checkintro { margin-bottom: 0; }
 #app.og-fit .og-checktap { margin-top: 0; }
-/* The check screen has no photos to give up, so its grid takes the slack and
-   stays vertically centred rather than pinned under the heading. */
-#app.og-fit .og-grid-check { flex: 1 1 auto; justify-content: center; min-height: 0; }
+/* The check grid keeps its natural height rather than absorbing the slack.
+   Growing it left a hole above and below a grid floating in the middle of the
+   screen; letting the column space everything evenly instead reads as one
+   screen rather than three pieces, and matches the step screens beside it. */
+#app.og-fit .og-grid-check { flex: 0 0 auto; min-height: 0; }
 
 /* As height runs out, spend the chrome before spending the content. The week
    range goes first — it is on the start screen and the grid carries the dates

@@ -338,12 +338,20 @@ can find out which one is missing.
 **Both screens fit one screen, on every phone.** They are a fixed-height
 column, not a document that happens to fit — someone is holding a tray with
 both hands, and scrolling to reach the grid or the Next button is the friction
-this screen exists to remove. Exactly one child flexes: the photos. Everything
-else is information that cannot be shrunk away, so it keeps its intrinsic
-height and the photos absorb what is left — the right thing to give, because a
-photo is one tap from full screen and a grid is not. As height runs out the
-chrome goes before the content: the week range first (the grid's own column
-headings carry the dates), then the page title.
+this screen exists to remove.
+
+The photos are **capped, not stretched**. Letting them absorb every spare pixel
+made a big phone look more crowded than a small one: the picture swelled and
+everything else stayed jammed against it. Capped at roughly 15vh, the leftover
+height becomes space *between* the blocks instead, so the screen gets calmer as
+the phone gets taller. The photo is a thumbnail that identifies; it is one tap
+from filling the screen, and that is where a tablet is actually compared
+against a strip.
+
+As height runs out the chrome goes before the content: the week range first
+(the grid's own column headings carry the dates), then the page title, then the
+photo shrinks below its cap. The grid, the total and the buttons never shrink —
+they are the things being acted on.
 
 **There is no verdict.** No tick, no "looks right". The app cannot see the
 tray, and one that claimed the tray was correct would be claiming something it
