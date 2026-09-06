@@ -113,8 +113,9 @@ function appearanceSection(current) {
   ]);
 }
 
-export async function settingsView({ app }) {
+export async function settingsView({ app, isCurrent = () => true }) {
   const settings = await store.getSettings();
+  if (!isCurrent()) return;
   const role = settings.role;
 
   clear(app);
@@ -123,6 +124,7 @@ export async function settingsView({ app }) {
   if (role === 'simple') {
     const session = await auth.getSession().catch(() => null);
     const notifOn = await pushLib.isSubscribed().catch(() => false);
+    if (!isCurrent()) return;
 
     app.appendChild(section(S.settingsAccount, [
       settingRow({
@@ -191,10 +193,11 @@ export async function settingsView({ app }) {
 
 // ---- slot times (supporter) ----------------------------------------------
 
-export async function slotsView({ app }) {
+export async function slotsView({ app, isCurrent = () => true }) {
   const settings = await store.getSettings();
   const code = settings.supporterCode;
   const routine = await supporter.loadRoutine(code);
+  if (!isCurrent()) return;
   const slots = [...routine.slots].sort((a, b) => timeToMinutes(a.time) - timeToMinutes(b.time));
   const schedules = routine.schedules;
   const errors = {};

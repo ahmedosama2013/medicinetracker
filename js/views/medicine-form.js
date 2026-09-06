@@ -35,7 +35,7 @@ const blankSchedule = slots => ({
   frequency: { type: 'daily', interval: 2, daysOfWeek: [], anchorDate: todayStr() },
 });
 
-export async function medicineFormView({ app, query }) {
+export async function medicineFormView({ app, query, isCurrent = () => true }) {
   const id = query.get('id');
   const settings = await store.getSettings();
   const code = settings.supporterCode;
@@ -60,10 +60,12 @@ export async function medicineFormView({ app, query }) {
       id ? supporter.getPhotoUrl(code, id).catch(() => null) : Promise.resolve(null),
     ]);
   } catch {
+    if (!isCurrent()) return;
     clear(app);
     app.appendChild(el('p.note', { text: S.pairCodeInvalid }));
     return;
   }
+  if (!isCurrent()) return releasePreview;
 
   const { slots } = routine;
   const existing = id ? routine.medicines.find(m => m.id === id) : null;

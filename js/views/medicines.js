@@ -31,7 +31,7 @@ function scheduleSummary(schedules, slots) {
     .join(' · ');
 }
 
-export async function medicinesView({ app }) {
+export async function medicinesView({ app, isCurrent = () => true }) {
   const settings = await store.getSettings();
   const code = settings.supporterCode;
 
@@ -48,10 +48,12 @@ export async function medicinesView({ app }) {
   try {
     routine = await supporter.loadRoutine(code);
   } catch {
+    if (!isCurrent()) return cleanup;
     pending.remove();
     app.appendChild(emptyState(S.errGeneric, S.pairCodeInvalid));
     return cleanup;
   }
+  if (!isCurrent()) return cleanup;
   pending.remove();
 
   const { medicines, schedules, slots } = routine;
@@ -76,6 +78,7 @@ export async function medicinesView({ app }) {
      * tile, which is the point: on the supporter's own screen a missing photo
      * is a job they can do, so it should be visible rather than absent. */
     const photoRows = await Promise.all(visible.map(m => store.getPhoto(m.id).catch(() => null)));
+    if (!isCurrent()) return cleanup;
     const urls = new Map();
     photoRows.forEach((row, i) => {
       if (!row?.blob) return;

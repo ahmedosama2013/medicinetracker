@@ -51,7 +51,7 @@ function ring({ taken = 0, skipped = 0, expected = 0 }) {
   });
 }
 
-export async function calendarView({ app }) {
+export async function calendarView({ app, isCurrent = () => true }) {
   const today = todayStr();
   const settings = await store.getSettings();
   const locked = settings.lockedThrough;
@@ -91,9 +91,10 @@ export async function calendarView({ app }) {
     // marking a dose does not rebuild the sheet under the person's thumb.
   }
 
+  /* Built detached, appended in one go -- see the same note in today.js. The
+   * month's data is two awaits away and clearing first left an empty page
+   * behind, or, with two draws in flight, two grids. */
   async function draw() {
-    clear(app);
-
     const cells = monthGrid(cursor.y, cursor.m);
 
     /* A supporter's history is fetched a range at a time rather than mirrored
@@ -107,8 +108,11 @@ export async function calendarView({ app }) {
     }
 
     const completion = await scheduleLib.completionForDates(cells.map(c => c.date));
+    if (!isCurrent()) return;
 
-    app.appendChild(el('div.cal-head', [
+    const frag = document.createDocumentFragment();
+
+    frag.appendChild(el('div.cal-head', [
       el('button.cal-nav', {
         type: 'button', 'aria-label': 'Previous month',
         onclick: () => { step(-1); },
@@ -125,7 +129,7 @@ export async function calendarView({ app }) {
     ]));
 
     const sheet = el('div.cal-sheet');
-    app.appendChild(sheet);
+    frag.appendChild(sheet);
 
     sheet.appendChild(el('div.cal-weekdays', S.weekdayShort.map((d, i) =>
       el('span', { text: d, 'aria-label': S.weekdayNames[i] }))));
@@ -170,6 +174,9 @@ export async function calendarView({ app }) {
         S.nothingMarked,
       ]),
     ]));
+
+    clear(app);
+    app.appendChild(frag);
   }
 
   function step(months) {

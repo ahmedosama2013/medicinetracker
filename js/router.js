@@ -7,10 +7,32 @@
  * not own redirects to that mode's home rather than rendering an empty screen.
  */
 
+import { S } from './strings.js';
+import { el, clear, emptyState } from './ui.js';
+
 const routes = new Map();
 let currentMode = null;
 let onRender = null;
 let activeCleanup = null;
+
+/* Every render gets a number. A render whose number is no longer the current
+ * one has been superseded and must not touch the DOM.
+ *
+ * Without this, two overlapping renders append two copies of the same screen.
+ * Every view is shaped `clear(app)` -> `await` -> `appendChild`, so: A clears,
+ * A yields, B clears, B yields, A appends its day, B appends its day. Both
+ * copies are live and identical, which is exactly how it was reported -- "many
+ * routine slots with the same slots and medicines, and a refresh fixes it".
+ * A reload fixes it because a reload runs exactly one render.
+ *
+ * Overlap was not rare. Realtime called refresh() once per dose_log change, so
+ * marking a five-medicine slot produced five of them; a supporter save fires
+ * three table events at once; and the supporter's poll refreshes on a timer
+ * with no idea whether a render is already in flight.
+ *
+ * Views receive `isCurrent` and check it after each await, because the append
+ * that does the damage happens inside the view, not here. */
+let generation = 0;
 
 /* Both roles land on Today. The supporter's used to be Medicines, because
  * that was the only screen they had; now that they can see the day, opening on
@@ -68,20 +90,52 @@ async function render() {
   await renderRoute(route, path);
 }
 
+function runCleanup() {
+  if (!activeCleanup) return;
+  try { activeCleanup(); } catch { /* a failed cleanup must not block navigation */ }
+  activeCleanup = null;
+}
+
 async function renderRoute(route, path) {
   if (!route) return;
   const app = document.getElementById('app');
 
+  const mine = generation + 1;
+  generation = mine;
+  const isCurrent = () => generation === mine;
+
   // Views may return a cleanup function; photo object URLs rely on it.
-  if (activeCleanup) {
-    try { activeCleanup(); } catch { /* a failed cleanup must not block navigation */ }
-    activeCleanup = null;
-  }
+  runCleanup();
 
   onRender?.(path, route);
 
-  const output = await route.view({ app, query: currentQuery(), path });
-  if (typeof output === 'function') activeCleanup = output;
+  let output;
+  try {
+    output = await route.view({ app, query: currentQuery(), path, isCurrent });
+  } catch {
+    /* A view that throws used to reject into nothing: the person was left on
+     * the previous screen with a console message and no explanation. This is
+     * the backstop, not a substitute for a view handling its own failure. */
+    if (isCurrent()) {
+      clear(app);
+      app.appendChild(emptyState(S.errGeneric, S.errRetry));
+    }
+    return;
+  }
+
+  if (typeof output === 'function') {
+    /* A superseded render still has to clean up. Its nodes are gone from the
+     * DOM but its object URLs are not, and the render that replaced it could
+     * not have released them -- when it started, this one had not yet returned
+     * anything to release. */
+    if (!isCurrent()) {
+      try { output(); } catch { /* nothing left to protect */ }
+      return;
+    }
+    activeCleanup = output;
+  }
+
+  if (!isCurrent()) return;
 
   // Reset scroll on navigation, but not when a view re-renders itself in place.
   if (app.dataset.path !== path) {

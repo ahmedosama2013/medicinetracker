@@ -246,4 +246,5 @@ export const S = {
   // ---- misc ------------------------------------------------------------
   loading: 'Loading',
   errGeneric: 'Something went wrong.',
+  errRetry: 'Close the app and open it again. Nothing you have recorded is lost.',
 };

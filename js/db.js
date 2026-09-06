@@ -116,6 +116,37 @@ export async function delMany(store, keys) {
   await Promise.all(keys.map(k => wrap(os.delete(k))));
 }
 
+/**
+ * Empty a store and refill it, in ONE transaction.
+ *
+ * `clear()` then `putMany()` is two transactions with a gap between them where
+ * the store is empty. Anything reading in that gap sees no medicines at all --
+ * and on the elder's Today "no medicines" is not an empty list, it is the
+ * cold-start screen with their share code on it. The window is small and the
+ * refetch runs on every realtime event, so it is reachable.
+ *
+ * Nothing may be awaited between the clear and the puts: an IndexedDB
+ * transaction auto-commits as soon as its request queue drains, so awaiting
+ * mid-way would close it and put the rest in a second one. Hence the requests
+ * are queued unawaited and only the transaction itself is waited on.
+ */
+export async function replaceAll(store, values) {
+  const db = await open();
+  const tx = db.transaction(store, 'readwrite');
+  const os = tx.objectStore(store);
+
+  const done = new Promise((resolve, reject) => {
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+    tx.onabort = () => reject(tx.error || new Error('Transaction aborted'));
+  });
+
+  os.clear();
+  for (const value of values) os.put(value);
+
+  return done;
+}
+
 export async function clear(store) {
   const db = await open();
   const tx = db.transaction(store, 'readwrite');

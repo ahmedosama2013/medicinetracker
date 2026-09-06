@@ -87,26 +87,35 @@ function nudgeButton(settings) {
   return el('div.nudge-wrap', [button, el('p.nudge-hint', { text: S.nudgeHint })]);
 }
 
-export async function todayView({ app }) {
+export async function todayView({ app, isCurrent = () => true }) {
   const date = todayStr();
   const settings = await store.getSettings();
+  if (!isCurrent()) return;
   let cleanup = () => {};
 
+  /* Everything is fetched BEFORE the screen is cleared, and the whole screen
+   * goes up in one go.
+   *
+   * The old order -- clear, then await, then append -- is what let two
+   * overlapping renders leave two copies of the day on screen: both cleared
+   * before either appended. `isCurrent` is the guard against that; building
+   * detached first is the belt, and it also means the person never sees a bare
+   * heading with the day missing underneath it. */
   async function draw() {
-    cleanup();
-    clear(app);
-
-    // Checked before anything else, so the "tap a medicine" hint below never
-    // has a moment where it is showing next to an empty-state message with
-    // nothing to tap yet.
     const medicines = await store.getActiveMedicines();
+    if (!isCurrent()) return;
 
-    app.appendChild(el('div.day-head', [
+    const head = el('div.day-head', [
       el('h1.page-title', { text: S.navToday }),
       el('span.day-date', { text: formatLong(date, S.monthNames, S.weekdayNames) }),
-    ]));
+    ]);
 
     if (!medicines.length) {
+      cleanup();
+      cleanup = () => {};
+      clear(app);
+      app.appendChild(head);
+
       /* The elder's cold start. Setup ends at sign-in, and until a supporter
        * has added something there is nothing this screen can show -- so it
        * used to say "No medicines yet" and stop, which is a dead end at the
@@ -134,9 +143,42 @@ export async function todayView({ app }) {
       return;
     }
 
-    let rail = await progressRail(date);
-    if (rail) app.appendChild(rail);
+    let rail;
 
+    // In parallel: both read the same stores, and the rail used to wait behind
+    // the day for no reason.
+    const [railNode, rendered] = await Promise.all([
+      progressRail(date),
+      // onChange swaps the rail and nothing else. renderDay already replaced
+      // the tapped slot in place, and redrawing the day here would re-read the
+      // database, reload every photo and jump the scroll position under the
+      // person's thumb.
+      renderDay({
+        date,
+        editable: true,
+        onChange: async () => {
+          const next = await progressRail(date);
+          if (rail && next) {
+            rail.replaceWith(next);
+            rail = next;
+          }
+        },
+      }),
+    ]);
+
+    if (!isCurrent()) {
+      // Superseded while we were reading. Its photos are already loaded and
+      // nothing else will ever release them.
+      rendered.cleanup();
+      return;
+    }
+
+    rail = railNode;
+
+    cleanup();
+    clear(app);
+    app.appendChild(head);
+    if (rail) app.appendChild(rail);
     app.appendChild(el('p.page-sub', { text: S.tapForPhoto }));
 
     if (settings.role === 'supporter') {
@@ -144,23 +186,8 @@ export async function todayView({ app }) {
       app.appendChild(nudgeButton(settings));
     }
 
-    // onChange swaps the rail and nothing else. renderDay already replaced the
-    // tapped slot in place, and redrawing the day here would re-read the
-    // database, reload every photo and jump the scroll position under the
-    // person's thumb.
-    const { node, cleanup: release } = await renderDay({
-      date,
-      editable: true,
-      onChange: async () => {
-        const next = await progressRail(date);
-        if (rail && next) {
-          rail.replaceWith(next);
-          rail = next;
-        }
-      },
-    });
-    cleanup = release;
-    app.appendChild(node);
+    cleanup = rendered.cleanup;
+    app.appendChild(rendered.node);
   }
 
   await draw();

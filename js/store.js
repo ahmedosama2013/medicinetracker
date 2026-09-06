@@ -196,14 +196,15 @@ export async function requestPersistence() {
 // directly (see js/supporter.js). These exist purely so js/sync.js's Realtime
 // mirror never has to import db.js on its own.
 
+/* One transaction each, via db.replaceAll -- see the comment there. A clear
+ * followed by a separate write leaves a window in which the routine is empty,
+ * and a read landing in it renders the elder's cold-start screen. */
 export async function replaceMedicinesCache(medicines) {
-  await db.clear(STORES.medicines);
-  await db.putMany(STORES.medicines, medicines);
+  await db.replaceAll(STORES.medicines, medicines);
 }
 
 export async function replaceSchedulesCache(schedules) {
-  await db.clear(STORES.schedules);
-  await db.putMany(STORES.schedules, schedules);
+  await db.replaceAll(STORES.schedules, schedules);
 }
 
 export const putDoseLogRow = row => db.put(STORES.doseLog, row);
