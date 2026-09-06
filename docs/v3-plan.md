@@ -338,10 +338,16 @@ failure paths locally. The nudge function has never run at all.
 Its own phase because it is the only part with unresolved design questions.
 Entry point is a card on Today, not a tab.
 
-> **In progress. The detailed plan is [phase-3-plan.md](phase-3-plan.md)**,
-> which settles the unresolved questions listed below and pulls item 23 in as
-> the phase's first commit. Where it departs from the outline here, that file
-> is the current one.
+> **Done. The record is [phase-3-plan.md](phase-3-plan.md)**, which settles the
+> unresolved questions listed below, pulls item 23 in as the phase's first
+> commit, and records what use turned up afterwards. Where it departs from the
+> outline here, that file is the current one.
+>
+> Two departures worth naming: **item 22 (the buy list) was dropped**, because
+> knowing you are short does not tell anyone when to buy and that is the real
+> question — see next-steps.md §6. And the entry point is **Settings → Pill
+> box**, not a card on Today. Its slot in the phase went to the bottom bar,
+> which now says which tab you are on by shape rather than by colour alone.
 
 18. **Week computation.** Seven days forward from the chosen start, per medicine,
     from `schedule.dueOn` — not from snapshots, which only exist for past days.

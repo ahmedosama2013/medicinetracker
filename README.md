@@ -2,10 +2,11 @@
 
 A medicine reminder and pill identification app for elderly users. Runs in the browser, backed by Supabase (Postgres, Auth, Realtime, Storage). Only the person taking the medicines has an account — a helper never signs up at all, they just enter a code.
 
-It solves two problems:
+It solves three problems:
 
 1. **Which pill is which.** Every medicine can carry a photo the helper took themselves, shown full screen with one tap. This is the point of the app.
 2. **What was taken.** One tap marks a whole time of day as done, and a month calendar shows the record.
+3. **Filling the weekly pill box.** A guided screen walks through one medicine at a time — its photos, how many to take out for the week, and which compartment each goes in — then shows what should be in each compartment to count against the tray. It never marks anything as taken.
 
 A helper's edits reach the elder's phone within a few seconds, live — no exporting or importing a file. See [docs/architecture.md](docs/architecture.md) for how.
 

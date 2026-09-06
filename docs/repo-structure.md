@@ -28,6 +28,7 @@ Medicine Tracker/
 │   ├── store.js               typed access to the local cache; the only module that touches db.js
 │   ├── date.js                local YYYY-MM-DD maths
 │   ├── schedule.js            what is due on a date; snapshots; calendar counts
+│   ├── organiser.js           pure: what goes in each pill-box compartment for a week
 │   ├── photos.js              capture, compression, object-URL lifetime
 │   ├── strings.js             every user-visible string, and APP_VERSION
 │   ├── ui.js                  DOM helper, dialog, sheet, toast, photo viewer
@@ -38,6 +39,7 @@ Medicine Tracker/
 │       ├── today.js           the Today screen
 │       ├── day.js             one day's slots — shared by Today and Calendar
 │       ├── calendar.js        month grid, rings, day sheet
+│       ├── organiser.js       filling the weekly pill box: start, step, check
 │       ├── medicine-sheet.js  one medicine, everything known about it
 │       ├── medicines.js       supporter: the medicine list, fetched live via the share code
 │       ├── medicine-form.js   supporter: medicine + schedules in one form
@@ -56,8 +58,11 @@ Medicine Tracker/
 │   │   ├── 0009_reminder_rpc_wrappers.sql  public wrappers for the app.* push
 │   │   │                              functions -- PostgREST cannot reach the
 │   │   │                              app schema, so cron had nothing to call
-│   │   └── 0010_slot_time_in_snapshots.sql  a medicine's own time stops
-│   │                                  relabelling the slot it sits in
+│   │   ├── 0010_slot_time_in_snapshots.sql  a medicine's own time stops
+│   │   │                              relabelling the slot it sits in
+│   │   ├── 0011_medicine_details.sql  purpose, packet photo, and dosage text
+│   │   │                              replaced by numeric dose_qty
+│   │   └── 0012_pill_box_slots.sql    slots.in_box + set_slot_in_box
 │   └── functions/
 │       ├── send-reminders/    Edge Function: Web Push delivery, cron-triggered
 │       ├── nudge/             Edge Function: the supporter's "have you taken them?" push
@@ -83,7 +88,7 @@ Medicine Tracker/
 | File | Responsibility |
 |---|---|
 | `js/db.js` | `open`, `get`, `getAll`, `getAllFromIndex`, `put`, `putMany`, `del`, `delMany`, `clear`, `replaceAll`, `uuid`. Stands in for the `idb` library. `replaceAll` empties and refills a store in **one** transaction — a clear followed by a separate write leaves a window in which the routine is empty, and a read landing in it renders the elder's cold-start screen |
-| `js/store.js` | Reads used by every view (`getMedicines`, `getDoseLogForDate`, ...), the dose-log append-only rule, and a small set of cache-writer/outbox functions used only by `js/sync.js`. `clearHouseholdData()` wipes everything but settings, on sign-out and disconnect |
+| `js/store.js` | Reads used by every view (`getMedicines`, `getDoseLogForDate`, ...), the dose-log append-only rule, and a small set of cache-writer/outbox functions used only by `js/sync.js`. Also the organiser session (`getOrganiser`, `startOrganiser`, `setOrganiserStepDone`) and `getBoxSlots()`. `clearHouseholdData()` wipes everything but settings, on sign-out and disconnect |
 | `js/auth.js` | Google sign-in, household create/resume, share-code rotation — simple-only |
 | `js/supporter.js` | `loadRoutine`, `saveMedicine`, `replaceSchedules`, `saveSlots`, photo actions, `loadDoseLog`/`loadHistory`/`logDose`/`unlogSlot`, `nudge` — every one code-gated, no session |
 | `js/supporter-sync.js` | `hydrate`, `ensureRange`, `refresh`, `startPolling`, `lastSync`. Fills the same cache `js/sync.js` does, but by polling — Realtime cannot reach a sessionless device. `refresh` returns whether anything actually changed, so a tick that changed nothing does not re-render the screen |
@@ -91,8 +96,10 @@ Medicine Tracker/
 | `js/sync.js` | Supabase Realtime subscription that mirrors a household's tables into the local cache, plus the dose-log offline outbox |
 | `js/date.js` | `todayStr`, `addDays`, `daysBetween`, `dayOfWeek`, `monthGrid`, `formatTime`, `formatLong`, `msUntilTomorrow`. No UTC anywhere |
 | `js/schedule.js` | `isDueOn`, `buildDay`, `dueOn`, `expectedFor`, `completionForDates`. The pure functions take plain arrays and can be called from the console; `isDueOn` is also ported into Postgres as `app.is_due` |
+| `js/organiser.js` | `planWeek(startDate, {medicines, schedules, slots})` → `{ dates, boxSlots, steps, compartments, outOfBox }`. Pure, console-callable. `steps` and `compartments` are the same numbers pivoted for the two screens, computed together so they cannot disagree. `BOX_FORMS` is what may physically go in a tray |
+| `js/views/organiser.js` | `#/organiser` — start screen, one step per medicine (`?step=N`), then the check screen (`?step=check`). Owns the wake lock |
 | `js/photos.js` | `compress`, `objectUrl`/`release`, `blobToDataUrl`/`dataUrlToBlob` |
-| `js/ui.js` | `el()` for DOM building, plus `confirmDialog`, `alertDialog`, `openSheet`, `openPhotoViewer`, `busyOverlay`, `toast`, `pickFile`, `pillTile`, `loadingState`, `applyTheme` |
+| `js/ui.js` | `el()` for DOM building, plus `confirmDialog`, `alertDialog`, `openSheet`, `openPhotoViewer`, `busyOverlay`, `toast`, `pickFile`, `pillTile`, `loadingState`, `applyTheme`, and `doseText`/`doseAmount` (a `doseQty` plus a `form` rendered as "2 tablets" or just "½") |
 | `js/views/day.js` | The shared day renderer, so a past day is corrected with the same controls as today |
 
 ## Conventions
@@ -106,6 +113,15 @@ Medicine Tracker/
 - **No HTML strings with data in them.** Everything goes through `el()` and `textContent`, so a medicine named `<img onerror=…>` is just a medicine with a silly name.
 - **Views return their cleanup.** A view that creates photo object URLs returns a function; the router calls it before rendering the next screen.
 - **Update in place, do not re-render.** After a write, replace the one node that changed. Rebuilding a whole screen re-reads the database, reloads photos and resets the scroll, which looks like the page refreshing.
+- **`append()` tolerates null; `appendChild` throws.** Any builder that can
+  return nothing — an empty section, an absent strip — must be added with
+  `append()` from `js/ui.js`. This has broken a screen once already, and only
+  in the case where the feature had nothing to show, which is the case
+  fixtures habitually omit.
+- **A new `medicines` column has seven homes**, and a missed one fails
+  silently: the migration, `public.get_routine`, `public.upsert_medicine`,
+  `app.compute_day`, `mapMedicine` in `js/sync.js`, the medicine form, and —
+  if `supporter-photo` writes it — the column-level `service_role` grant.
 - **Comments explain why, not what.** The ones worth reading are on the append-only rule, the service worker's `no-cache`, and the two-clock freeze design in `supabase/migrations/0001_init.sql`.
 
 ## Regenerating the icons

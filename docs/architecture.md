@@ -18,6 +18,7 @@ index.html
           ├── js/store.js ──────── the only module that touches the local IndexedDB cache
           │      └── js/db.js ─── IndexedDB promise wrapper
           ├── js/schedule.js ──── what is due on a date (also ported into Postgres, `app.compute_day`/`app.is_due`)
+          ├── js/organiser.js ─── pure: what goes in each pill-box compartment for a week
           └── js/views/* ──────── one module per screen
 ```
 
@@ -93,11 +94,52 @@ mechanisms used to undo that on every tap.
 - **The supporter's poll.** It called back every sixty seconds regardless.
   `supporter-sync.refresh()` now returns whether the server's view actually
   differs from the last sync, and the poll only re-renders when it does.
+- **The elder's own routine writes.** Since the pill-box flags, the elder's
+  device writes to `slots` too, and that write echoes straight back. The
+  routine tables use the same `localWrites` map the dose log does, keyed on row
+  id. `isLocalEcho` *consumes* its entry, so the burst check maps before it
+  reduces — short-circuiting would leave ids in the map to swallow somebody
+  else's later change.
+- **Boot and backfill.** `refetchRoutine` and `refetchHistory` return whether
+  anything actually differed, signature-compared against the cache. Boot
+  renders from cache immediately and redraws only if the server turned out to
+  differ — which is what makes an elder signing in on a wiped cache see their
+  medicines rather than the cold-start screen, without making every daily open
+  wait on the network. `backfill()` uses the same answer, so returning to the
+  app does not rebuild a screen that was already right.
+
+  `backfill`'s in-flight guard is a timestamp, not a boolean. Cleared only in a
+  `finally`, a fetch that never settles — one bar of signal, no response and no
+  rejection — would disable backfill for the life of the page: the mechanism
+  for recovering from a bad connection, switched off by one.
 
 An in-place update that finds its node detached (something re-rendered while a
 write was in flight — easy during a confirmation dialog) calls back to
 `onStale`, and the caller re-renders from the store. Silently doing nothing was
 the old behaviour and it read exactly like the tap being ignored.
+
+### Organiser mode
+
+Filling a weekly pill box. `js/organiser.js` is pure and console-callable;
+`js/views/organiser.js` is the screen. Four rules hold it together:
+
+- **It never writes to the dose log.** Filling a tray is not taking a medicine.
+  Nothing in either file imports `js/doses.js`, and it must stay that way.
+- **The plan is computed forward from `schedule.isDueOn`, never from
+  snapshots** — those only exist for past days.
+- **The plan is frozen when a sitting starts** (`store.startOrganiser`) and
+  read back on every render, so a supporter's edit cannot move the grid under
+  someone's hands. The one exception: if the set of `inBox` slots no longer
+  matches the plan's, the sitting is discarded, because the tray it was planned
+  for no longer exists.
+- **The step lives in the hash** (`#/organiser?step=3`, or `?step=check`), not
+  in a variable. Realtime, the midnight check and the supporter's poll all call
+  `router.refresh()`, and a step index in a closure would reset someone to
+  medicine one mid-tray.
+
+The wake lock is module-level, released only when `currentPath()` is no longer
+`#/organiser` — the router runs a view's cleanup *after* the hash has changed,
+which is what makes a step change distinguishable from leaving.
 
 ### Today has to mean today
 
@@ -134,25 +176,32 @@ Three decisions still explain most of the frontend code:
 
 ## Local cache data model
 
-Six IndexedDB object stores plus an `outbox`, database `medtrack` version 2. Defined in [js/db.js](../js/db.js), accessed only through [js/store.js](../js/store.js). This is the *cache* shape on the simple device; the authoritative shape lives in Postgres (`supabase/migrations/0001_init.sql`).
+Seven IndexedDB object stores plus an `outbox`, database `medtrack` version 3. Defined in [js/db.js](../js/db.js), accessed only through [js/store.js](../js/store.js). This is the *cache* shape on the simple device; the authoritative shape lives in Postgres (`supabase/migrations/0001_init.sql`).
 
 | Store | Key | Holds |
 |---|---|---|
-| `medicines` | `id` | name, strength, dosage, form, notes, `archived` |
-| `photos` | `medicineId` | one compressed JPEG `Blob`. Optional |
+| `medicines` | `id` | name, strength, `doseQty` (a number), `form`, `purpose`, notes, `archived` |
+| `photos` | `medicineId` | `blob` (the pill) and `packetBlob` (the box), both optional, one record |
 | `schedules` | `id` | one row per medicine-and-slot pairing, plus frequency |
 | `doseLog` | `id` | one row per medicine per slot per day: `status` (`taken`/`skipped`) and `loggedBy` |
 | `daySnapshots` | `date` | what was expected on a frozen past day |
 | `settings` | `"app"` | single row: role, slot definitions, `lockedThrough`, `theme` |
 | `outbox` | `id` | elder-only: dose writes queued while offline |
+| `organiser` | `"current"` | one in-progress pill-box filling. Local, never synced |
 
 ### Slots
 
 A "slot" is a time of day — morning, afternoon, evening, night, plus any the supporter adds. They live in `settings.slots`, not their own store, because they are a short list edited as a unit:
 
 ```js
-{ id: 'morning', label: 'Morning', time: '08:00', order: 1, builtIn: true }
+{ id: 'morning', label: 'Morning', time: '08:00', order: 1, builtIn: true, inBox: true }
 ```
+
+`inBox` is whether this time of day goes in the weekly pill box. It is
+household state, not device state — there is one physical tray — so it lives on
+`public.slots` and both phones agree about it. Written by `set_slot_in_box`,
+which is deliberately narrower than `save_slots`: the elder's Settings can call
+it, and that screen has no business archiving a time of day.
 
 A schedule points at a slot by `slotId` and may override its time (`time: '06:30'`) for one medicine. `null` means inherit the slot's time.
 

@@ -9,6 +9,7 @@ Everything the two people actually do, start to finish. This is the only file th
 | | **Supporter** — the person helping | **Simple** — the person taking the medicines |
 |---|---|---|
 | Their phone shows | Today, Calendar, Medicines, Settings | Today, Calendar, Settings |
+| Both can | Fill the weekly pill box (Settings → Pill box) | |
 | Account | None — just a code | Signs in with Google, once |
 | They do | Add medicines, photos and times; check what was taken | Mark doses taken or skipped, check photos |
 | How often | At setup, then whenever they want to check in | Every day |
@@ -49,10 +50,15 @@ Usually walked through over the phone, with the elder reading out their code.
 2. Tap **Share** → **Add to Home Screen** → **Add**.
 3. Open the app from the home screen. Answer **"I help someone with their medicines"**.
 4. Enter the code from the elder's Settings screen, then **Connect**. No account, no sign-in — the code is enough.
-5. *Optional:* Settings → **Times of day**, to change what time morning, afternoon, evening and night mean, or to add your own.
+5. *Optional:* Settings → **Times of day**, to change what time morning, afternoon, evening and night mean, or to add your own. And Settings → **Pill box**, if a weekly organiser is used (Flow 4).
 6. **Medicines** → **Add a medicine**, for each one:
    - Name, strength, how much to take, and the form.
    - **Take a photo** of the actual pill. This is the part that matters — it is how the pills get identified when the weekly organiser is refilled.
+   - **How much to take** is a number; the unit comes from the form. Halves and
+     quarters are allowed.
+   - **What it is for**, one short line — read by whoever fills the pill box.
+   - A second photo **of the packet**, if useful. It is shown only when filling
+     the organiser, where the question is which box to reach for.
    - Notes if useful, e.g. "take with food".
    - **When to take it** — one or more times. Pick the time of day, optionally override its time for this medicine, and choose every day / every few days / certain days of the week.
    - **Save.** A medicine with no times set cannot be saved: it would appear on no screen and you would never notice.
@@ -78,13 +84,33 @@ If your helper marked something for you, that medicine says **Marked by your hel
 
 ## Flow 4 — Filling a weekly pill organiser
 
-The photos exist for this.
+The photos exist for this. On either phone — whoever is holding the tray.
 
-1. Open **Today**.
-2. For each medicine in a group, tap it, then tap the photo to fill the screen, and match it against the packet in hand.
-3. Close and move to the next.
+```
+Settings  →  Pill box  →  Fill the pill box  →  one medicine at a time  →  check
+```
 
-A screen built specifically for this — one medicine at a time, the whole week at once, so each box is only opened once — is planned. See Phase 3 in [v3-plan.md](v3-plan.md).
+**Once, first:** Settings → **Pill box** → tick which times of day go in your
+box. Two ticks is the usual 7×2 tray, four is 7×4. The line underneath tells
+you which you have just described. Anything unticked is taken from its packet
+on the day instead.
+
+1. **Settings → Pill box → Fill the pill box.** Choose the week to start from
+   (today by default). It says how many medicines go in the box, and lists
+   anything that does not — syrups, inhalers and drops, plus anything at a time
+   of day you did not tick.
+2. **One medicine per screen.** Its photos, what it is for, **how many to take
+   out for the whole week**, and a grid showing which day and time each one
+   goes in. Tap either photo to see it full screen. Tap **Next**.
+3. **At the end, a check screen**: how many go in each compartment. Count them
+   against the tray. Tap any compartment to see exactly what belongs in it.
+
+The screen stays awake throughout, and you can stop and come back — it
+remembers where you were. Changing which times of day go in the box starts the
+sitting again, because the tray it was planned for has changed shape.
+
+**Nothing here marks anything as taken.** Filling the box is not taking the
+medicine, and the app keeps those separate on purpose.
 
 ## Flow 5 — Turning on reminders
 
@@ -186,6 +212,8 @@ taken in a dark room.
 | Tapped Done with no signal | It still works | The tap is saved on the phone immediately and sent to the server as soon as it reconnects — nothing is lost |
 | No reminders arriving | Not turned on yet, or permission was denied | Settings → Reminders → Turn on, and check the phone's own notification settings for the app |
 | Nothing on Today | No medicines yet, or none due today | Ask the supporter to add some, or check back later |
+| *"Nothing goes in the box this week"* | Everything due is a syrup, inhaler or drops, or is at a time of day not ticked under Pill box | Check Settings → Pill box if you expected something there |
+| The pill box grid is not the shape of your tray | The ticked times of day do not match the box | Settings → Pill box; the line under the chips says which shape you have described |
 | Supporter's Today says *"Could not check for updates"* | Their phone cannot reach the server | It keeps showing the last information it had; it retries on its own. Check the connection if it persists |
 | Supporter taps a circle and gets an error | A supporter's marks need a connection — they are never queued for later | Try again once back online. Nothing was recorded |
 | *"Already sent"* when sending a reminder | One per hour, on purpose | Wait, or phone them |

@@ -33,8 +33,14 @@ marked", not "All taken", and takes a neutral tint rather than an alarmed one �
 one skipped medicine out of six is not a problem with the slot.
 
 **Organiser mode must never write to the dose log.** Filling a tray is not
-taking a medicine, and conflating them would quietly falsify the calendar.
-(Phase 3; written down now so it is not discovered late.)
+taking a medicine, and conflating them would quietly falsify the calendar. Its
+start screen says so out loud, once — someone who believed otherwise would stop
+marking their doses.
+
+**A step counter is not an adherence number.** "3 of 9 medicines" is
+orientation inside a task with an end, like the progress rail on Today: it
+resets, it is never stored, and there is no historical counterpart. What must
+never appear is anything summing across sittings.
 
 **The whole day is always shown.** Nothing is hidden because its time has
 passed. Hiding a passed slot turns a late dose into an unrecoverable state.
@@ -56,7 +62,7 @@ properties, not a duplicated stylesheet.
 | Tap targets | 46px minimum | 40px minimum |
 | Row height | 58px | 48px |
 | Content width | 28rem | 42rem |
-| Navigation | bottom bar, 3 tabs | bottom bar, 4 tabs |
+| Navigation | bottom bar, 3 tabs, 72px | bottom bar, 4 tabs, 64px |
 
 The two now differ mainly on **touch, not text**. Once a photo carries the
 recognition, 20px body copy stops earning its space — but a 46px target still
@@ -291,14 +297,53 @@ a phone line. (The code's character set already excludes `0`, `O`, `1`, `I` and
 
 ### Medicine detail sheet
 
-Tapping a medicine opens a sheet: photo, strength, dosage, notes, and every
-time of day it is due. The full-screen viewer is still there one tap deeper —
+Tapping a medicine opens a sheet: the pill photo, what it is for, strength, how
+much to take, notes, the packet photo if there is one, and every time of day it
+is due. The full-screen viewer is still there one tap deeper —
 matching a tablet against a blister strip needs the photo as large as the
 screen allows, and that is the whole reason the photos exist.
 
 With no photo the block is a plain div, not a button. A control that opens a
 full-screen view of nothing is a dead end, and a square of empty space pushes
 the actual information below the fold.
+
+### Organiser mode
+
+Reached from **Settings → Pill box**, not from a tab and not from Today.
+Filling the box is a weekly job at most, and a tab asks everyone to look past
+it every day. Both roles have it: whoever is holding the tray fills it.
+
+Three screens.
+
+**Start** — which week, how many medicines go in the box, and a strip of
+everything that does *not*, each with its reason. Two reasons, two sentences: a
+syrup cannot go in a compartment at all, whereas a tablet in an unticked time
+of day is out because of how this household's box is shaped — and only the
+second is something the person can change.
+
+**A step per medicine** — both photos side by side when both exist (the pill
+answers "is this the right tablet?", the packet answers "which box do I reach
+for?"), the purpose line, the week's total to take out as the largest thing on
+the screen, and a day × time-of-day grid. Each photo opens the full-screen
+viewer. A grid cell is **three** states, not two: a dot carrying the amount, or
+a dash for not due. Rendering both as empty makes a twice-weekly medicine's
+five blank days read as work outstanding.
+
+**Check** — the same grid with compartment totals instead of per-medicine
+amounts, because counting is how a filled tray is actually verified and pill
+colour is unknowable from a photo. Tapping a compartment lists what belongs in
+it with the real pill photos, since "the count is wrong" is only useful if you
+can find out which one is missing.
+
+**There is no verdict.** No tick, no "looks right". The app cannot see the
+tray, and one that claimed the tray was correct would be claiming something it
+has no way to know.
+
+Which times of day go in the box is a per-slot setting rather than a
+compartment count. A count has a hole in it: with a 7×2 tray and four times of
+day, the afternoon and evening medicines have nowhere to go, and merging two
+times into one compartment puts the afternoon dose where it gets taken at
+breakfast. That is the one place this app could actively mislead someone.
 
 ### Calendar
 

@@ -1,5 +1,10 @@
 # Phase 3 — Organiser mode
 
+> **Done.** Items 18–21 and 23 shipped; item 22 was dropped (see below) and its
+> slot went to the bottom bar. Each section below carries a "done" note
+> recording what the plan got wrong and what use turned up afterwards —
+> that is the part worth reading.
+
 The screen the photos have always been for. A supporter or an elder sits down
 with a week's worth of boxes and a plastic tray and fills it, and the app walks
 them through it one medicine at a time so each box is opened exactly once.
@@ -31,9 +36,10 @@ Three things follow from that and they are what shapes every screen below:
   opening every box seven times.
 - **The screen must not go dark.** Hence the wake lock. Hence also that nothing
   must require typing.
-- **The moment they find they are short is the only moment that information
-  exists.** Nobody counts pills as a separate activity. That is item 22, and it
-  is why refill enters the product here rather than as stock tracking.
+- **It is a task with an end, not a screen you check.** It starts, it can be
+  interrupted and resumed, and it finishes with a check against the tray.
+  (A fourth thing was planned from this sitting — noticing you are short while
+  the box is open — and was dropped; see item 22.)
 
 ## Decisions taken before starting
 
@@ -566,6 +572,10 @@ Each is a commit.
    bottom bar**: which tab you are on now differs in shape, not only in colour.
 7. **Docs.** Every file listed under [Docs to update](#docs-to-update) below,
    in one pass, plus this file's own record of what departed from the plan.
+   *Done.* The prediction underneath was right: over half of what got written
+   was not knowable from the plan — the fixture blind spot, the 320px overflow,
+   the routine echo, the elder's cold start and the stuck backfill flag were
+   all found by using the thing.
 
 Steps 1 and 2 are backend-and-plumbing with small visible surfaces; 3 to 6 are
 where the phase actually is.
