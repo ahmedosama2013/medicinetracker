@@ -121,6 +121,27 @@ Nothing to restore by hand. The medicines, schedule, and dose history all live o
 - **Elder:** install the app, answer **"I take the medicines"**, sign in with the same Google account. Everything comes back — same household, same code (unless it's been rotated since).
 - **Supporter:** install the app, answer **"I help someone…"**, enter the current code.
 
+### Two phones at once
+
+The same works without giving anything up. Signing in with the same Google
+account on a second phone, tablet or browser reaches the **same** household —
+one account owns exactly one household, and the app resolves it rather than
+creating another. Medicines, photos, times and the full dose history all
+arrive, and both devices then stay in step live: marking a dose on one shows on
+the other within seconds.
+
+Marking the same dose on both is harmless. A dose is recorded once per medicine
+per slot per day however many devices say so.
+
+Two things are per-device rather than per-account:
+
+- **Reminders.** Turn them on separately on each device. If both are on, both
+  will buzz — which is usually the point on a phone and a tablet, and usually
+  not on two phones the same person carries.
+- **Anything tapped while offline** stays on the device that tapped it until it
+  reconnects, so a phone left in a drawer can hold a dose the other has not
+  seen yet.
+
 ## Flow 9 — Cutting off a supporter, or losing the code
 
 The elder's Settings → **Get a new code**. Every device using the old code — including the supporter's own, if they still have it — immediately loses access, and the new code is shown right there to hand to whoever should still have it.
