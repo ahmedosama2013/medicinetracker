@@ -196,7 +196,7 @@ Two sides to this: a Google Cloud OAuth client, and telling Supabase about it.
    | **Testing** (default) | Accounts listed under **Audience → Test users**, max 100 — *plus anyone with an owner or editor role on the Google Cloud project*. Everyone else gets `403 access_denied` | One entry per person, added by you |
    | **In production** | Anyone with a Google account | Every sign-in creates a household in *your* Supabase project |
 
-   **That owner/editor exception is worth knowing before you conclude anything from testing.** Your own accounts probably have a role on the Cloud project, so they sign in whatever the publishing status is — which makes Testing look open when it is not. Check the status on the **Audience** page rather than inferring it from whether you personally can sign in.
+   **Read the status off the Audience page; do not infer it from whether a sign-in works.** An account with a role on the Cloud project is admitted whatever the status is, so a successful sign-in tells you nothing on its own — and neither does a failed one, which has several possible causes (see Troubleshooting).
 
    **Publishing does not require Google's verification review.** That is only for sensitive scopes — Gmail, Drive, contacts. Supabase's Google provider asks for `email`, `profile` and `openid`, which are not sensitive, so "Publish App" is the whole step. (Confirm in the console; Google moves these rules around.)
 
