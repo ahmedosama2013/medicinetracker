@@ -375,6 +375,7 @@ function openCompartment(row, day) {
 export async function organiserView({ app, query, isCurrent = () => true }) {
   const tokens = [];
   const cleanup = () => {
+    app.classList.remove('og-fit');
     photos.releaseAll(tokens.splice(0));
     document.removeEventListener('visibilitychange', onVisibility);
     /* Only when actually LEAVING the organiser. The router runs this before
@@ -472,10 +473,21 @@ export async function organiserView({ app, query, isCurrent = () => true }) {
   }
 
   clear(app);
+  /* The step and check screens are fixed-height and must not scroll; the start
+   * screen is an ordinary page and should. Owned by the view rather than keyed
+   * off `app.dataset.path`, because that is set after the render and the same
+   * route needs both behaviours. */
+  app.classList.toggle('og-fit', checking || !!step);
   app.appendChild(el('h1.page-title', { text: checking ? S.organiserCheckTitle : S.organiserTitle }));
-  app.appendChild(el('p.og-week', {
-    text: `${formatLong(plan.dates[0], S.monthNames, S.weekdayNames)} – ${formatLong(plan.dates[6], S.monthNames, S.weekdayNames)}`,
-  }));
+  /* The week's range, on the screens where it is the subject: choosing the
+   * week, and reading dates across the finished tray. Not on a step, where the
+   * grid's own column headings already carry the dates and the line is a
+   * second copy of them competing with the photo for height. */
+  if (!step) {
+    app.appendChild(el('p.og-week', {
+      text: `${formatLong(plan.dates[0], S.monthNames, S.weekdayNames)} – ${formatLong(plan.dates[6], S.monthNames, S.weekdayNames)}`,
+    }));
+  }
 
   if (checking) {
     checkScreen({ app, plan });

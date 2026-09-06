@@ -145,6 +145,7 @@
   --text-3xl: 2rem;       /* 32px */
 
   --target-min: 2.5rem;   /* 40px */
+  --nav-h: 4rem;          /* the bottom bar; subtracted by the organiser's fit layout */
   --row-h: 3rem;          /* 48px */
   --tile: 2.75rem;        /* 44px — the pill identity tile */
 
@@ -313,6 +314,7 @@ body.mode-simple {
   --text-md: 1.0625rem;    /* 17px */
   --text-lg: 1.1875rem;    /* 19px */
   --target-min: 2.875rem;  /* 46px */
+  --nav-h: 4.5rem;
   --row-h: 3.625rem;       /* 58px — a 44px tile plus breathing room */
   --content-max: 28rem;
 }
@@ -493,7 +495,7 @@ body.mode-none #app {
   justify-content: center;
   gap: var(--space-1);
   padding: var(--space-2) 0;
-  min-height: 4rem;
+  min-height: var(--nav-h);
   color: var(--ink-2);
   font-size: var(--text-sm);
   font-weight: 500;
@@ -538,7 +540,6 @@ body.mode-none #app {
    about what the glyphs mean, so the words get the extra size, not the icons. */
 body.mode-simple .nav-inner .navlink {
   font-size: var(--text-base);
-  min-height: 4.5rem;
 }
 
 .navlink[data-icon="today"] .navlink-icon::before { -webkit-mask-image: var(--icon-today); mask-image: var(--icon-today); }
@@ -2018,6 +2019,62 @@ body.mode-simple .dialog-actions { flex-direction: column-reverse; }
 
 /* The packet, at the size the question deserves: "which box do I reach for?"
    is asked while looking at a shelf, not at a tablet in your palm. */
+/* ---- one screen, no scrolling ------------------------------------------
+ *
+ * The step and check screens must fit entirely, on every phone. Someone is
+ * holding a tray with both hands; scrolling to find the grid, or to reach
+ * Next, is the exact friction this screen exists to remove -- and a total you
+ * have to scroll past is a total you will misread.
+ *
+ * So the page becomes a fixed-height column rather than a document that
+ * happens to fit, and ONE child is allowed to flex: the photos. Everything
+ * else — the heading, the total, the grid, the buttons — is information you
+ * cannot shrink away, so it keeps its intrinsic height and the photos absorb
+ * whatever is left. On a tall phone they are generous; on a short one they
+ * give up their space first, which is the right order because the photo is
+ * one tap away from being full screen and the grid is not.
+ *
+ * `min-height: 0` on every level is load-bearing: a flex item's default
+ * `min-height: auto` refuses to shrink below its content, which is what makes
+ * a nested flex column overflow its parent instead of compressing.
+ */
+#app.og-fit {
+  height: 100dvh;
+  padding-top: var(--space-3);
+  padding-bottom: calc(var(--nav-h) + env(safe-area-inset-bottom, 0px) + var(--space-2));
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  overflow: hidden;
+  animation: none;
+}
+
+#app.og-fit > * { flex: 0 0 auto; }
+#app.og-fit .page-title { font-size: var(--text-xl); }
+#app.og-fit .og-photos,
+#app.og-fit .og-photos-none { flex: 1 1 auto; min-height: 0; margin-bottom: 0; }
+#app.og-fit .og-photo { min-height: 0; }
+#app.og-fit .og-photo-btn { flex: 1 1 auto; min-height: 0; height: auto; aspect-ratio: auto; max-height: none; }
+#app.og-fit .og-total { margin: 0; }
+#app.og-fit .og-actions { margin-top: 0; }
+#app.og-fit .og-checkintro { margin-bottom: 0; }
+#app.og-fit .og-checktap { margin-top: 0; }
+/* The check screen has no photos to give up, so its grid takes the slack and
+   stays vertically centred rather than pinned under the heading. */
+#app.og-fit .og-grid-check { flex: 1 1 auto; justify-content: center; min-height: 0; }
+
+/* As height runs out, spend the chrome before spending the content. The week
+   range goes first — it is on the start screen and the grid carries the dates
+   anyway — then the heading, which repeats what the person just tapped. */
+@media (max-height: 46rem) {
+  #app.og-fit .og-week { display: none; }
+  #app.og-fit { gap: var(--space-1); }
+}
+@media (max-height: 44rem) {
+  #app.og-fit .page-title { display: none; }
+  #app.og-fit .og-photo-cap { display: none; }
+}
+
 /* Two photos side by side when both exist, one full width when only one.
    Side by side rather than stacked: stacking pushes the grid off the screen,
    and the grid is what the person is about to act on. Each is a door to the
@@ -2060,7 +2117,7 @@ body.mode-simple .dialog-actions { flex-direction: column-reverse; }
 .og-compname { flex: 1; font-weight: 500; }
 .og-compqty { color: var(--ink-2); font-variant-numeric: tabular-nums; }
 
-.og-name { font-size: var(--text-lg); font-weight: 600; margin: 0; text-align: center; }
+.og-name { font-size: clamp(1rem, 4.2vw, var(--text-lg)); font-weight: 600; margin: 0; text-align: center; }
 .og-strength { color: var(--ink-2); font-weight: 400; }
 .og-purpose { text-align: center; color: var(--ink-2); font-size: var(--text-md); margin: var(--space-1) 0 0; }
 
@@ -2072,13 +2129,13 @@ body.mode-simple .dialog-actions { flex-direction: column-reverse; }
   justify-content: center;
   gap: var(--space-3);
   margin: var(--space-5) 0;
-  padding: var(--space-4);
+  padding: clamp(var(--space-2), 2vh, var(--space-4));
   background: var(--surface-2, var(--sunken));
   border-radius: var(--r-md);
 }
 .og-total-label { color: var(--ink-3); font-size: var(--text-base); }
 .og-total-value {
-  font-size: var(--text-xl);
+  font-size: clamp(1.125rem, 5.5vw, var(--text-xl));
   font-weight: 600;
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.015em;
@@ -2090,8 +2147,8 @@ body.mode-simple .dialog-actions { flex-direction: column-reverse; }
    horizontally, and a grid you have to scroll sideways to read is useless for
    checking against a tray you can see all of at once. Measured, not guessed --
    see the note in docs/phase-3-plan.md. */
-.og-grid { display: flex; flex-direction: column; gap: var(--space-2); }
-.og-row { display: grid; grid-template-columns: 5rem repeat(7, 1fr); align-items: center; gap: 2px; }
+.og-grid { display: flex; flex-direction: column; gap: clamp(2px, 0.8vh, 8px); }
+.og-row { display: grid; grid-template-columns: clamp(4rem, 21vw, 5rem) repeat(7, 1fr); align-items: center; gap: 2px; }
 .og-rowlabel { display: flex; flex-direction: column; font-size: var(--text-sm); line-height: 1.2; }
 .og-rowname { font-weight: 500; }
 .og-rowtime { color: var(--ink-3); font-variant-numeric: tabular-nums; }
@@ -2100,17 +2157,17 @@ body.mode-simple .dialog-actions { flex-direction: column-reverse; }
 .og-dayname { color: var(--ink-3); text-transform: uppercase; letter-spacing: 0.03em; }
 .og-daynum { color: var(--ink-2); font-variant-numeric: tabular-nums; }
 
-.og-cell { display: flex; align-items: center; justify-content: center; min-height: 38px; }
+.og-cell { display: flex; align-items: center; justify-content: center; min-height: clamp(26px, 4.4vh, 38px); }
 .og-dot {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
+  width: clamp(24px, 7.6vw, 32px);
+  height: clamp(24px, 7.6vw, 32px);
   border-radius: 50%;
   background: var(--primary);
   color: #fff;
-  font-size: var(--text-sm);
+  font-size: clamp(11px, 3.4vw, 14px);
   font-weight: 600;
   font-variant-numeric: tabular-nums;
 }
@@ -2128,11 +2185,8 @@ body.mode-simple .dialog-actions { flex-direction: column-reverse; }
    Measured at 320 and 375, on both the step and check screens, at 7x2 and
    7x4. */
 @media (max-width: 360px) {
-  .og-row { grid-template-columns: 4.25rem repeat(7, 1fr); }
   .og-rowlabel { font-size: var(--text-xs); }
   .og-head .og-day { font-size: var(--text-xs); }
-  .og-cell { min-height: 34px; }
-  .og-dot { width: 28px; height: 28px; font-size: var(--text-xs); }
 }
 
 .og-actions {

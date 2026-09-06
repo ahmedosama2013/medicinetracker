@@ -335,6 +335,16 @@ colour is unknowable from a photo. Tapping a compartment lists what belongs in
 it with the real pill photos, since "the count is wrong" is only useful if you
 can find out which one is missing.
 
+**Both screens fit one screen, on every phone.** They are a fixed-height
+column, not a document that happens to fit — someone is holding a tray with
+both hands, and scrolling to reach the grid or the Next button is the friction
+this screen exists to remove. Exactly one child flexes: the photos. Everything
+else is information that cannot be shrunk away, so it keeps its intrinsic
+height and the photos absorb what is left — the right thing to give, because a
+photo is one tap from full screen and a grid is not. As height runs out the
+chrome goes before the content: the week range first (the grid's own column
+headings carry the dates), then the page title.
+
 **There is no verdict.** No tick, no "looks right". The app cannot see the
 tray, and one that claimed the tray was correct would be claiming something it
 has no way to know.
