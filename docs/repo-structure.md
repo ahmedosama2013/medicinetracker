@@ -51,7 +51,13 @@ Medicine Tracker/
 │   │   ├── 0004_second_reminder.sql   one follow-up if a slot is still unmarked
 │   │   ├── 0005_skipped_doses.sql     widens dose_log.status, adds the UPDATE policy
 │   │   ├── 0006_supporter_parity.sql  logged_by + four code-gated read/write functions
-│   │   └── 0007_nudge.sql             last_nudge_at, the nudge rate limit
+│   │   ├── 0007_nudge.sql             last_nudge_at, the nudge rate limit
+│   │   ├── 0008_nudge_grants.sql      service_role grants the nudge needs
+│   │   ├── 0009_reminder_rpc_wrappers.sql  public wrappers for the app.* push
+│   │   │                              functions -- PostgREST cannot reach the
+│   │   │                              app schema, so cron had nothing to call
+│   │   └── 0010_slot_time_in_snapshots.sql  a medicine's own time stops
+│   │                                  relabelling the slot it sits in
 │   └── functions/
 │       ├── send-reminders/    Edge Function: Web Push delivery, cron-triggered
 │       ├── nudge/             Edge Function: the supporter's "have you taken them?" push

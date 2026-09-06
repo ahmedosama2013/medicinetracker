@@ -96,6 +96,11 @@ export const S = {
   nudgeSent: 'Reminder sent',
   nudgeWait: mins => `Already sent. You can send another in ${mins} minute${mins === 1 ? '' : 's'}.`,
   nudgeNoSubscription: 'They have not turned reminders on yet, so nothing was sent.',
+  /* Distinct from "sent". The edge function reports a delivery that reached
+   * nobody, and reporting that as success is exactly the failure this button
+   * exists to remove -- the supporter would sit waiting on a buzz that never
+   * happened. */
+  nudgeFailed: 'The reminder could not be delivered. Their phone may be switched off.',
   // Shown once at the top of the day rather than on every card: with six
   // medicines in a slot, six copies of the same hint is noise. Only rendered
   // once there is at least one medicine -- see js/views/today.js.

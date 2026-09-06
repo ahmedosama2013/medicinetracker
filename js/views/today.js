@@ -71,9 +71,19 @@ function nudgeButton(settings) {
       button.disabled = true;
       try {
         const result = await supporter.nudge(settings.supporterCode);
-        if (result?.retryInMinutes) toast(S.nudgeWait(result.retryInMinutes));
-        else if (result?.reason === 'no-subscriptions') toast(S.nudgeNoSubscription);
-        else toast(S.nudgeSent);
+        if (result?.retryInMinutes) {
+          toast(S.nudgeWait(result.retryInMinutes));
+        } else if (result?.reason === 'no-subscriptions') {
+          toast(S.nudgeNoSubscription);
+        } else if (!result?.sent) {
+          /* The function distinguishes "delivered to nobody" from "delivered",
+           * and this fell through to the success toast. Nothing burned the
+           * cooldown either, so trying again is worth offering. */
+          toast(S.nudgeFailed);
+          button.disabled = false;
+        } else {
+          toast(S.nudgeSent);
+        }
       } catch {
         toast(S.errGeneric);
         button.disabled = false;

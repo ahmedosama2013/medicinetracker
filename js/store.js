@@ -213,6 +213,30 @@ export async function replaceSchedulesCache(schedules) {
 export const putDoseLogRow = row => db.put(STORES.doseLog, row);
 export const deleteDoseLogRow = id => db.del(STORES.doseLog, id);
 
+/**
+ * Everything belonging to a household, gone. Settings survive.
+ *
+ * Sign-out and disconnect used to clear only the role and the credentials.
+ * replaceMedicinesCache overwrites medicines on the next sync, but doseLog,
+ * daySnapshots and photos are only ever added to -- so signing in as a
+ * different account, or pairing to a different household, left the previous
+ * one's dose history and pill photos on the device and rendering in the
+ * calendar. That is a privacy problem, not a staleness one.
+ *
+ * The outbox goes too. Anything left in it belongs to a household this device
+ * is no longer part of, and the writes would be rejected by RLS anyway.
+ */
+export async function clearHouseholdData() {
+  await Promise.all([
+    db.clear(STORES.medicines),
+    db.clear(STORES.schedules),
+    db.clear(STORES.doseLog),
+    db.clear(STORES.daySnapshots),
+    db.clear(STORES.photos),
+    db.clear(STORES.outbox),
+  ]);
+}
+
 // ---- offline outbox (js/sync.js only) --------------------------------------
 // Dose-log writes queued while the elder's device is offline. See js/sync.js.
 

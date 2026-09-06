@@ -157,8 +157,13 @@ const overlayHost = () => document.getElementById('overlay');
 
 let openCount = 0;
 
+/* Everything that can hold focus inside a panel, in document order. */
+const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]), '
+  + 'select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
 function mountOverlay(panel, { onDismiss, dismissible = true, className = '' } = {}) {
   const host = overlayHost();
+  const returnFocusTo = document.activeElement;
   const layer = el(`div.overlay-layer${className ? `.${className}` : ''}`);
   const backdrop = el('div.overlay-backdrop');
   layer.appendChild(backdrop);
@@ -177,17 +182,48 @@ function mountOverlay(panel, { onDismiss, dismissible = true, className = '' } =
       document.body.classList.remove('overlay-open');
     }
     document.removeEventListener('keydown', onKey);
+
+    /* Back where they came from. Without this, closing a sheet dropped focus
+     * to the top of the document and a keyboard user had to tab all the way
+     * back to the row they were on. The node may be gone -- redrawSlot
+     * replaces the slot that opened it -- hence the check. */
+    if (returnFocusTo?.isConnected) returnFocusTo.focus?.();
   };
 
   const dismiss = () => { close(); onDismiss?.(); };
 
   function onKey(event) {
-    if (event.key !== 'Escape' || !dismissible) return;
-    /* Only the topmost overlay answers. Every layer adds its own listener to
-     * `document`, so without this one Escape dismisses the whole stack at
-     * once -- closing a medicine sheet would also close the calendar day
-     * sheet underneath it and drop the person back to the month grid. */
+    /* Only the topmost overlay answers. Every layer adds its own keydown
+     * listener to `document`, so without this one Escape dismisses the whole
+     * stack at once -- closing a medicine sheet would also close the calendar
+     * day sheet underneath it and drop the person back to the month grid. */
     if (host.lastElementChild !== layer) return;
+
+    /* Keep Tab inside the panel. aria-modal tells a screen reader the rest of
+     * the page is inert; it does nothing about the tab order, so focus walked
+     * straight out into the screen behind -- which for a keyboard or switch
+     * user is the difference between a modal and a decoration. */
+    if (event.key === 'Tab') {
+      const items = [...panel.querySelectorAll(FOCUSABLE)];
+      if (!items.length) {
+        event.preventDefault();
+        panel.focus?.();
+        return;
+      }
+      const first = items[0];
+      const last = items[items.length - 1];
+      const inside = panel.contains(document.activeElement);
+      if (event.shiftKey && (!inside || document.activeElement === first)) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && (!inside || document.activeElement === last)) {
+        event.preventDefault();
+        first.focus();
+      }
+      return;
+    }
+
+    if (event.key !== 'Escape' || !dismissible) return;
     event.preventDefault();
     dismiss();
   }
@@ -290,6 +326,7 @@ export function openPhotoViewer({ url, name, strength, altText }) {
 }
 
 let toastTimer = null;
+let toastHideTimer = null;
 
 /**
  * toast('Saved')
@@ -302,12 +339,19 @@ let toastTimer = null;
  */
 export function toast(message, { actionLabel = null, onAction = null } = {}) {
   const node = document.getElementById('toast');
+  clearTimeout(toastTimer);
+  clearTimeout(toastHideTimer);
   clear(node);
   node.appendChild(el('span', { text: message }));
 
+  /* The pending hide is tracked, not fired and forgotten. A toast raised
+   * inside the 250ms fade-out of the previous one was made visible and then
+   * hidden again by that one's timer -- reachable by cycling two doses
+   * quickly, which is exactly when a toast matters. */
   const hide = () => {
     node.classList.remove('toast-on');
-    setTimeout(() => { node.hidden = true; }, 250);
+    clearTimeout(toastHideTimer);
+    toastHideTimer = setTimeout(() => { node.hidden = true; }, 250);
   };
 
   if (actionLabel && onAction) {

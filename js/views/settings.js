@@ -75,6 +75,10 @@ async function signOut() {
   });
   if (!ok) return;
   await auth.signOut();
+  /* Wipe first, then forget who we were. An interrupted sign-out then leaves a
+   * device with no role and no data, rather than a new role and the previous
+   * household's history still in the calendar. */
+  await store.clearHouseholdData().catch(() => {});
   await store.saveSettings({ role: null, householdId: null, shareCode: null });
   window.location.replace('#/welcome');
   window.location.reload();
@@ -85,6 +89,7 @@ async function disconnect() {
     title: S.settingsDisconnect, body: S.settingsDisconnectConfirm, confirmLabel: S.settingsDisconnect, danger: true,
   });
   if (!ok) return;
+  await store.clearHouseholdData().catch(() => {});
   await store.saveSettings({ role: null, supporterCode: null, supporterHouseholdName: null });
   window.location.replace('#/welcome');
   window.location.reload();

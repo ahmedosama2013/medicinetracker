@@ -15,7 +15,7 @@ import * as store from '../store.js';
 import * as scheduleLib from '../schedule.js';
 import * as supporterSync from '../supporter-sync.js';
 import { S } from '../strings.js';
-import { el, clear, openSheet, alertDialog } from '../ui.js';
+import { el, clear, openSheet, alertDialog, loadingState, emptyState } from '../ui.js';
 import { todayStr, monthGrid, parse, formatLong, isAfter } from '../date.js';
 import { renderDay } from './day.js';
 
@@ -70,7 +70,10 @@ export async function calendarView({ app, isCurrent = () => true }) {
     return 'open';
   }
 
+  let opening = false;
+
   async function openDay(date) {
+    if (opening) return;              // two taps used to open two sheets
     const state = dayState(date);
 
     if (state === 'future') {
@@ -78,20 +81,49 @@ export async function calendarView({ app, isCurrent = () => true }) {
       return;
     }
 
-    let rendered;
+    opening = true;
+    let rendered = null;
+    let sheetOpen = true;
+
     const sheet = openSheet({
       title: formatLong(date, S.monthNames, S.weekdayNames),
-      content: el('p', { text: S.loading }),
-      onClose: () => { rendered?.cleanup(); sheetCleanup = null; draw(); },
+      content: loadingState(),
+      onClose: () => {
+        sheetOpen = false;
+        rendered?.cleanup();
+        rendered = null;
+        sheetCleanup = null;
+        draw();
+      },
     });
 
-    rendered = await renderDay({
-      date,
-      editable: state === 'open',
-      lockReason: state === 'locked' ? S.lockedBody : null,
-    });
-    sheet.setContent(rendered.node);
-    sheetCleanup = () => rendered?.cleanup();
+    let day;
+    try {
+      day = await renderDay({
+        date,
+        editable: state === 'open',
+        lockReason: state === 'locked' ? S.lockedBody : null,
+      });
+    } catch {
+      if (sheetOpen) sheet.setContent(emptyState(S.errGeneric));
+      opening = false;
+      return;
+    } finally {
+      opening = false;
+    }
+
+    /* Closed while the day was loading -- easy, since the sheet is on screen
+     * showing a spinner the whole time. `rendered` was still undefined when
+     * onClose ran, so every object URL for this day used to leak, and
+     * setContent then wrote into a detached node. */
+    if (!sheetOpen) {
+      day.cleanup();
+      return;
+    }
+
+    rendered = day;
+    sheet.setContent(day.node);
+    sheetCleanup = () => { rendered?.cleanup(); rendered = null; };
     // The month's rings are refreshed by draw() when the sheet closes, so
     // marking a dose does not rebuild the sheet under the person's thumb.
   }
