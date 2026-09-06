@@ -82,9 +82,49 @@ export async function getActiveMedicines() {
 
 // ---- photos ---------------------------------------------------------------
 
+/* Two photos per medicine, one record.
+ *
+ * `{ medicineId, blob, packetBlob }` -- the pill photo answers "which tablet
+ * is this?" at 44px, the packet photo answers "which box do I reach for?"
+ * while filling an organiser. They live on one record rather than in two
+ * stores because js/db.js's upgrade() cannot change a keyPath or add an index
+ * to an existing store (it only ever creates missing ones), and an IndexedDB
+ * record is schemaless, so a second field costs nothing. See
+ * docs/phase-3-plan.md, item 23c.
+ *
+ * Writes are read-modify-write for the same reason: `db.put` replaces the
+ * whole record, so saving a packet photo with a bare put would silently erase
+ * the pill photo next to it.
+ */
+const PHOTO_FIELD = { pill: 'blob', packet: 'packetBlob' };
+
 export const getPhoto = medicineId => db.get(STORES.photos, medicineId);
-export const putPhoto = (medicineId, blob) => db.put(STORES.photos, { medicineId, blob });
-export const deletePhoto = medicineId => db.del(STORES.photos, medicineId);
+
+export async function getPhotoBlob(medicineId, kind = 'pill') {
+  const row = await db.get(STORES.photos, medicineId);
+  return row?.[PHOTO_FIELD[kind] || 'blob'] || null;
+}
+
+export async function putPhoto(medicineId, kind, blob) {
+  const existing = await db.get(STORES.photos, medicineId);
+  return db.put(STORES.photos, {
+    ...(existing || {}), medicineId, [PHOTO_FIELD[kind] || 'blob']: blob,
+  });
+}
+
+export async function deletePhoto(medicineId, kind = null) {
+  // No kind means the medicine is going: drop the record and both photos.
+  if (!kind) return db.del(STORES.photos, medicineId);
+
+  const existing = await db.get(STORES.photos, medicineId);
+  if (!existing) return undefined;
+  const next = { ...existing };
+  delete next[PHOTO_FIELD[kind] || 'blob'];
+  // Nothing left worth a row -- keeping an empty one would make `getPhoto`
+  // return a truthy object with no image in it.
+  if (!next.blob && !next.packetBlob) return db.del(STORES.photos, medicineId);
+  return db.put(STORES.photos, next);
+}
 
 // ---- schedules ------------------------------------------------------------
 

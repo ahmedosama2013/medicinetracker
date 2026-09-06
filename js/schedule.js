@@ -45,7 +45,7 @@ export function effectiveTime(schedule, slot) {
 
 /**
  * Group everything due on `dateStr` into slots, sorted by time. Pure.
- * Returns [{ slotId, label, time, medicines: [{ medicineId, name, strength, dosage, notes, form }] }]
+ * Returns [{ slotId, label, time, medicines: [{ medicineId, name, strength, doseQty, notes, form, purpose }] }]
  */
 export function buildDay(dateStr, { medicines, schedules, slots }) {
   const byId = new Map(medicines.map(m => [m.id, m]));
@@ -78,9 +78,15 @@ export function buildDay(dateStr, { medicines, schedules, slots }) {
       medicineId: medicine.id,
       name: medicine.name,
       strength: medicine.strength,
-      dosage: medicine.dosage,
+      /* Same both-shapes rule as toSnapshot below. A live medicine always has
+       * doseQty after migration 0011 -- but a device that has not synced
+       * since the app updated still holds pre-migration records in its cache,
+       * and dropping the old field here rendered a blank dose for however
+       * many seconds that took to heal. */
+      ...(medicine.doseQty == null ? { dosage: medicine.dosage } : { doseQty: medicine.doseQty }),
       notes: medicine.notes,
       form: medicine.form,
+      purpose: medicine.purpose,
       // Carried per medicine so a row can show its own time when it differs.
       time,
     });
@@ -161,9 +167,15 @@ export function toSnapshot(dateStr, groups) {
         medicineId: m.medicineId,
         name: m.name,
         strength: m.strength,
-        dosage: m.dosage,
+        // `dosage` is carried through when present rather than converted:
+        // this shapes snapshots, and a snapshot frozen before migration 0011
+        // holds the free text that was true on the day. Rewriting it is the
+        // one thing freezing a day exists to prevent. js/ui.js's doseText
+        // renders whichever of the two a row happens to have.
+        ...(m.doseQty == null ? { dosage: m.dosage } : { doseQty: m.doseQty }),
         notes: m.notes || '',
         form: m.form || 'tablet',
+        purpose: m.purpose || '',
         time: m.time || g.time,
       })),
     })),

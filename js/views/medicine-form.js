@@ -20,12 +20,20 @@ import { todayStr, formatTime } from '../date.js';
 import { go } from '../router.js';
 import { archiveMedicine } from './medicines.js';
 
-let previewToken = null;
+/* A medicine has two photos -- the pill and the packet -- and everything
+ * about picking one is identical, so the state is keyed by kind rather than
+ * duplicated. `pill` answers "which tablet is this?" on Today; `packet`
+ * answers "which box do I reach for?" while filling an organiser.
+ *
+ * Module-level rather than per-render because the view's cleanup runs after
+ * the closure is gone; see releasePreviews below. */
+const PHOTO_KINDS = ['pill', 'packet'];
+let previewTokens = { pill: null, packet: null };
 
-function releasePreview() {
-  if (previewToken !== null) {
-    photosLib.release(previewToken);
-    previewToken = null;
+function releasePreviews() {
+  for (const kind of PHOTO_KINDS) {
+    if (previewTokens[kind] !== null) photosLib.release(previewTokens[kind]);
+    previewTokens[kind] = null;
   }
 }
 
@@ -54,19 +62,23 @@ export async function medicineFormView({ app, query, isCurrent = () => true }) {
    * so it never needed the routine to come back first. That was one avoidable
    * round trip on the slowest screen in the app. */
   let routine;
-  let loadedPhotoUrl = null;
+  let loadedUrls = {};
   try {
-    [routine, loadedPhotoUrl] = await Promise.all([
+    let pillUrl;
+    let packetUrl;
+    [routine, pillUrl, packetUrl] = await Promise.all([
       supporter.loadRoutine(code),
-      id ? supporter.getPhotoUrl(code, id).catch(() => null) : Promise.resolve(null),
+      id ? supporter.getPhotoUrl(code, id, 'pill').catch(() => null) : Promise.resolve(null),
+      id ? supporter.getPhotoUrl(code, id, 'packet').catch(() => null) : Promise.resolve(null),
     ]);
+    loadedUrls = { pill: pillUrl, packet: packetUrl };
   } catch {
     if (!isCurrent()) return;
     clear(app);
     app.appendChild(el('p.note', { text: S.pairCodeInvalid }));
     return;
   }
-  if (!isCurrent()) return releasePreview;
+  if (!isCurrent()) return releasePreviews;
 
   const { slots } = routine;
   const existing = id ? routine.medicines.find(m => m.id === id) : null;
@@ -77,16 +89,21 @@ export async function medicineFormView({ app, query, isCurrent = () => true }) {
     id: existing?.id || null,
     name: existing?.name || '',
     strength: existing?.strength || '',
-    dosage: existing?.dosage || '',
+    // A number since migration 0011. Kept as a string in the draft because
+    // that is what an <input> holds; parsed once, in validate().
+    doseQty: existing?.doseQty == null ? '1' : String(existing.doseQty),
     form: existing?.form || 'tablet',
+    purpose: existing?.purpose || '',
     notes: existing?.notes || '',
     archived: existing?.archived || false,
   };
 
-  // Fetched above, alongside the routine.
-  let photoUrl = existing?.photoPath ? loadedPhotoUrl : null;
-  let photoBlob = null;      // a freshly picked, not-yet-saved photo
-  let photoDirty = false;
+  // Fetched above, alongside the routine. `blob` is a freshly picked,
+  // not-yet-saved photo; `dirty` means this kind needs a round trip on save.
+  const photo = {
+    pill: { url: existing?.photoPath ? loadedUrls.pill : null, blob: null, dirty: false, node: null },
+    packet: { url: existing?.packetPhotoPath ? loadedUrls.packet : null, blob: null, dirty: false, node: null },
+  };
 
   const schedules = existingSchedules.filter(s => s.active).map(s => ({
     id: s.id,
@@ -143,7 +160,6 @@ export async function medicineFormView({ app, query, isCurrent = () => true }) {
    * node, and replaceWith quietly does nothing. That exact mistake cost a day
    * in Phase 1 (see js/views/day.js's redrawSlot). */
   const cardNodes = new Map();      // schedule entry -> its live node
-  let photoNode = null;
 
   /* Which control the person was using, read BEFORE the swap. Removing a
    * focused element resets document.activeElement to <body> immediately, so
@@ -165,9 +181,9 @@ export async function medicineFormView({ app, query, isCurrent = () => true }) {
     swap(previous, scheduleCard(entry));
   }
 
-  function redrawPhoto() {
-    const previous = photoNode;
-    swap(previous, photoField());
+  function redrawPhoto(kind) {
+    const previous = photo[kind].node;
+    swap(previous, photoField(kind));
   }
 
   // ---- rendering ---------------------------------------------------------
@@ -188,17 +204,36 @@ export async function medicineFormView({ app, query, isCurrent = () => true }) {
     });
   }
 
-  function photoField() {
-    releasePreview();
+  function textFieldWithHint(key, label, placeholder, hint) {
+    const input = el('input', {
+      type: 'text', id: `f-${key}`, value: draft[key],
+      placeholder: placeholder || '', autocomplete: 'off',
+      oninput: e => { draft[key] = e.target.value; },
+    });
+    return field({ id: `f-${key}`, label, control: input, hint });
+  }
+
+  function photoField(kind) {
+    const state = photo[kind];
+
+    /* Only this kind's token is released. Releasing both -- which a single
+     * shared token forced -- would revoke the other picker's live preview the
+     * moment either one was redrawn, and the image beside it would go blank
+     * with nothing to explain why. */
+    if (previewTokens[kind] !== null) {
+      photosLib.release(previewTokens[kind]);
+      previewTokens[kind] = null;
+    }
+
     let preview;
-    if (photoBlob) {
-      const { url, token } = photosLib.objectUrl(photoBlob);
-      previewToken = token;
+    if (state.blob) {
+      const { url, token } = photosLib.objectUrl(state.blob);
+      previewTokens[kind] = token;
       preview = el('span.photo-preview', el('img', { src: url, alt: '' }));
-    } else if (photoUrl) {
-      preview = el('span.photo-preview', el('img', { src: photoUrl, alt: '' }));
+    } else if (state.url) {
+      preview = el('span.photo-preview', el('img', { src: state.url, alt: '' }));
     } else {
-      preview = el('span.photo-preview', { text: S.noPhoto });
+      preview = el('span.photo-preview', { text: kind === 'packet' ? S.noPacketPhoto : S.noPhoto });
     }
 
     // A live input element, because programmatic .click() on a detached input
@@ -208,42 +243,45 @@ export async function medicineFormView({ app, query, isCurrent = () => true }) {
       accept: 'image/*',
       capture: 'environment',
       hidden: true,
-      id: 'f-photo',
+      id: `f-photo-${kind}`,
       onchange: async e => {
         const file = e.target.files?.[0];
         if (!file) return;
         try {
-          photoBlob = await photosLib.compress(file);
-          photoUrl = null;
-          photoDirty = true;
-          redrawPhoto();
+          state.blob = await photosLib.compress(file);
+          state.url = null;
+          state.dirty = true;
+          redrawPhoto(kind);
         } catch {
           toast(S.errPhotoFailed);
         }
       },
     });
 
-    photoNode = field({
-      label: S.fieldPhoto,
-      hint: S.photoOptional,
+    const has = state.blob || state.url;
+    state.node = field({
+      label: kind === 'packet' ? S.fieldPacketPhoto : S.fieldPhoto,
+      hint: kind === 'packet' ? S.packetPhotoOptional : S.photoOptional,
       control: el('div.photo-picker', [
         preview,
         input,
         el('div.btn-row', [
           el('button.btn', {
             type: 'button',
-            text: (photoBlob || photoUrl) ? S.retakePhoto : S.takePhoto,
+            text: has ? S.retakePhoto : S.takePhoto,
             onclick: () => input.click(),
           }),
-          (photoBlob || photoUrl) ? el('button.btn.btn-quiet', {
+          has ? el('button.btn.btn-quiet', {
             type: 'button',
             text: S.removePhoto,
-            onclick: () => { photoBlob = null; photoUrl = null; photoDirty = true; redrawPhoto(); },
+            onclick: () => {
+              state.blob = null; state.url = null; state.dirty = true; redrawPhoto(kind);
+            },
           }) : null,
         ]),
       ]),
     });
-    return photoNode;
+    return state.node;
   }
 
   function scheduleCard(entry) {
@@ -363,18 +401,38 @@ export async function medicineFormView({ app, query, isCurrent = () => true }) {
       textField('name', S.fieldName, S.fieldNamePlaceholder, { required: true }),
       el('div.field-inline', [
         textField('strength', S.fieldStrength, S.fieldStrengthPlaceholder),
-        textField('dosage', S.fieldDosage, S.fieldDosagePlaceholder),
+        /* A number, not free text. The organiser has to add these up across a
+         * week, and "1 tablet" cannot be added to anything. The unit comes
+         * from the form below, which is also what lets it be translated.
+         * step 0.25 because scored tablets are halved and quartered. */
+        field({
+          id: 'f-doseQty',
+          label: S.fieldDosage,
+          error: errors.doseQty,
+          hint: S.fieldDosageHint,
+          control: el('input', {
+            type: 'number', id: 'f-doseQty',
+            min: '0.25', max: '99', step: '0.25',
+            inputmode: 'decimal',
+            value: draft.doseQty,
+            class: errors.doseQty ? 'input-invalid' : '',
+            oninput: e => { draft.doseQty = e.target.value; },
+          }),
+        }),
       ]),
       field({
         id: 'f-form',
         label: S.fieldForm,
         control: el('select', {
           id: 'f-form',
+          // The dose's unit is derived from this, so the hint under the
+          // number above stops being true the moment it changes.
           onchange: e => { draft.form = e.target.value; },
         }, store.MEDICINE_FORMS.map(f => el('option', {
           value: f, text: S.forms[f], selected: draft.form === f,
         }))),
       }),
+      textFieldWithHint('purpose', S.fieldPurpose, S.fieldPurposePlaceholder, S.purposeHint),
       field({
         id: 'f-notes',
         label: S.fieldNotes,
@@ -385,7 +443,8 @@ export async function medicineFormView({ app, query, isCurrent = () => true }) {
           oninput: e => { draft.notes = e.target.value; },
         }),
       }),
-      photoField(),
+      photoField('pill'),
+      photoField('packet'),
     ]));
 
     app.appendChild(section(S.schedulesHeading, [
@@ -449,7 +508,8 @@ export async function medicineFormView({ app, query, isCurrent = () => true }) {
   function validate() {
     for (const key of Object.keys(errors)) delete errors[key];
     if (!draft.name.trim()) errors.name = S.errNameRequired;
-    if (!draft.dosage.trim()) errors.dosage = S.errDosageRequired;
+    const qty = Number(draft.doseQty);
+    if (!Number.isFinite(qty) || qty <= 0 || qty > 99) errors.doseQty = S.errDosageRequired;
     if (!schedules.length) errors.schedules = S.errNoSchedule;
 
     schedules.forEach((entry, index) => {
@@ -482,7 +542,11 @@ export async function medicineFormView({ app, query, isCurrent = () => true }) {
 
     let saved;
     try {
-      saved = await supporter.saveMedicine(code, draft);
+      // doseQty leaves the form as a number. The draft holds it as a string
+      // because that is what an <input> gives back, and upsert_medicine casts
+      // to numeric -- "1" would survive that cast, but "" would not, and
+      // validate() is the only thing standing between the two.
+      saved = await supporter.saveMedicine(code, { ...draft, doseQty: Number(draft.doseQty) });
       draft.id = saved.id; // so a retry after a later failure updates this row instead of inserting a new one
       const payload = schedules.map(s => ({ ...s, frequency: normalizeFrequency(s.frequency) }));
       await supporter.replaceSchedules(code, saved.id, payload);
@@ -500,12 +564,18 @@ export async function medicineFormView({ app, query, isCurrent = () => true }) {
     // despite the error. Reported separately here so the toast matches what
     // actually happened.
     let photoFailed = false;
-    if (photoDirty) {
-      busy.setMessage(photoBlob ? S.busyUploadingPhoto : S.busyRemovingPhoto);
+    for (const kind of PHOTO_KINDS) {
+      const state = photo[kind];
+      if (!state.dirty) continue;
+      busy.setMessage(state.blob ? S.busyUploadingPhoto : S.busyRemovingPhoto);
       try {
-        if (photoBlob) await supporter.uploadPhoto(code, saved.id, photoBlob);
-        else await supporter.deletePhoto(code, saved.id);
+        if (state.blob) await supporter.uploadPhoto(code, saved.id, state.blob, kind);
+        else await supporter.deletePhoto(code, saved.id, kind);
       } catch {
+        /* One flag for both, deliberately. The toast's job is "the medicine
+         * saved, a photo did not" -- naming which one would need two more
+         * strings to tell the person something they can see for themselves on
+         * the page they are about to land on. */
         photoFailed = true;
       }
     }
@@ -520,12 +590,12 @@ export async function medicineFormView({ app, query, isCurrent = () => true }) {
     await supporterSync.refresh(code).catch(() => {});
 
     busy.close();
-    releasePreview();
+    releasePreviews();
     setSaveBusy(false);
     toast(photoFailed ? S.savedMedicineNoPhoto : S.savedMedicine);
     go('#/medicines');
   }
 
   draw();
-  return () => releasePreview();
+  return () => releasePreviews();
 }

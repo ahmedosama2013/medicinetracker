@@ -12,7 +12,7 @@ import * as doses from '../doses.js';
 import * as schedule from '../schedule.js';
 import * as photos from '../photos.js';
 import { S } from '../strings.js';
-import { el, icon, pillTile, emptyState, toast, confirmDialog } from '../ui.js';
+import { el, icon, pillTile, emptyState, toast, confirmDialog, doseText } from '../ui.js';
 import { formatTime, todayStr, timeToMinutes } from '../date.js';
 import { openMedicineSheet } from './medicine-sheet.js';
 
@@ -257,7 +257,7 @@ export async function renderDay({
           ownTime ? el('span.med-at', { text: ownTime }) : null,
           state === 'skipped'
             ? el('span.med-skip-note', { text: S.skipped })
-            : (medicine.dosage ? el('span.med-dosage', { text: medicine.dosage }) : null),
+            : (doseText(medicine) ? el('span.med-dosage', { text: doseText(medicine) }) : null),
           medicine.notes ? el('span.med-notes', { text: medicine.notes }) : null,
           state && settings.role === 'simple' && byWhom.get(keyOf(group.slotId, medicine.medicineId)) === 'supporter'
             ? el('span.med-bywhom', { text: S.markedByHelper })

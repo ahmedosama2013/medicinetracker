@@ -45,7 +45,8 @@ let lastSignature = null;
 
 function signatureOf(routine, rows) {
   const meds = (routine?.medicines || [])
-    .map(m => `${m.id}:${m.name}:${m.strength}:${m.dosage}:${m.form}:${m.notes}:${m.archived}:${m.photoPath}`)
+    .map(m => [m.id, m.name, m.strength, m.doseQty, m.form, m.notes, m.purpose,
+      m.archived, m.photoPath, m.packetPhotoPath].join(':'))
     .sort().join('|');
   const schedules = (routine?.schedules || [])
     .map(s => `${s.id}:${s.slotId}:${s.time}:${s.active}:${JSON.stringify(s.frequency)}`)
@@ -89,27 +90,35 @@ function mapDose(row) {
  * Best effort throughout. A medicine whose photo fails to download falls back
  * to its generated tile, which is exactly what that tile is for.
  */
-async function cachePhotos(code, medicines, previousPaths) {
-  await Promise.all(medicines.map(async medicine => {
-    if (!medicine.photoPath) {
-      if (previousPaths.get(medicine.id)) await store.deletePhoto(medicine.id).catch(() => {});
-      return;
-    }
-    // Re-attempt when the path is unchanged but nothing is cached: a failed
-    // download must not be remembered as a success.
-    const cached = await store.getPhoto(medicine.id).catch(() => null);
-    if (cached?.blob && medicine.photoPath === previousPaths.get(medicine.id)) return;
-
-    try {
-      const url = await supporter.getPhotoUrl(code, medicine.id);
-      if (!url) return;
-      const res = await fetch(url);
-      if (!res.ok) return;
-      await store.putPhoto(medicine.id, await res.blob());
-    } catch {
-      // Stays missing locally until the next sync; the tile covers it.
-    }
+async function cachePhotos(code, medicines, previous) {
+  await Promise.all(medicines.flatMap(medicine => {
+    const was = previous.get(medicine.id);
+    return [
+      cachePhoto(code, medicine.id, 'pill', medicine.photoPath, was?.photoPath),
+      cachePhoto(code, medicine.id, 'packet', medicine.packetPhotoPath, was?.packetPhotoPath),
+    ];
   }));
+}
+
+async function cachePhoto(code, medicineId, kind, path, previousPath) {
+  if (!path) {
+    if (previousPath) await store.deletePhoto(medicineId, kind).catch(() => {});
+    return;
+  }
+  // Re-attempt when the path is unchanged but nothing is cached: a failed
+  // download must not be remembered as a success.
+  const cached = await store.getPhotoBlob(medicineId, kind).catch(() => null);
+  if (cached && path === previousPath) return;
+
+  try {
+    const url = await supporter.getPhotoUrl(code, medicineId, kind);
+    if (!url) return;
+    const res = await fetch(url);
+    if (!res.ok) return;
+    await store.putPhoto(medicineId, kind, await res.blob());
+  } catch {
+    // Stays missing locally until the next sync; the tile covers it.
+  }
 }
 
 /** Medicines, schedules and slots. Cheap enough to replace wholesale. */
@@ -117,11 +126,12 @@ async function pullRoutine(code) {
   const routine = await supporter.loadRoutine(code);
 
   const previous = await store.getMedicines();
-  const previousPaths = new Map(previous.map(m => [m.id, m.photoPath]));
+  const previousPaths = new Map(previous.map(m => [m.id, m]));
 
   const medicines = (routine.medicines || []).map(m => ({
-    id: m.id, name: m.name, strength: m.strength, dosage: m.dosage,
-    form: m.form, notes: m.notes, archived: m.archived, photoPath: m.photoPath,
+    id: m.id, name: m.name, strength: m.strength, doseQty: m.doseQty,
+    form: m.form, notes: m.notes, purpose: m.purpose, archived: m.archived,
+    photoPath: m.photoPath, packetPhotoPath: m.packetPhotoPath,
   }));
   await store.replaceMedicinesCache(medicines);
   await store.replaceSchedulesCache((routine.schedules || []).map(s => ({

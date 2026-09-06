@@ -12,11 +12,16 @@ import { supabase } from './supabase.js';
 import * as store from './store.js';
 import { refresh } from './router.js';
 
+/* Enumerates columns explicitly, which is exactly why every new medicine
+ * column has to be added here as well as to the migration -- a column missing
+ * from this list arrives from Postgres and is dropped on the doorstep, with
+ * nothing anywhere to say so. See docs/phase-3-plan.md, item 23. */
 function mapMedicine(row) {
   return {
-    id: row.id, name: row.name, strength: row.strength, dosage: row.dosage,
-    form: row.form, notes: row.notes, archived: row.archived,
-    createdAt: row.created_at, photoPath: row.photo_path,
+    id: row.id, name: row.name, strength: row.strength, doseQty: row.dose_qty,
+    form: row.form, notes: row.notes, purpose: row.purpose, archived: row.archived,
+    createdAt: row.created_at,
+    photoPath: row.photo_path, packetPhotoPath: row.packet_photo_path,
   };
 }
 
@@ -55,7 +60,7 @@ async function refetchRoutine(householdId) {
   ]);
 
   const previous = await store.getMedicines();
-  const previousPhotoPath = new Map(previous.map(m => [m.id, m.photoPath]));
+  const previousPaths = new Map(previous.map(m => [m.id, m]));
 
   const medicines = (medsRes.data || []).map(mapMedicine);
   await store.replaceMedicinesCache(medicines);
@@ -63,18 +68,23 @@ async function refetchRoutine(householdId) {
   await store.saveSettings({ slots: (slotsRes.data || []).map(mapSlot) });
 
   for (const medicine of medicines) {
-    if (medicine.photoPath) {
-      // Re-attempt even when the path looks unchanged: recording it as "seen"
-      // happens above regardless of whether the download actually succeeded,
-      // so a prior failed download (see cachePhoto's catch) must still retry.
-      const alreadyCached = await store.getPhoto(medicine.id);
-      if (medicine.photoPath !== previousPhotoPath.get(medicine.id) || !alreadyCached) {
-        await cachePhoto(medicine.id, medicine.photoPath);
-      }
-    } else if (previousPhotoPath.get(medicine.id)) {
-      await store.deletePhoto(medicine.id);
-    }
+    const was = previousPaths.get(medicine.id);
+    await syncPhoto(medicine, 'pill', medicine.photoPath, was?.photoPath);
+    await syncPhoto(medicine, 'packet', medicine.packetPhotoPath, was?.packetPhotoPath);
   }
+}
+
+/* One photo of one kind. Re-attempts even when the path looks unchanged:
+ * recording it as "seen" happens whether or not the download actually
+ * succeeded, so a prior failure (see cachePhoto's catch) has to retry. */
+async function syncPhoto(medicine, kind, path, previousPath) {
+  if (!path) {
+    if (previousPath) await store.deletePhoto(medicine.id, kind);
+    return;
+  }
+  const cached = await store.getPhotoBlob(medicine.id, kind);
+  if (path === previousPath && cached) return;
+  await cachePhoto(medicine.id, kind, path);
 }
 
 /** Dose history and calendar freezes: fetched in full once on startup, then
@@ -95,11 +105,11 @@ async function refetchHouseholdMeta(householdId) {
   if (data) await store.saveSettings({ lockedThrough: data.locked_through, timezone: data.timezone });
 }
 
-async function cachePhoto(medicineId, path) {
+async function cachePhoto(medicineId, kind, path) {
   try {
     const { data, error } = await supabase().storage.from('med-photos').download(path);
     if (error || !data) return;
-    await store.putPhoto(medicineId, data);
+    await store.putPhoto(medicineId, kind, data);
   } catch {
     // Best effort: the photo stays missing locally until the next successful sync.
   }

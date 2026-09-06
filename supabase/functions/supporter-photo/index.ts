@@ -39,10 +39,17 @@ Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
 
   try {
-    const { action, code, medicineId, photoBase64 } = await req.json()
+    const { action, code, medicineId, photoBase64, kind } = await req.json()
     if (!code || !medicineId) {
       return new Response('missing code or medicineId', { status: 400, headers: corsHeaders })
     }
+    // A medicine has two photos and they answer different questions: the pill
+    // is "which tablet is this?" at 44px, the packet is "which box do I reach
+    // for?" while filling an organiser. Same bucket, same lifecycle, different
+    // column -- so the three actions below are parameterised rather than
+    // duplicated. Absent `kind` means the pill, which is every caller that
+    // predates Phase 3.
+    const column = kind === 'packet' ? 'packet_photo_path' : 'photo_path'
     const householdId = await householdIdForCode(code)
 
     if (action === 'upload') {
@@ -50,7 +57,7 @@ Deno.serve(async (req) => {
       if (bytes.length > 512_000) {
         return new Response('photo too large', { status: 400, headers: corsHeaders })
       }
-      const path = `${householdId}/${medicineId}/${crypto.randomUUID()}.jpg`
+      const path = `${householdId}/${medicineId}/${kind === 'packet' ? 'packet' : 'pill'}-${crypto.randomUUID()}.jpg`
       const { error: uploadError } = await supabase.storage
         .from(BUCKET)
         .upload(path, bytes, { contentType: 'image/jpeg' })
@@ -58,51 +65,51 @@ Deno.serve(async (req) => {
 
       const { data: existing } = await supabase
         .from('medicines')
-        .select('photo_path')
+        .select(column)
         .eq('id', medicineId)
         .eq('household_id', householdId)
         .single()
 
       await supabase
         .from('medicines')
-        .update({ photo_path: path })
+        .update({ [column]: path })
         .eq('id', medicineId)
         .eq('household_id', householdId)
 
-      if (existing?.photo_path) await supabase.storage.from(BUCKET).remove([existing.photo_path])
+      if (existing?.[column]) await supabase.storage.from(BUCKET).remove([existing[column]])
       return Response.json({ path }, { headers: corsHeaders })
     }
 
     if (action === 'delete') {
       const { data: existing } = await supabase
         .from('medicines')
-        .select('photo_path')
+        .select(column)
         .eq('id', medicineId)
         .eq('household_id', householdId)
         .single()
 
       await supabase
         .from('medicines')
-        .update({ photo_path: null })
+        .update({ [column]: null })
         .eq('id', medicineId)
         .eq('household_id', householdId)
 
-      if (existing?.photo_path) await supabase.storage.from(BUCKET).remove([existing.photo_path])
+      if (existing?.[column]) await supabase.storage.from(BUCKET).remove([existing[column]])
       return Response.json({ ok: true }, { headers: corsHeaders })
     }
 
     if (action === 'getUrl') {
       const { data: row } = await supabase
         .from('medicines')
-        .select('photo_path')
+        .select(column)
         .eq('id', medicineId)
         .eq('household_id', householdId)
         .single()
-      if (!row?.photo_path) return Response.json({ url: null }, { headers: corsHeaders })
+      if (!row?.[column]) return Response.json({ url: null }, { headers: corsHeaders })
 
       const { data, error } = await supabase.storage
         .from(BUCKET)
-        .createSignedUrl(row.photo_path, 300)
+        .createSignedUrl(row[column], 300)
       if (error) throw error
       return Response.json({ url: data.signedUrl }, { headers: corsHeaders })
     }

@@ -1644,6 +1644,33 @@ body.mode-simple .dialog-actions { flex-direction: column-reverse; }
   margin: calc(var(--space-3) * -1) 0 var(--space-4);
 }
 
+/* Sits directly under the photo, ahead of the labelled facts. It is a
+   sentence, not a field, so it gets no label -- "for blood pressure" reads as
+   an answer where "What it is for: for blood pressure" reads as a form. */
+.detail-purpose {
+  font-size: var(--text-md);
+  color: var(--ink-2);
+  text-align: center;
+  margin: 0 0 var(--space-4);
+}
+
+/* Not full-bleed like the pill photo above it. That one is the identifying
+   image and earns the whole sheet width; this one is a reminder of which box
+   to reach for, and giving it equal weight would say they answer equally
+   important questions. */
+.detail-packet {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  padding: 0;
+  background: var(--sunken);
+  cursor: zoom-in;
+  overflow: hidden;
+}
+.detail-packet img { width: 100%; height: 100%; object-fit: contain; }
+
 .detail-facts { display: flex; flex-direction: column; }
 .detail-fact {
   display: flex;

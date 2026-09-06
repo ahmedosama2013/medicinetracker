@@ -9,13 +9,14 @@
  * that is the whole reason the photos exist (docs/flow.md, Flow 4). So the
  * sheet is the detail and the photo inside it is the door to the big version.
  *
- * `purpose` and the packet photo are Phase 4; the layout leaves room for both
- * rather than being rearranged around them later.
+ * `purpose` and the packet photo landed in Phase 3 (item 23), into the room
+ * the layout was already leaving for them.
  */
 
 import * as store from '../store.js';
+import * as photos from '../photos.js';
 import { S } from '../strings.js';
-import { el, clear, append, icon, pillTile, openSheet, openPhotoViewer } from '../ui.js';
+import { el, clear, append, icon, pillTile, openSheet, openPhotoViewer, doseText } from '../ui.js';
 import { formatTime } from '../date.js';
 
 /** "Morning 8:00 am · Night 9:00 pm", or null when nothing is scheduled. */
@@ -57,11 +58,21 @@ function fact(label, value) {
 }
 
 /**
- * @param {object} medicine  { medicineId, name, strength, dosage, notes, form }
- * @param {string} [url]     object URL for the photo, if this device has one
+ * @param {object} medicine  { medicineId, name, strength, doseQty, notes, form, purpose }
+ * @param {string} [url]     object URL for the pill photo, if this device has one
  */
 export function openMedicineSheet({ medicine, url }) {
   const altText = `${medicine.name} ${medicine.strength || ''}`.trim();
+
+  /* The packet photo is loaded here rather than handed in, and that is the
+   * point: Today holds a pill photo per medicine because those are the tiles,
+   * but a packet photo is only ever looked at inside this sheet. Creating an
+   * object URL for every one of them on a screen where most will never be
+   * opened is a dozen blobs held live for nothing. So this sheet owns its
+   * token and releases it on close, which is the same contract every view
+   * follows on unmount. */
+  const packet = el('div.detail-packet-slot');
+  let packetToken = null;
 
   /* With no photo this is a plain block, not a button: a control that opens a
    * full-screen view of nothing is a dead end, and a square of empty space
@@ -90,14 +101,43 @@ export function openMedicineSheet({ medicine, url }) {
     content: [
       photo,
       url ? el('p.detail-hint', { text: S.seePhotoFull }) : null,
+      /* Above the facts, not among them: "what is this for?" is the question
+       * an elder actually asks about a box a supporter bought, and burying it
+       * in a labelled row next to Strength would answer it last. */
+      medicine.purpose ? el('p.detail-purpose', { text: medicine.purpose }) : null,
       el('div.detail-facts', [
         fact(S.fieldStrength, medicine.strength),
-        fact(S.fieldDosage, medicine.dosage),
+        fact(S.fieldDosage, doseText(medicine)),
         fact(S.fieldNotes, medicine.notes),
       ]),
+      packet,
       when,
     ],
+    onClose: () => {
+      if (packetToken !== null) photos.release(packetToken);
+      packetToken = null;
+    },
   });
+
+  store.getPhotoBlob(medicine.medicineId, 'packet')
+    .then(blob => {
+      // Opened and closed again while this read was in flight: the sheet's
+      // onClose has already run, so a URL created now would never be revoked.
+      if (!blob || !packet.isConnected) return;
+      const { url: packetUrl, token } = photos.objectUrl(blob);
+      packetToken = token;
+      append(packet, [
+        el('h3.detail-heading', { text: S.fieldPacketPhoto }),
+        el('button.detail-packet', {
+          type: 'button',
+          'aria-label': S.seePhotoFull,
+          onclick: () => openPhotoViewer({
+            url: packetUrl, name: medicine.name, strength: medicine.strength, altText,
+          }),
+        }, el('img', { src: packetUrl, alt: '' })),
+      ]);
+    })
+    .catch(() => { /* the rest of the sheet is still worth showing */ });
 
   whenNodes(medicine.medicineId)
     .then(nodes => {

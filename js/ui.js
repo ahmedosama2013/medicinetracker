@@ -108,6 +108,38 @@ const FORM_ICON = {
  * everywhere. Not an attempt to guess the pill's real colour -- it cannot be
  * known from a name, and anywhere the real colour would matter the UI counts
  * instead. This is only a distinguishable, consistent marker. */
+/**
+ * "2 tablets", "\u00bd tablet", "10 ml" -- how much to take, in words.
+ *
+ * The number lives in `doseQty` and the noun comes from `form`, which is what
+ * makes this both countable (the organiser has to add it up) and translatable
+ * (the noun is a string, not something a supporter typed).
+ *
+ * The `dosage` fallback is not dead code. Snapshots frozen before migration
+ * 0011 carry the old free-text value and are deliberately never rewritten --
+ * that is the entire point of freezing a past day -- so a calendar day from
+ * before the migration renders whatever it actually recorded at the time.
+ */
+export function doseText(medicine) {
+  if (!medicine) return '';
+  if (medicine.doseQty == null) return medicine.dosage || '';
+
+  const qty = Number(medicine.doseQty);
+  if (!Number.isFinite(qty) || qty <= 0) return '';
+
+  const [one, many] = S.doseUnits[medicine.form] || S.doseUnits.other;
+  const whole = Math.floor(qty);
+  const fraction = S.doseFractions[Number((qty - whole).toFixed(2))];
+
+  const amount = fraction
+    ? (whole ? `${whole}${fraction}` : fraction)
+    : String(Number(qty.toFixed(2)));
+
+  // Singular at or below one, so a scored tablet reads "half a tablet" rather
+  // than the "½ tablets" a naive `=== 1` test produces.
+  return `${amount} ${qty <= 1 ? one : many}`;
+}
+
 export function tileTone(id) {
   const text = String(id || '');
   let hash = 0;

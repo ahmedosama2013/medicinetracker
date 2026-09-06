@@ -64,15 +64,20 @@ async function photoAction(action, body) {
   return data;
 }
 
-export async function uploadPhoto(code, medicineId, blob) {
+/* `kind` selects which of a medicine's two photos this is: 'pill' (the
+ * default, and every caller that predates Phase 3) or 'packet'. The edge
+ * function maps it to a column; everything else about the three actions is
+ * identical. */
+export async function uploadPhoto(code, medicineId, blob, kind = 'pill') {
   const dataUrl = await blobToDataUrl(blob);
   const photoBase64 = dataUrl.split(',')[1];
-  return photoAction('upload', { code, medicineId, photoBase64 });
+  return photoAction('upload', { code, medicineId, photoBase64, kind });
 }
 
-export const deletePhoto = (code, medicineId) => photoAction('delete', { code, medicineId });
+export const deletePhoto = (code, medicineId, kind = 'pill') =>
+  photoAction('delete', { code, medicineId, kind });
 
-export async function getPhotoUrl(code, medicineId) {
-  const { url } = await photoAction('getUrl', { code, medicineId });
+export async function getPhotoUrl(code, medicineId, kind = 'pill') {
+  const { url } = await photoAction('getUrl', { code, medicineId, kind });
   return url;
 }

@@ -144,19 +144,47 @@ export const S = {
   fieldStrength: 'Strength',
   fieldStrengthPlaceholder: 'e.g. 625 mg',
   fieldDosage: 'How much to take',
-  fieldDosagePlaceholder: 'e.g. 1 tablet',
+  fieldDosageHint: 'A number. The unit comes from the form below.',
+  fieldPurpose: 'What it is for',
+  fieldPurposePlaceholder: 'e.g. for blood pressure',
+  /* Short on purpose, and the hint says why. This line is read by whoever is
+   * filling the weekly organiser, holding a box they did not buy. It is not
+   * somewhere to write instructions -- those go in Notes -- and it is
+   * certainly not somewhere to write advice. */
+  purposeHint: 'One short line, for whoever fills the pill box.',
   fieldForm: 'Form',
   fieldNotes: 'Notes',
   fieldNotesPlaceholder: 'e.g. take with food',
-  fieldPhoto: 'Photo',
+  fieldPhoto: 'Photo of the pill',
+  fieldPacketPhoto: 'Photo of the packet',
   takePhoto: 'Take a photo',
   retakePhoto: 'Change photo',
   removePhoto: 'Remove photo',
   photoOptional: 'Optional, but it is what makes the pills easy to identify.',
+  packetPhotoOptional: 'Optional. Helps whoever is filling the pill box find the right box.',
+  noPacketPhoto: 'No packet photo',
   forms: {
     tablet: 'Tablet', capsule: 'Capsule', liquid: 'Liquid', drops: 'Drops',
     injection: 'Injection', inhaler: 'Inhaler', other: 'Other',
   },
+
+  /* The unit a dose is counted in, per form. "How much to take" is a number
+   * now (migration 0011), and the noun comes from here rather than from what
+   * someone typed -- which is what makes it translatable and countable at the
+   * same time. Singular first, plural second. */
+  doseUnits: {
+    tablet: ['tablet', 'tablets'],
+    capsule: ['capsule', 'capsules'],
+    liquid: ['ml', 'ml'],
+    drops: ['drop', 'drops'],
+    injection: ['injection', 'injections'],
+    inhaler: ['puff', 'puffs'],
+    other: ['dose', 'doses'],
+  },
+  /* Quarters and halves are real -- plenty of tablets are scored -- and "0.5
+   * tablets" is not how anyone says it. Anything else falls back to the
+   * decimal, which is honest rather than pretty. */
+  doseFractions: { 0.25: '\u00bc', 0.5: '\u00bd', 0.75: '\u00be' },
 
   schedulesHeading: 'When to take it',
   addSchedule: 'Add a time',
@@ -202,7 +230,7 @@ export const S = {
   confirm: 'Confirm',
 
   errNameRequired: 'Give the medicine a name.',
-  errDosageRequired: 'Say how much to take, for example "1 tablet".',
+  errDosageRequired: 'Say how much to take, as a number.',
   errNoSchedule: 'Add at least one time. A medicine with no time set would never appear on the Today screen.',
   errAnchorRequired: 'Choose the date to count from.',
   errDaysRequired: 'Pick at least one day of the week.',
