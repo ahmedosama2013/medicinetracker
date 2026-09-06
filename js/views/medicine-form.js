@@ -125,6 +125,51 @@ export async function medicineFormView({ app, query, isCurrent = () => true }) {
     }
   }
 
+  /* ---- partial redraws ---------------------------------------------------
+   *
+   * draw() clears the whole form and rebuilds it, and it used to run on every
+   * slot change, every frequency change and every weekday tap. Field values
+   * survived (they live in `draft`), but focus did not, a long form jumped,
+   * and the whole thing read as the page reloading while you were filling it
+   * in -- which is how it was reported.
+   *
+   * So the two things that actually change get swapped in place. draw() is
+   * still the right answer for anything structural: adding or removing a
+   * schedule renumbers the cards, and a validation pass changes several at
+   * once.
+   *
+   * The node is read BEFORE the replacement is built, because scheduleCard
+   * registers what it creates -- ask afterwards and you get the new detached
+   * node, and replaceWith quietly does nothing. That exact mistake cost a day
+   * in Phase 1 (see js/views/day.js's redrawSlot). */
+  const cardNodes = new Map();      // schedule entry -> its live node
+  let photoNode = null;
+
+  /* Which control the person was using, read BEFORE the swap. Removing a
+   * focused element resets document.activeElement to <body> immediately, so
+   * asking afterwards always comes back empty -- the restore looked like it
+   * worked and never did. */
+  function focusedIdWithin(node) {
+    return node?.contains(document.activeElement) ? document.activeElement.id : null;
+  }
+
+  function swap(previous, next) {
+    if (!previous?.isConnected) { draw(); return; }
+    const id = focusedIdWithin(previous);
+    previous.replaceWith(next);
+    if (id) next.querySelector(`#${CSS.escape(id)}`)?.focus();
+  }
+
+  function redrawCard(entry) {
+    const previous = cardNodes.get(entry);
+    swap(previous, scheduleCard(entry));
+  }
+
+  function redrawPhoto() {
+    const previous = photoNode;
+    swap(previous, photoField());
+  }
+
   // ---- rendering ---------------------------------------------------------
 
   function textField(key, label, placeholder, { required = false } = {}) {
@@ -171,14 +216,14 @@ export async function medicineFormView({ app, query, isCurrent = () => true }) {
           photoBlob = await photosLib.compress(file);
           photoUrl = null;
           photoDirty = true;
-          draw();
+          redrawPhoto();
         } catch {
           toast(S.errPhotoFailed);
         }
       },
     });
 
-    return field({
+    photoNode = field({
       label: S.fieldPhoto,
       hint: S.photoOptional,
       control: el('div.photo-picker', [
@@ -193,20 +238,22 @@ export async function medicineFormView({ app, query, isCurrent = () => true }) {
           (photoBlob || photoUrl) ? el('button.btn.btn-quiet', {
             type: 'button',
             text: S.removePhoto,
-            onclick: () => { photoBlob = null; photoUrl = null; photoDirty = true; draw(); },
+            onclick: () => { photoBlob = null; photoUrl = null; photoDirty = true; redrawPhoto(); },
           }) : null,
         ]),
       ]),
     });
+    return photoNode;
   }
 
-  function scheduleCard(entry, index) {
+  function scheduleCard(entry) {
+    const index = schedules.indexOf(entry);
     const slot = slots.find(s => s.id === entry.slotId) || slots[0];
     const freq = entry.frequency;
 
     const slotSelect = el('select', {
       id: `s-slot-${index}`,
-      onchange: e => { entry.slotId = e.target.value; draw(); },
+      onchange: e => { entry.slotId = e.target.value; redrawCard(entry); },
     }, slots.map(s => el('option', {
       value: s.id, text: `${s.label} (${formatTime(s.time)})`, selected: s.id === entry.slotId,
     })));
@@ -216,11 +263,15 @@ export async function medicineFormView({ app, query, isCurrent = () => true }) {
       id: `s-time-${index}`,
       value: entry.time || '',
       oninput: e => { entry.time = e.target.value; },
+      // On commit, not on every keystroke: the hint below and the "add a time
+      // of day" link both depend on whether this differs from the slot, and
+      // without this they only appeared after some unrelated redraw.
+      onchange: () => redrawCard(entry),
     });
 
     const typeSelect = el('select', {
       id: `s-freq-${index}`,
-      onchange: e => { freq.type = e.target.value; draw(); },
+      onchange: e => { freq.type = e.target.value; redrawCard(entry); },
     }, [
       el('option', { value: 'daily', text: S.freqDaily, selected: freq.type === 'daily' }),
       el('option', { value: 'everyNDays', text: S.freqEveryNDays, selected: freq.type === 'everyNDays' }),
@@ -266,13 +317,13 @@ export async function medicineFormView({ app, query, isCurrent = () => true }) {
             const at = freq.daysOfWeek.indexOf(dayIndex);
             if (at === -1) freq.daysOfWeek.push(dayIndex);
             else freq.daysOfWeek.splice(at, 1);
-            draw();
+            redrawCard(entry);
           },
         }))),
       }));
     }
 
-    return el('div.sched', [
+    const node = el('div.sched', [
       el('div.sched-head', [
         el('span.sched-num', { text: `${index + 1}` }),
         schedules.length > 1 ? el('button.btn-link', {
@@ -299,6 +350,9 @@ export async function medicineFormView({ app, query, isCurrent = () => true }) {
       field({ id: `s-freq-${index}`, label: S.scheduleFrequency, control: typeSelect }),
       ...extras,
     ]);
+
+    cardNodes.set(entry, node);
+    return node;
   }
 
   function draw() {
@@ -336,7 +390,7 @@ export async function medicineFormView({ app, query, isCurrent = () => true }) {
 
     app.appendChild(section(S.schedulesHeading, [
       errors.schedules ? el('p.field-error', { text: errors.schedules }) : null,
-      ...schedules.map(scheduleCard),
+      ...schedules.map(entry => scheduleCard(entry)),
       el('button.btn.btn-block', {
         type: 'button',
         text: S.addSchedule,
