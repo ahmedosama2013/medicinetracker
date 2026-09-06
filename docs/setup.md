@@ -21,18 +21,15 @@ Supabase project. Sign in with Google and you get your own household in it —
 your own medicines, your own share code, alongside everyone else's. Migrations,
 Edge Functions and VAPID keys are all properties of the project, already done.
 
-Two things only the project's owner can do for you, and both fail in ways that
-do not say what is wrong:
+Just try signing in. If Google refuses with a generic "access blocked", the
+project owner needs to look at the OAuth consent screen's **Audience** page —
+either publishing the app or adding your account there. Nothing else about
+sign-in is yours to fix.
 
-- **Your Google account must be allowed to sign in.** If the OAuth consent
-  screen is in *Testing* mode — which it usually is at this scale — sign-in
-  works only for accounts added under **Google Cloud → APIs & Services → OAuth
-  consent screen → Audience → Test users**. Otherwise Google refuses with a
-  generic "access blocked".
-- **You need Supabase access only if you are changing the backend.** Running
-  migrations or deploying functions needs `npx supabase login` and
-  `link --project-ref …`, which needs an invite to the Supabase organisation.
-  Editing the frontend needs neither.
+**Supabase access is only needed to change the backend.** Running migrations or
+deploying Edge Functions needs `npx supabase login` and `link --project-ref …`,
+which needs an invite to the Supabase organisation. Editing the frontend needs
+neither, and most work is frontend.
 
 Do **not** point `js/config.js` at a different project and leave it
 uncommitted — see [Which Supabase project is this checkout pointing
