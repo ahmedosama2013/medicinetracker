@@ -2068,11 +2068,21 @@ body.mode-simple .dialog-actions { flex-direction: column-reverse; }
    uncrowded -- and it is one tap from filling the screen, which is where
    actually comparing a tablet against a strip happens. Shrinks below the cap
    on short phones; never grows past it on tall ones. */
-#app.og-fit .og-photos,
+#app.og-fit .og-photos {
+  flex: 0 1 auto;
+  min-height: 0;
+  height: clamp(3.5rem, 15vh, 8rem);
+  margin-bottom: 0;
+  /* A second guarantee, not the mechanism -- the images are contained and
+     cannot escape on their own. Safe here because everything inside is a
+     picture; the no-photo block below is text and is deliberately left to size
+     itself rather than risk clipping a sentence. */
+  overflow: hidden;
+}
+
 #app.og-fit .og-photos-none {
   flex: 0 1 auto;
   min-height: 0;
-  max-height: clamp(3.5rem, 15vh, 8rem);
   margin-bottom: 0;
 }
 #app.og-fit .og-photo { min-height: 0; }
@@ -2102,7 +2112,14 @@ body.mode-simple .dialog-actions { flex-direction: column-reverse; }
    Side by side rather than stacked: stacking pushes the grid off the screen,
    and the grid is what the person is about to act on. Each is a door to the
    full-screen viewer, which is where identification really happens. */
-.og-photos { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-3); margin-bottom: var(--space-4); }
+/* A DEFINITE height, not just a cap. This is the root of the whole problem:
+   with `height: auto` the grid row, the figure and the button are all
+   indefinite, so the image had nothing to size against -- as a percentage it
+   silently resolved to none in WebKit, and once absolutely positioned the
+   button collapsed to zero instead. A real height fixes both: the row stretches
+   the figure, the figure gives the button a height, and the image resolves
+   against it. Still shrinkable, via flex-shrink in the fit layout below. */
+.og-photos { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-3); margin-bottom: var(--space-4); height: 8rem; }
 .og-photos-one { grid-template-columns: 1fr; }
 .og-photo { margin: 0; display: flex; flex-direction: column; gap: var(--space-1); min-height: 0; }
 
@@ -2113,34 +2130,54 @@ body.mode-simple .dialog-actions { flex-direction: column-reverse; }
  * background -- white in light mode, near-black in dark -- which read as part
  * of the picture rather than as empty space around it.
  *
- * So the button is a transparent, centring frame and the image sizes itself
- * inside it. The border and radius live on the IMAGE, so they hug the actual
- * photo whatever its ratio; on the container they would have drawn the box we
- * are trying to get rid of. That edge still matters -- a photo shot against a
- * white worktop has no boundary of its own on a warm canvas.
+ * The button is a transparent frame; `object-fit: contain` shapes the photo
+ * inside it and the letterbox is the page showing through, so there is nothing
+ * to fill.
+ *
+ * THE IMAGE IS ABSOLUTELY POSITIONED, and that is not decoration. Sizing it
+ * with `max-height: 100%` -- the obvious way -- makes it depend on a
+ * percentage resolved against the button, whose height comes from flex inside
+ * `.og-photo`, whose height comes from a grid row in `.og-photos`, which is
+ * `auto` with only a max. Every link in that chain is indefinite, and per spec
+ * a percentage against an indefinite height resolves to `none`. Blink resolves
+ * it anyway; WebKit does not -- so on iOS (Safari and Chrome alike, both
+ * WebKit) the cap vanished, the image rendered at intrinsic size, and with
+ * nothing clipping it, it painted straight over the caption and the medicine's
+ * name. Only with one photo, because two halve the column and the intrinsic
+ * height usually lands under the cap.
+ *
+ * `inset: 0` resolves against the containing block's USED height, which exists
+ * after layout whether or not it was definite. So it cannot overflow, and
+ * `overflow: hidden` below is a second guarantee rather than the mechanism:
+ * on a screen someone reads while holding a tray, text must never be sat on.
+ *
+ * The edge is a drop-shadow, not a border. `filter: drop-shadow` follows the
+ * painted content, and with `contain` the letterbox is transparent -- so it
+ * hugs the actual photo at whatever ratio it is, which a border on either box
+ * could not. It still earns its place: a pill shot against a white worktop has
+ * no boundary of its own on a warm canvas.
  *
  * The 44px pillTile keeps its `contain` letterbox on purpose (see docs/ui.md):
  * a grid of tiles needs uniform squares, and there the tone is a deliberate
  * backdrop rather than an accident of the photo's shape. */
 .og-photo-btn {
+  position: relative;
   flex: 1 1 auto;
   min-height: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   width: 100%;
   border: none;
   padding: 0;
   background: none;
   cursor: zoom-in;
+  overflow: hidden;
 }
 .og-photo-btn img {
-  max-width: 100%;
-  max-height: 100%;
-  width: auto;
-  height: auto;
-  border-radius: var(--r-md);
-  border: 1px solid var(--line);
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 1px 1px rgba(60, 50, 30, 0.28)) drop-shadow(0 3px 6px rgba(60, 50, 30, 0.16));
 }
 .og-photo-cap { text-align: center; color: var(--ink-3); font-size: var(--text-sm); }
 

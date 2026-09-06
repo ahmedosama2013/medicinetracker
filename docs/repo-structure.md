@@ -126,6 +126,10 @@ Medicine Tracker/
   `min-height`. The organiser's fit layout subtracts it to size itself, so a
   declared height the content then exceeds makes that subtraction wrong — it
   did, by 10px, and the buttons sat under the bar.
+- **A percentage height needs a definite parent.** `max-height: 100%` against
+  a chain of `auto` heights resolves to `none` in WebKit and to something
+  usable in Blink, so it works in desktop responsive mode and fails on the
+  phone. If a box must constrain its contents, give it a real height.
 - **Comments explain why, not what.** The ones worth reading are on the append-only rule, the service worker's `no-cache`, and the two-clock freeze design in `supabase/migrations/0001_init.sql`.
 
 ## Regenerating the icons

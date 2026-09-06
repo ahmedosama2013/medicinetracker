@@ -340,8 +340,9 @@ column, not a document that happens to fit — someone is holding a tray with
 both hands, and scrolling to reach the grid or the Next button is the friction
 this screen exists to remove.
 
-The photos are shown **at their own aspect ratio**, in a transparent frame
-with the border on the image rather than on a box around it. Real photos here
+The photos are shown **at their own aspect ratio**, in a transparent frame,
+with a drop-shadow that follows the photo's edges rather than a border around a
+box. Real photos here
 run from 1.4:1 to nearly 4:1 — people crop tightly around a pill or shoot a
 whole strip — and fitting those into a fixed box left large slabs of tile
 background that read as part of the picture. The 44px `pillTile` keeps its
