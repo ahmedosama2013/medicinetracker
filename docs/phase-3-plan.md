@@ -403,6 +403,21 @@ anything as taken." Once, there, and nowhere else. Repeating it every step
 would nag; omitting it risks someone believing this screen marks doses and
 quietly stopping marking them on Today, which is the worst outcome available.
 
+**One bug shipped and was caught within the hour, by the user opening the
+screen.** `outOfBoxStrip()` returns null when nothing is out of the box, and
+three call sites passed that straight to `appendChild`, which throws. Every
+routine I tested against had a syrup or an unticked slot in it, so `outOfBox`
+was never empty; the first real household was all tablets in ticked slots —
+the *simplest* case, and the one my fixtures never covered. Fixed by using
+`append()` from `js/ui.js`, which drops null by design.
+
+Two things worth taking from it. Test fixtures built to exercise a feature
+systematically avoid the case where the feature does nothing, and that case is
+usually the most common one in real data. And Phase 2.5's S1c did its job:
+the router's backstop turned a thrown view into "Something went wrong. Close
+the app and open it again" instead of a blank screen, which is how it got
+reported clearly enough to find in one step.
+
 Measured on a 375×812 phone: with a 7×2 tray everything fits on one screen,
 photo included. With 7×4 the grid clears the fold and the buttons need a
 thumb-scroll, which is why the packet is capped at 12rem rather than filling

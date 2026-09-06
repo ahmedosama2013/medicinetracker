@@ -27,7 +27,7 @@ import * as photos from '../photos.js';
 import { planWeek } from '../organiser.js';
 import { S } from '../strings.js';
 import {
-  el, clear, section, emptyState, pillTile, doseText, doseAmount, toast,
+  el, append, clear, section, emptyState, pillTile, doseText, doseAmount, toast,
 } from '../ui.js';
 import { todayStr, formatLong, formatTime, dayOfWeek } from '../date.js';
 import { go, refresh, currentPath } from '../router.js';
@@ -118,6 +118,9 @@ function weekGrid(grid, dates) {
  * out because of how this household's box is shaped -- and that one is a
  * setting the person can go and change. */
 function outOfBoxStrip(outOfBox) {
+  // Null, not an empty section: a household whose medicines all go in the box
+  // should see no heading at all. Callers use append(), which drops null --
+  // appendChild would throw, and did.
   if (!outOfBox.length) return null;
   return section(S.organiserOutHeading, [
     el('div.og-out', outOfBox.map(item => el('div.og-outrow', [
@@ -152,13 +155,13 @@ function startScreen({ app, session, plan, weekStart, onStart, onPick }) {
   if (!plan.boxSlots.length) {
     app.appendChild(emptyState(S.organiserNoBoxSlots, S.organiserNoBoxSlotsHint));
     app.appendChild(el('a.btn.btn-block', { href: '#/settings', text: S.settingsPillBox }));
-    app.appendChild(outOfBoxStrip(plan.outOfBox));
+    append(app, outOfBoxStrip(plan.outOfBox));
     return;
   }
 
   if (!plan.steps.length) {
     app.appendChild(emptyState(S.organiserNothing, S.organiserNothingHint));
-    app.appendChild(outOfBoxStrip(plan.outOfBox));
+    append(app, outOfBoxStrip(plan.outOfBox));
     return;
   }
 
@@ -179,7 +182,7 @@ function startScreen({ app, session, plan, weekStart, onStart, onPick }) {
     }),
   ]));
 
-  app.appendChild(outOfBoxStrip(plan.outOfBox));
+  append(app, outOfBoxStrip(plan.outOfBox));
 }
 
 function stepScreen({ app, plan, step, index, done, packetUrl, onToggle }) {
