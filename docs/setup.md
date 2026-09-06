@@ -6,9 +6,45 @@ For what the app *does* once it's running, see [flow.md](flow.md). For why it's 
 
 ---
 
-## Already have a project? Start here
+## Joining a project someone else already set up
 
-If your Supabase project predates v3, run this from the repo root. **In this
+If the backend exists and you are just picking up the code, you need **none**
+of this walkthrough:
+
+```bash
+git pull
+python3 -m http.server 8848      # or 8000; both are in the allow lists
+```
+
+`js/config.js` is committed, so the checkout already points at the right
+Supabase project. Sign in with Google and you get your own household in it —
+your own medicines, your own share code, alongside everyone else's. Migrations,
+Edge Functions and VAPID keys are all properties of the project, already done.
+
+Two things only the project's owner can do for you, and both fail in ways that
+do not say what is wrong:
+
+- **Your Google account must be allowed to sign in.** If the OAuth consent
+  screen is in *Testing* mode — which it usually is at this scale — sign-in
+  works only for accounts added under **Google Cloud → APIs & Services → OAuth
+  consent screen → Audience → Test users**. Otherwise Google refuses with a
+  generic "access blocked".
+- **You need Supabase access only if you are changing the backend.** Running
+  migrations or deploying functions needs `npx supabase login` and
+  `link --project-ref …`, which needs an invite to the Supabase organisation.
+  Editing the frontend needs neither.
+
+Do **not** point `js/config.js` at a different project and leave it
+uncommitted — see [Which Supabase project is this checkout pointing
+at?](#which-supabase-project-is-this-checkout-pointing-at) for why that
+presents as data disappearing rather than as a configuration mistake.
+
+## Already have your own project? Start here
+
+Only if you maintain your own Supabase project for this app. If you are joining
+someone else's, see the section above instead.
+
+If your project predates v3, run this from the repo root. **In this
 order** — the functions read tables the migrations create.
 
 ```bash
