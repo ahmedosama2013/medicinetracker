@@ -338,6 +338,11 @@ failure paths locally. The nudge function has never run at all.
 Its own phase because it is the only part with unresolved design questions.
 Entry point is a card on Today, not a tab.
 
+> **In progress. The detailed plan is [phase-3-plan.md](phase-3-plan.md)**,
+> which settles the unresolved questions listed below and pulls item 23 in as
+> the phase's first commit. Where it departs from the outline here, that file
+> is the current one.
+
 18. **Week computation.** Seven days forward from the chosen start, per medicine,
     from `schedule.dueOn` — not from snapshots, which only exist for past days.
 19. **Step screen.** One medicine at a time: packet photo, purpose line, the
