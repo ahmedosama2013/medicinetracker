@@ -177,6 +177,14 @@ export async function renderDay({ date, editable = true, lockReason = null, onCh
     const state = stateOf(group.slotId, medicine.medicineId);
     const row = el(`div.med${state === 'skipped' ? '.med-skipped' : ''}`);
 
+    /* A medicine given its own time inside this slot. It is still marked with
+     * the rest of the slot -- logging is keyed on (date, slot), so it cannot
+     * be otherwise -- but the time it is actually due has to be visible, or
+     * setting an override looks like it did nothing. */
+    const ownTime = medicine.time && medicine.time !== group.time
+      ? formatTime(medicine.time)
+      : null;
+
     row.appendChild(el('button.med-open', {
       type: 'button',
       onclick: () => openMedicineSheet({
@@ -194,6 +202,7 @@ export async function renderDay({ date, editable = true, lockReason = null, onCh
           medicine.strength ? el('span.med-strength', { text: ` ${medicine.strength}` }) : null,
         ]),
         el('span.med-line.med-sub', [
+          ownTime ? el('span.med-at', { text: ownTime }) : null,
           state === 'skipped'
             ? el('span.med-skip-note', { text: S.skipped })
             : (medicine.dosage ? el('span.med-dosage', { text: medicine.dosage }) : null),

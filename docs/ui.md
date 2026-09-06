@@ -227,6 +227,26 @@ invisible history.
 A dose the supporter marked shows "Marked by your helper", so a mark the person
 did not make is never a surprise.
 
+### A medicine at its own time
+
+A schedule may override its slot's time for one medicine. Marking is keyed on
+`(date, slot, medicine)` with no time in it, so an overridden medicine is still
+**marked together with the rest of its slot** — two groups sharing a slot
+cannot be completed independently, and splitting them would make one Done tap
+appear to complete both.
+
+What the override changes is when it is *due*, and that has to stay visible.
+The slot header shows the **slot's own** time; a medicine with an override
+shows its time on its own row. Both `mergeBySlot` and `app.compute_day`
+previously took the earliest time across the slot, so overriding one medicine
+to 6am relabelled the whole Morning card "6:00 am" for everything in it —
+nothing was written to the slot, but it read exactly as though the override had
+moved it.
+
+For a genuinely different hour, the answer is **a new time of day**, not an
+override. The medicine form links to it once an override is set, because that
+is where someone discovers they wanted one.
+
 ### Cold start
 
 Setup ends at sign-in, and nothing can appear until a supporter enters the

@@ -1872,3 +1872,18 @@ body.mode-simple .dialog-actions { flex-direction: column-reverse; }
   font-size: var(--text-xs);
   margin-top: var(--space-2);
 }
+
+/* A medicine due at its own time inside a slot. Tinted rather than plain grey
+   because it is the one thing on the row that contradicts the slot header
+   above it, and it has to survive being read at a glance. */
+.med-at {
+  color: var(--primary-ink);
+  background: var(--primary-tint);
+  border-radius: var(--r-pill);
+  padding: 0.05rem 0.45rem;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
+/* The "add a time of day" escape hatch inside a schedule card. */
+.sched-addslot { display: inline-block; margin-top: calc(var(--space-2) * -1); }

@@ -261,8 +261,16 @@ export async function medicineFormView({ app, query }) {
         id: `s-time-${index}`,
         label: S.scheduleTime,
         control: timeInput,
-        hint: entry.time ? null : S.scheduleTimeDefault(formatTime(slot.time)),
+        hint: entry.time && entry.time !== slot.time
+          ? S.scheduleTimeOverride(slot.label, formatTime(slot.time))
+          : S.scheduleTimeDefault(formatTime(slot.time)),
       }),
+      /* The way out, offered where the problem is discovered. A medicine at a
+       * genuinely different hour wants its own slot, not an override -- but
+       * that lives on another screen and nothing here pointed at it. */
+      entry.time && entry.time !== slot.time
+        ? el('a.btn-link.sched-addslot', { href: '#/slots', text: S.scheduleTimeAddSlot })
+        : null,
       field({ id: `s-freq-${index}`, label: S.scheduleFrequency, control: typeSelect }),
       ...extras,
     ]);

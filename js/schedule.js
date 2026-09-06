@@ -62,7 +62,15 @@ export function buildDay(dateStr, { medicines, schedules, slots }) {
     const time = effectiveTime(schedule, slot);
     const key = `${schedule.slotId}|${time}`;
     if (!groups.has(key)) {
-      groups.set(key, { slotId: schedule.slotId, label: slot.label, time, medicines: [] });
+      groups.set(key, {
+        slotId: schedule.slotId,
+        label: slot.label,
+        time,
+        // The slot's OWN time, kept separate from any medicine's override --
+        // see mergeBySlot for why the difference matters.
+        slotTime: slot.time,
+        medicines: [],
+      });
     }
     const group = groups.get(key);
     if (group.medicines.some(m => m.medicineId === medicine.id)) continue;
@@ -73,6 +81,8 @@ export function buildDay(dateStr, { medicines, schedules, slots }) {
       dosage: medicine.dosage,
       notes: medicine.notes,
       form: medicine.form,
+      // Carried per medicine so a row can show its own time when it differs.
+      time,
     });
   }
 
@@ -84,6 +94,16 @@ export function buildDay(dateStr, { medicines, schedules, slots }) {
  * same slotId. Logging is keyed on (date, slotId), so those groups have to be
  * merged back together before they reach the UI, or one Done tap would appear
  * to complete both.
+ *
+ * The merged group keeps the SLOT's time, not the earliest medicine's. Taking
+ * the minimum -- which both this and app.compute_day used to do -- meant that
+ * overriding one medicine to 6am relabelled the whole Morning card "6:00 am"
+ * for every other medicine in it. Nothing was actually written to the slot,
+ * but it read exactly as though the override had moved everything, which is
+ * what it was reported as.
+ *
+ * Each medicine keeps its own time, so an override stays visible on its row
+ * rather than disappearing into the group.
  */
 function mergeBySlot(groups) {
   const bySlot = new Map();
@@ -98,8 +118,12 @@ function mergeBySlot(groups) {
         existing.medicines.push(medicine);
       }
     }
-    existing.time = timeToMinutes(group.time) < timeToMinutes(existing.time) ? group.time : existing.time;
   }
+
+  /* Order and headline by the slot's own time. Snapshots written before this
+   * change carry no slotTime, so fall back to the group's -- for those, the
+   * old minimum-of-overrides is the only value there is. */
+  for (const group of bySlot.values()) group.time = group.slotTime || group.time;
   return [...bySlot.values()].sort((a, b) => timeToMinutes(a.time) - timeToMinutes(b.time));
 }
 
@@ -132,6 +156,7 @@ export function toSnapshot(dateStr, groups) {
       slotId: g.slotId,
       label: g.label,
       time: g.time,
+      slotTime: g.slotTime || g.time,
       medicines: g.medicines.map(m => ({
         medicineId: m.medicineId,
         name: m.name,
@@ -139,6 +164,7 @@ export function toSnapshot(dateStr, groups) {
         dosage: m.dosage,
         notes: m.notes || '',
         form: m.form || 'tablet',
+        time: m.time || g.time,
       })),
     })),
   };

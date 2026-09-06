@@ -159,6 +159,13 @@ export const S = {
   scheduleSlot: 'Time of day',
   scheduleTime: 'At',
   scheduleTimeDefault: slotTime => `Slot default (${slotTime})`,
+  /* Shown when a medicine is given its own time inside a slot. Marking is
+   * keyed on the slot, so it is still marked together with everything else in
+   * it -- that is a real constraint, and the form has to say so rather than
+   * let someone discover it on the Today screen. */
+  scheduleTimeOverride: (label, slotTime) =>
+    `Due at its own time, but still marked together with the rest of ${label} (${slotTime}).`,
+  scheduleTimeAddSlot: 'For a very different time, add a time of day',
   scheduleFrequency: 'How often',
   freqDaily: 'Every day',
   freqEveryNDays: 'Every few days',
