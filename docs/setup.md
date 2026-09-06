@@ -131,6 +131,7 @@ What `db push` applies:
 | `0008_nudge_grants` | `service_role` grants the nudge function needs |
 | `0009_reminder_rpc_wrappers` | `public` wrappers so `send-reminders` can reach its `app.*` functions at all |
 | `0010_slot_time_in_snapshots` | Stops one medicine's own time relabelling its whole slot on frozen days |
+| `0011_medicine_details` | `purpose`, `packet_photo_path`, and `dosage` free text replaced by a numeric `dose_qty`. **Drops a column** — read the pre-flight `select` in its header first, and deploy the frontend and `supporter-photo` alongside it |
 
 Migrations are additive and safe to re-run; `db push` skips ones already
 applied.
