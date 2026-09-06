@@ -23,6 +23,7 @@ const PRECACHE = [
   './css/app.css',
   './icons/icon-192.png',
   './icons/apple-touch-icon.png',
+  './icons/favicon.svg',
 ];
 
 self.addEventListener('install', event => {

@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" role="img" aria-label="Medicine Tracker">
+  <!-- Matches icons/make-icons.py: a two-tone capsule on the brand blue, at
+       -45 degrees, on a rounded square. Vector rather than another PNG so it
+       stays crisp on any tab bar at any zoom, in one file of a few hundred
+       bytes. The 32px PNG beside it is for browsers that ignore SVG icons. -->
+  <rect width="100" height="100" rx="22" fill="#1a56a0"/>
+  <line x1="33.03" y1="66.97" x2="66.97" y2="33.03"
+        stroke="#d8e4f5" stroke-width="27" stroke-linecap="round"/>
+  <!-- Stops short of centre so the round cap's apex lands on it, which is
+       where make-icons.py puts the boundary between the two halves. -->
+  <line x1="33.03" y1="66.97" x2="40.45" y2="59.55"
+        stroke="#ffffff" stroke-width="27" stroke-linecap="round"/>
+</svg>

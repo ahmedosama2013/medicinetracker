@@ -58,8 +58,9 @@ Medicine Tracker/
 │       └── supporter-photo/   Edge Function: photo upload/delete/signed-URL for code-gated devices
 │
 ├── icons/
-│   ├── icon-192.png  icon-512.png  apple-touch-icon.png
-│   └── make-icons.py          regenerates the three PNGs, stdlib only
+│   ├── icon-192.png  icon-512.png  apple-touch-icon.png  favicon-32.png
+│   ├── favicon.svg            the tab icon, hand-written to match the PNGs
+│   └── make-icons.py          regenerates the four PNGs, stdlib only
 │
 └── docs/
     ├── architecture.md
@@ -105,4 +106,6 @@ Medicine Tracker/
 python3 icons/make-icons.py
 ```
 
-Writes the three PNGs from scratch using only `zlib` and `struct` — no Pillow, no ImageMagick. `apple-touch-icon.png` is a full opaque square because iOS composites onto black and applies its own corner mask.
+Writes the four PNGs from scratch using only `zlib` and `struct` — no Pillow, no ImageMagick. Paths are relative to the script, so it runs from any checkout.
+
+`apple-touch-icon.png` is a full opaque square because iOS composites onto black and applies its own corner mask. `favicon.svg` is not generated: it is hand-written to the same geometry, because a vector stays crisp at every tab-bar size and zoom level in under a kilobyte. `favicon-32.png` exists only for browsers that ignore SVG icons. If you change the mark, change both.

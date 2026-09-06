@@ -1,4 +1,4 @@
-import zlib, struct, math
+import os, zlib, struct, math
 
 BG   = (0x1a, 0x56, 0xa0)
 PILL = (0xff, 0xff, 0xff)
@@ -65,9 +65,15 @@ def write_png(path, size, square=False):
     open(path, 'wb').write(png)
     print(path, size, len(png), 'bytes')
 
-base = '/home/umerbutt/personal/Medicine Tracker/icons/'
+# Relative to this file, so it runs from any checkout rather than only the one
+# it was written on.
+base = os.path.join(os.path.dirname(os.path.abspath(__file__)), '')
 write_png(base + 'icon-192.png', 192)
 write_png(base + 'icon-512.png', 512)
 # iOS composites the icon onto black, so this one is a full opaque square;
 # iOS applies its own corner mask.
 write_png(base + 'apple-touch-icon.png', 180, square=True)
+# Favicon fallback for browsers that ignore icons/favicon.svg. 32px is what a
+# tab bar actually uses; 16px is rendered from it and stays legible because the
+# mark is one thick shape rather than fine detail.
+write_png(base + 'favicon-32.png', 32)

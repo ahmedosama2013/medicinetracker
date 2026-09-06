@@ -13,6 +13,12 @@
 <meta name="color-scheme" content="light dark">
 <meta name="description" content="A simple medicine reminder and pill identification app.">
 
+<!-- SVG first: browsers that understand it get one crisp file at any size. The
+     32px PNG is the fallback for those that ignore SVG icons. Both are built
+     from the same mark as the home-screen icons (icons/make-icons.py). -->
+<link rel="icon" href="./icons/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="./icons/favicon-32.png" sizes="32x32" type="image/png">
+
 <!-- iOS ignores manifest icons for Add to Home Screen. -->
 <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
