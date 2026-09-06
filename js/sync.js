@@ -217,7 +217,46 @@ async function handleSnapshotChange({ eventType, new: row, old: oldRow }) {
  * (it flushes in IndexedDB key order, not insertion order). */
 const doseKey = (date, slotId, medicineId) => `dose:${date}:${slotId}:${medicineId}`;
 
-async function flushOutbox() {
+/* One flush at a time.
+ *
+ * Every setDose / logSlot / undoSlot calls flushOutbox() without awaiting it,
+ * so three fast taps used to start three flushes. Each read the queue at a
+ * different moment and then raced to the network, and whichever request
+ * happened to land last won -- not necessarily the one the person tapped last.
+ * A quick unmarked -> taken -> skipped could finish as `taken` on the server
+ * while the phone said `skipped`, and Realtime would then push `taken` back and
+ * quietly overwrite the last tap.
+ *
+ * The queue itself was always right: one item per dose, holding the final state
+ * (see supabase/migrations/0005_skipped_doses.sql). The bug was purely in there
+ * being more than one flusher. Serialising also means a burst of taps costs one
+ * flush that reads the already-coalesced result. */
+let flushing = null;
+let flushDirty = false;
+
+function flushOutbox() {
+  if (flushing) {
+    // Something was queued after this flush read the outbox. Go round again
+    // rather than starting a second flush alongside it.
+    flushDirty = true;
+    return flushing;
+  }
+
+  flushing = (async () => {
+    try {
+      do {
+        flushDirty = false;
+        await drainOutbox();
+      } while (flushDirty);
+    } finally {
+      flushing = null;
+    }
+  })();
+
+  return flushing;
+}
+
+async function drainOutbox() {
   if (!navigator.onLine) return;
   const pending = await store.getOutbox();
   for (const item of pending) {

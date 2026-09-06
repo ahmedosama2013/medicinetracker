@@ -140,42 +140,88 @@ export async function renderDay({
   const slotResolved = group =>
     group.medicines.every(m => stateByKey.has(keyOf(group.slotId, m.medicineId)));
 
+  /* Writes for one dose, in the order they were tapped.
+   *
+   * Two taps on the same medicine used to fire two independent writes and let
+   * the network decide which won. Chaining per dose means the last tap is the
+   * last write, which is the only ordering a person would predict. Different
+   * medicines still write in parallel -- they cannot conflict. */
+  const writeQueue = new Map();
+
+  function queueWrite(key, task) {
+    const previous = writeQueue.get(key) || Promise.resolve();
+    const next = previous.then(task, task);
+    writeQueue.set(key, next.then(() => {}, () => {}));
+    return next;
+  }
+
+  /** Wait for anything still in flight for this slot's medicines. */
+  function settled(group) {
+    return Promise.all(group.medicines
+      .map(m => writeQueue.get(keyOf(group.slotId, m.medicineId)))
+      .filter(Boolean));
+  }
+
   async function cycleDose(group, medicine) {
     if (!await mayMark(settings)) return;
     const key = keyOf(group.slotId, medicine.medicineId);
-    const next = NEXT_STATE[String(stateOf(group.slotId, medicine.medicineId))];
+    const was = stateOf(group.slotId, medicine.medicineId);
+    const next = NEXT_STATE[String(was)];
     const wasResolved = slotResolved(group);
+
+    /* The screen moves on the tap, not on the round trip.
+     *
+     * Waiting for the write meant a second tap read the state as it was
+     * before the first one and computed the same "next", so the tap was
+     * silently swallowed -- and on the supporter's side, where the write goes
+     * straight out over the network with no outbox behind it, the target could
+     * sit unresponsive for a visible second with nothing to say it was busy. */
+    if (next === null) stateByKey.delete(key); else stateByKey.set(key, next);
+
+    /* Collapse only on the transition into resolved, so marking every
+     * medicine one at a time ends up exactly where tapping Done does --
+     * two routes to the same state must not leave the slot looking
+     * different. Editing inside an already-resolved slot (the person
+     * expanded the strip to change something) keeps it open, because
+     * collapsing what they just chose to open is the jarring case. */
+    const justResolved = !wasResolved && slotResolved(group);
+    redrawSlot(group, { expanded: justResolved ? null : true });
+    onChange?.();
+
     try {
-      await doses.setDose(settings, date, group.slotId, medicine.medicineId, next);
-      if (next === null) stateByKey.delete(key); else stateByKey.set(key, next);
-
-      /* Collapse only on the transition into resolved, so marking every
-       * medicine one at a time ends up exactly where tapping Done does --
-       * two routes to the same state must not leave the slot looking
-       * different. Editing inside an already-resolved slot (the person
-       * expanded the strip to change something) keeps it open, because
-       * collapsing what they just chose to open is the jarring case. */
-      const justResolved = !wasResolved && slotResolved(group);
-      redrawSlot(group, { expanded: justResolved ? null : true });
-      onChange?.();
-
-      if (next === 'skipped') {
-        toast(S.skippedToast(medicine.name), {
-          actionLabel: S.undo,
-          // Back to taken, not to unmarked: reaching skipped by accident means
-          // one tap too many, and one tap too many lands you here from taken.
-          onAction: async () => {
-            try {
-              await doses.setDose(settings, date, group.slotId, medicine.medicineId, 'taken');
-              stateByKey.set(key, 'taken');
-              redrawSlot(group, { expanded: true });
-              onChange?.();
-            } catch { toast(S.errGeneric); }
-          },
-        });
-      }
+      await queueWrite(key, () =>
+        doses.setDose(settings, date, group.slotId, medicine.medicineId, next));
     } catch {
+      // Put the screen back where the person left it. The slot's collapse
+      // state has to be recomputed too: the failed write may have been the
+      // one that resolved it.
+      if (was === null) stateByKey.delete(key); else stateByKey.set(key, was);
+      redrawSlot(group, { expanded: true });
+      onChange?.();
       toast(S.errGeneric);
+      return;
+    }
+
+    if (next === 'skipped') {
+      toast(S.skippedToast(medicine.name), {
+        actionLabel: S.undo,
+        // Back to taken, not to unmarked: reaching skipped by accident means
+        // one tap too many, and one tap too many lands you here from taken.
+        onAction: async () => {
+          stateByKey.set(key, 'taken');
+          redrawSlot(group, { expanded: true });
+          onChange?.();
+          try {
+            await queueWrite(key, () =>
+              doses.setDose(settings, date, group.slotId, medicine.medicineId, 'taken'));
+          } catch {
+            stateByKey.set(key, 'skipped');
+            redrawSlot(group, { expanded: true });
+            onChange?.();
+            toast(S.errGeneric);
+          }
+        },
+      });
     }
   }
 
@@ -339,6 +385,10 @@ export async function renderDay({
           button.disabled = true;
           const hadFocus = document.activeElement === button;
           try {
+            /* A per-medicine write may still be in flight. Undo deletes the
+             * whole slot server-side, and a log landing after that delete
+             * would resurrect the row the person just cleared. */
+            await settled(group);
             if (resolved) {
               await doses.undoSlot(settings, date, group.slotId);
               for (const m of group.medicines) stateByKey.delete(keyOf(group.slotId, m.medicineId));
