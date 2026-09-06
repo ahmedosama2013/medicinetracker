@@ -20,10 +20,40 @@ npx supabase functions deploy supporter-photo --no-verify-jwt
 npx supabase functions deploy nudge --no-verify-jwt
 ```
 
-`js/config.js` is committed and points at whichever project this repo is set up
-for. If you keep a local copy pointing somewhere else, `git pull` will not touch
-it and **your deployed site and your laptop will be talking to different
-databases** — which looks exactly like data going missing.
+### Which Supabase project is this checkout pointing at?
+
+Check before anything else, because getting this wrong wastes an afternoon:
+
+```bash
+grep SUPABASE_URL js/config.js
+git diff js/config.js          # empty output = you are on the committed one
+```
+
+`js/config.js` is **committed on purpose** — it holds only the project URL, the
+publishable key and the VAPID public key, none of which are secrets (Row Level
+Security and the code-gated functions protect the data; verified by the last
+two items in the [checklist](#verification-checklist)). So whatever is committed
+is what GitHub Pages serves.
+
+That means an **uncommitted local edit is a trap**. `git pull` will not touch it,
+so your laptop talks to one database and the deployed site talks to another.
+The symptom is not an error — it is signing in on a second device and finding
+no medicines, because you have landed in a different database with an empty
+household of the same name.
+
+Decide which you want and make it explicit:
+
+- **Everyone shares one backend.** Commit `js/config.js` so laptop and
+  deployment agree. Whoever owns that project runs the catch-up above.
+- **You want your own backend for testing.** Fine, but keep it out of the repo
+  rather than as a dirty file — and know that the deployed site is *not*
+  testing your changes. Nothing you verify locally has been exercised against
+  the deployed backend until someone points them at the same place.
+
+If you change which project is committed, the new project's Supabase **Site URL
+/ Redirect URLs** (step 3b) and the Google Cloud OAuth client's **authorized
+origins** (step 3a) both have to include the GitHub Pages URL, or sign-in breaks
+there while continuing to work on `localhost`.
 
 ### Then check three things push depends on
 
