@@ -12,6 +12,7 @@
 
 import * as store from '../store.js';
 import * as supporter from '../supporter.js';
+import * as supporterSync from '../supporter-sync.js';
 import * as photosLib from '../photos.js';
 import { S } from '../strings.js';
 import { el, clear, loadingState, field, section, toast } from '../ui.js';
@@ -101,6 +102,28 @@ export async function medicineFormView({ app, query, isCurrent = () => true }) {
   if (!schedules.length) schedules.push(blankSchedule(slots));
 
   const errors = {};
+
+  /* Save does up to four round trips -- the medicine, its schedules, a photo
+   * through an edge function that can cold start, and a cache refresh -- and
+   * the button used to look untouched for all of them. Two taps in that window
+   * ran save() twice with draft.id still null on the second, which is two
+   * medicines with the same name, both on Today, and no way to tell which to
+   * remove. */
+  let saving = false;
+  let saveButton = null;
+
+  function setSaveBusy(state) {
+    saving = state;
+    if (!saveButton) return;
+    saveButton.disabled = state;
+    clear(saveButton);
+    if (state) {
+      saveButton.appendChild(el('span.spinner', { 'aria-hidden': 'true' }));
+      saveButton.appendChild(el('span', { text: S.saving }));
+    } else {
+      saveButton.textContent = S.save;
+    }
+  }
 
   // ---- rendering ---------------------------------------------------------
 
@@ -321,10 +344,12 @@ export async function medicineFormView({ app, query, isCurrent = () => true }) {
       }),
     ]));
 
+    saveButton = el('button.btn.btn-primary', { type: 'button', text: S.save, onclick: save });
     app.appendChild(el('div.form-actions', [
       el('button.btn.btn-quiet', { type: 'button', text: S.cancel, onclick: () => go('#/medicines') }),
-      el('button.btn.btn-primary', { type: 'button', text: S.save, onclick: save }),
+      saveButton,
     ]));
+    if (saving) setSaveBusy(true);
 
     if (existing && !existing.archived) {
       app.appendChild(el('button.btn.btn-quiet.btn-block', {
@@ -385,6 +410,7 @@ export async function medicineFormView({ app, query, isCurrent = () => true }) {
   }
 
   async function save() {
+    if (saving) return;
     if (!validate()) {
       draw();
       app.querySelector('.input-invalid, .field-error')?.scrollIntoView({ block: 'center' });
@@ -394,6 +420,8 @@ export async function medicineFormView({ app, query, isCurrent = () => true }) {
     // The medicine record and its schedule are the core save. If either of
     // these throws, nothing usable was written, so the person stays on the
     // form and sees the generic error -- there is nothing to navigate to yet.
+    setSaveBusy(true);
+
     let saved;
     try {
       saved = await supporter.saveMedicine(code, draft);
@@ -401,6 +429,7 @@ export async function medicineFormView({ app, query, isCurrent = () => true }) {
       const payload = schedules.map(s => ({ ...s, frequency: normalizeFrequency(s.frequency) }));
       await supporter.replaceSchedules(code, saved.id, payload);
     } catch {
+      setSaveBusy(false);
       toast(S.errGeneric);
       return;
     }
@@ -421,7 +450,16 @@ export async function medicineFormView({ app, query, isCurrent = () => true }) {
       }
     }
 
+    /* The supporter's own Today and the photos on their medicine list read the
+     * local cache, not the live routine -- so without this a medicine they had
+     * just added was missing from their own Today, and its freshly uploaded
+     * photo showed the fallback tile, for up to a minute. It costs a round trip
+     * on a screen that has already done three, which is why the button is still
+     * showing that it is working. */
+    await supporterSync.refresh(code).catch(() => {});
+
     releasePreview();
+    setSaveBusy(false);
     toast(photoFailed ? S.savedMedicineNoPhoto : S.savedMedicine);
     go('#/medicines');
   }

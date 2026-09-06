@@ -12,7 +12,7 @@ import * as auth from '../auth.js';
 import * as supporter from '../supporter.js';
 import * as pushLib from '../push.js';
 import { S, APP_VERSION } from '../strings.js';
-import { el, clear, section, toast, confirmDialog, field, applyTheme } from '../ui.js';
+import { el, clear, section, toast, confirmDialog, field, applyTheme, loadingState, emptyState } from '../ui.js';
 import { timeToMinutes } from '../date.js';
 import { go, refresh } from '../router.js';
 
@@ -26,24 +26,38 @@ function settingRow({ label, hint, control }) {
   ]);
 }
 
+/* onClick is handed its own button, so an action that takes a round trip can
+ * disable it and say it is working. */
 function actionRow({ label, hint, buttonLabel, onClick, primary = false }) {
+  const button = el(`button.btn${primary ? '.btn-primary' : ''}`, {
+    type: 'button', text: buttonLabel,
+  });
+  button.addEventListener('click', () => onClick(button));
+
   return el('div.setting-row', { style: 'flex-wrap: wrap;' }, [
     el('div.setting-main', [
       el('div.setting-label', { text: label }),
       hint ? el('div.setting-hint', { text: hint }) : null,
     ]),
-    el(`button.btn${primary ? '.btn-primary' : ''}`, {
-      type: 'button', text: buttonLabel, onclick: onClick,
-    }),
+    button,
   ]);
 }
 
-async function rotateCode() {
+/** Disable a button and show it working. Returns it to normal on failure. */
+function busy(button, label = S.loading) {
+  button.disabled = true;
+  clear(button);
+  button.appendChild(el('span.spinner', { 'aria-hidden': 'true' }));
+  button.appendChild(el('span', { text: label }));
+}
+
+async function rotateCode(button) {
   const ok = await confirmDialog({
     title: S.settingsRotateCode, body: S.settingsRotateCodeConfirm,
     confirmLabel: S.settingsRotateCode, danger: true,
   });
   if (!ok) return;
+  busy(button);
   try {
     const code = await auth.rotateShareCode();
     await store.saveSettings({ shareCode: code });
@@ -51,6 +65,7 @@ async function rotateCode() {
     refresh();
   } catch {
     toast(S.errGeneric);
+    refresh();
   }
 }
 
@@ -75,9 +90,13 @@ async function disconnect() {
   window.location.reload();
 }
 
-async function toggleNotifications(householdId) {
+/* Two network calls and a permission prompt, previously with the button live
+ * throughout. `null` from isSubscribed means the check itself failed, and
+ * turning them on is the useful thing to attempt from there. */
+async function toggleNotifications(householdId, button) {
+  busy(button);
   try {
-    if (await pushLib.isSubscribed()) await pushLib.unsubscribe();
+    if (await pushLib.isSubscribed() === true) await pushLib.unsubscribe();
     else await pushLib.subscribe(householdId);
   } catch (err) {
     toast(err.message || S.errGeneric);
@@ -122,9 +141,21 @@ export async function settingsView({ app, isCurrent = () => true }) {
   app.appendChild(el('h1.page-title', { text: S.settingsTitle }));
 
   if (role === 'simple') {
-    const session = await auth.getSession().catch(() => null);
-    const notifOn = await pushLib.isSubscribed().catch(() => false);
+    /* Both of these are network calls, and isSubscribed also waits on the
+     * service worker. This screen used to sit as a bare heading for as long as
+     * they took, and forever if the worker never activated. */
+    const pending = loadingState();
+    app.appendChild(pending);
+
+    const [session, notifState] = await Promise.all([
+      auth.getSession().catch(() => null),
+      pushLib.isSubscribed().catch(() => null),
+    ]);
     if (!isCurrent()) return;
+    pending.remove();
+
+    const notifOn = notifState === true;
+    const notifUnknown = notifState === null;
 
     app.appendChild(section(S.settingsAccount, [
       settingRow({
@@ -142,16 +173,17 @@ export async function settingsView({ app, isCurrent = () => true }) {
         buttonLabel: S.settingsRotateCode,
         onClick: rotateCode,
       }),
-      actionRow({ label: S.settingsSignOut, buttonLabel: S.settingsSignOut, onClick: signOut }),
+      actionRow({ label: S.settingsSignOut, buttonLabel: S.settingsSignOut, onClick: () => signOut() }),
     ]));
 
     app.appendChild(section(S.settingsNotifications, [
       actionRow({
-        label: notifOn ? S.notificationsOnLabel : S.notificationsOffLabel,
-        hint: S.notificationsHint,
+        label: notifUnknown ? S.notificationsUnknownLabel
+          : notifOn ? S.notificationsOnLabel : S.notificationsOffLabel,
+        hint: notifUnknown ? S.notificationsUnknownHint : S.notificationsHint,
         buttonLabel: notifOn ? S.notificationsTurnOff : S.notificationsTurnOn,
         primary: !notifOn,
-        onClick: () => toggleNotifications(settings.householdId),
+        onClick: button => toggleNotifications(settings.householdId, button),
       }),
     ]));
   } else {
@@ -164,7 +196,7 @@ export async function settingsView({ app, isCurrent = () => true }) {
         label: S.settingsDisconnect,
         hint: S.settingsDisconnectHint,
         buttonLabel: S.settingsDisconnect,
-        onClick: disconnect,
+        onClick: () => disconnect(),
       }),
     ]));
 
@@ -196,16 +228,54 @@ export async function settingsView({ app, isCurrent = () => true }) {
 export async function slotsView({ app, isCurrent = () => true }) {
   const settings = await store.getSettings();
   const code = settings.supporterCode;
-  const routine = await supporter.loadRoutine(code);
+
+  /* Something on screen before the network is touched. Every other supporter
+   * screen got this in Phase 2; this one was missed, so the previous screen
+   * simply stayed put for the whole round trip -- and a failure threw out of
+   * the view with nothing to explain it. */
+  clear(app);
+  app.appendChild(el('h1.page-title', { text: S.slotsTitle }));
+  const pending = loadingState();
+  app.appendChild(pending);
+
+  let routine;
+  try {
+    routine = await supporter.loadRoutine(code);
+  } catch {
+    if (!isCurrent()) return;
+    clear(app);
+    app.appendChild(el('h1.page-title', { text: S.slotsTitle }));
+    app.appendChild(emptyState(S.errGeneric, S.pairCodeInvalid));
+    app.appendChild(el('a.btn.btn-quiet.btn-block', { href: '#/settings', text: S.back }));
+    return;
+  }
   if (!isCurrent()) return;
+
   const slots = [...routine.slots].sort((a, b) => timeToMinutes(a.time) - timeToMinutes(b.time));
   const schedules = routine.schedules;
   const errors = {};
 
-  const usageCount = slotId => schedules.filter(s => s.slotId === slotId && s.active).length;
+  /* Archived medicines keep their schedules -- archiving hides a medicine, it
+   * does not rewrite its routine -- so counting active schedules alone told
+   * the person that removing a slot would affect medicines that stopped
+   * appearing months ago. */
+  const liveMedicines = new Set(routine.medicines.filter(m => !m.archived).map(m => m.id));
+  const usageCount = slotId => schedules
+    .filter(s => s.slotId === slotId && s.active && liveMedicines.has(s.medicineId)).length;
 
+  /* Saving happens on blur and on picking a time -- no Save button -- so it
+   * has to say something, or changing a slot time is indistinguishable from
+   * changing nothing. Returns false rather than throwing: the callers are
+   * event handlers, and a rejection there goes nowhere. */
   async function persist() {
-    await supporter.saveSlots(code, slots);
+    try {
+      await supporter.saveSlots(code, slots);
+      toast(S.saved);
+      return true;
+    } catch {
+      toast(S.errGeneric);
+      return false;
+    }
   }
 
   async function removeSlot(slot) {
@@ -221,8 +291,8 @@ export async function slotsView({ app, isCurrent = () => true }) {
     // Schedules using the slot are deactivated server-side, never deleted:
     // dose_log rows point at them, and history must survive a routine change.
     slots.splice(slots.indexOf(slot), 1);
-    await persist();
-    refresh();
+    if (await persist()) refresh();
+    else draw();          // put the removed slot back on screen
   }
 
   function draw() {
@@ -266,7 +336,7 @@ export async function slotsView({ app, isCurrent = () => true }) {
                 if (!e.target.value) return;
                 slot.time = e.target.value;
                 await persist();
-                draw();
+                draw();   // re-sorts: slots are ordered by time
               },
             }),
           }),
@@ -295,8 +365,8 @@ export async function slotsView({ app, isCurrent = () => true }) {
           order: slots.length + 1,
           builtIn: false,
         });
-        await persist();
-        refresh();     // server has now assigned a real id -- reload to pick it up
+        if (await persist()) refresh();   // the server assigns the real id
+        else { slots.pop(); draw(); }
       },
     }));
 

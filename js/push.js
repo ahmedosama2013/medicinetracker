@@ -5,6 +5,20 @@
 import { supabase } from './supabase.js';
 import { VAPID_PUBLIC_KEY } from './config.js';
 
+/* navigator.serviceWorker.ready never resolves if no worker ever activates --
+ * a failed sw.js fetch, a hard-reloaded tab. Awaiting it unguarded left the
+ * Settings screen as a lone heading, indefinitely, with nothing to say so. */
+const SW_READY_MS = 4000;
+
+function serviceWorkerReady() {
+  return Promise.race([
+    navigator.serviceWorker.ready,
+    new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('The app has not finished starting up.')), SW_READY_MS);
+    }),
+  ]);
+}
+
 function urlBase64ToUint8Array(base64) {
   const padding = '='.repeat((4 - (base64.length % 4)) % 4);
   const base64safe = (base64 + padding).replace(/-/g, '+').replace(/_/g, '/');
@@ -23,8 +37,16 @@ function urlBase64ToUint8Array(base64) {
  */
 export async function isSubscribed() {
   if (!('serviceWorker' in navigator)) return false;
-  const reg = await navigator.serviceWorker.ready;
-  const sub = await reg.pushManager.getSubscription();
+
+  let sub;
+  try {
+    const reg = await serviceWorkerReady();
+    sub = await reg.pushManager.getSubscription();
+  } catch {
+    // Unknown, which is not the same as off. Settings says so rather than
+    // reporting a state it could not read.
+    return null;
+  }
   if (!sub) return false;
 
   try {
@@ -49,7 +71,7 @@ export async function subscribe(householdId) {
   const permission = await Notification.requestPermission();
   if (permission !== 'granted') throw new Error('Permission was not granted.');
 
-  const reg = await navigator.serviceWorker.ready;
+  const reg = await serviceWorkerReady();
   const sub = await reg.pushManager.subscribe({
     userVisibleOnly: true,
     applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
@@ -82,9 +104,18 @@ export async function subscribe(householdId) {
 
 export async function unsubscribe() {
   if (!('serviceWorker' in navigator)) return;
-  const reg = await navigator.serviceWorker.ready;
+  const reg = await serviceWorkerReady();
   const sub = await reg.pushManager.getSubscription();
   if (!sub) return;
-  await supabase().from('push_subscriptions').delete().eq('endpoint', sub.endpoint);
+
+  /* The error was discarded here, which is the mirror image of the bug fixed
+   * in subscribe(): the browser unsubscribed regardless, so the screen said
+   * reminders were off while the row survived and the cron job carried on
+   * pushing to an endpoint nobody was listening to. The server row goes first,
+   * and the browser subscription only if that worked. */
+  const { error } = await supabase().from('push_subscriptions')
+    .delete().eq('endpoint', sub.endpoint);
+  if (error) throw new Error(`Reminders could not be turned off: ${error.message}`);
+
   await sub.unsubscribe();
 }

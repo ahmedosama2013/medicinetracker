@@ -177,6 +177,8 @@ export const S = {
   weekdayNames: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
 
   save: 'Save',
+  saving: 'Saving',
+  saved: 'Saved',
   cancel: 'Cancel',
   back: 'Back',
   close: 'Close',
@@ -242,6 +244,11 @@ export const S = {
   notificationsOnLabel: 'Reminders are on',
   notificationsTurnOn: 'Turn on',
   notificationsTurnOff: 'Turn off',
+  /* Third state, not a second. Reporting "off" when the check itself failed is
+   * how a household ran for weeks believing reminders were on -- a switch that
+   * cannot be wrong is worse than one that admits it does not know. */
+  notificationsUnknownLabel: 'Reminders could not be checked',
+  notificationsUnknownHint: 'This usually means the app has not finished starting up. Turning them on again is safe.',
 
   // ---- misc ------------------------------------------------------------
   loading: 'Loading',

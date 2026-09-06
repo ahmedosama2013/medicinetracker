@@ -1846,6 +1846,16 @@ body.mode-simple .dialog-actions { flex-direction: column-reverse; }
 
 @keyframes spin { to { transform: rotate(360deg); } }
 
+/* A button that is working. currentColor rather than the token pair, so the
+   ring reads on a filled primary button as well as a quiet one -- the fixed
+   --primary ring was invisible on its own background. */
+.btn .spinner {
+  width: 1rem;
+  height: 1rem;
+  border-color: currentColor;
+  border-top-color: transparent;
+}
+
 /* Reduced motion kills the rotation, so the ring alone would read as a static
    dot. Pulse the opacity instead -- still says "working", without spinning. */
 @media (prefers-reduced-motion: reduce) {
