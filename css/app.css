@@ -915,6 +915,17 @@ body.mode-simple .dose { width: 2.125rem; height: 2.125rem; }
   margin-top: var(--space-2);
 }
 
+/* `min-width: 0` is load-bearing, not tidying.
+ *
+ * Form controls default to `min-width: auto`, which resolves to the control's
+ * intrinsic minimum -- and for a native date or time input that minimum is the
+ * width of its shadow content. WebKit enforces it, so `width: 100%` loses and
+ * the control overflows its card, taking the whole page into horizontal scroll.
+ * Blink renders those controls compactly enough to fit, which is why this is
+ * invisible in desktop responsive mode and obvious on an iPhone.
+ *
+ * Same shape of bug as the organiser photo: a rule the two engines disagree
+ * about, so the laptop is not evidence. */
 input[type="text"],
 input[type="time"],
 input[type="date"],
@@ -922,6 +933,8 @@ input[type="number"],
 select,
 textarea {
   width: 100%;
+  min-width: 0;
+  max-width: 100%;
   border: 1.5px solid var(--line-strong);
   background: var(--surface);
   border-radius: var(--r-sm);
@@ -929,6 +942,17 @@ textarea {
   min-height: var(--target-min);
   font-size: var(--text-base);
   transition: border-color var(--dur) var(--ease), box-shadow var(--dur) var(--ease);
+}
+
+/* And release the native sizing entirely for the two that carry it. iOS sizes
+   these from their shadow content and ignores `width` while the native
+   appearance is on; `min-width: 0` alone does not always win. Nothing is lost
+   visually -- the border, background, radius and padding above are ours
+   already, and the value still renders and still opens the system picker. */
+input[type="date"],
+input[type="time"] {
+  -webkit-appearance: none;
+  appearance: none;
 }
 
 textarea { min-height: 4.5rem; resize: vertical; }

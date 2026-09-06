@@ -126,6 +126,10 @@ Medicine Tracker/
   `min-height`. The organiser's fit layout subtracts it to size itself, so a
   declared height the content then exceeds makes that subtraction wrong — it
   did, by 10px, and the buttons sat under the bar.
+- **Form controls need `min-width: 0`.** Their `min-width` defaults to `auto`,
+  which is the control's intrinsic minimum — the width of a native date or time
+  input's shadow content. WebKit enforces it and `width: 100%` loses, taking
+  the page into horizontal scroll; Blink renders them compactly enough to fit.
 - **A percentage height needs a definite parent.** `max-height: 100%` against
   a chain of `auto` heights resolves to `none` in WebKit and to something
   usable in Blink, so it works in desktop responsive mode and fails on the
