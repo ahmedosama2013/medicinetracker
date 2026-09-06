@@ -105,7 +105,16 @@ Consider: right-to-left layout, whether numerals should be Urdu or Latin, and wh
 ## 6. Smaller items
 
 - **PRN and as-needed medicines.** No fixed schedule, logged when taken. Needs a separate section on Today, since it does not belong to any slot.
-- **Refill and stock tracking.** Corrected in v3 planning: the warning goes to the **elder**, not the supporter — supporters are often abroad and cannot buy medicine locally. And counting down doses is the wrong model; the moment the information actually exists is while filling the organiser and finding you are short. See Phase 3 in [v3-plan.md](v3-plan.md).
+- ~~**Refill and stock tracking.**~~ **Decided against, in Phase 3.** It was
+  planned as item 22 — "I don't have enough" while filling the organiser,
+  adding to a shared buy-list — on the reasoning that filling the tray is the
+  one moment the information exists. That reasoning still holds. What does not
+  is the assumption that knowing you are short tells anyone when to buy:
+  households differ on how far ahead they stock up, some have a relative who
+  visits monthly and buys everything then, and an elder often cannot say when
+  a refill is due either. An app that surfaced "running low" would be guessing
+  at a decision the people involved make on information it does not have. Left
+  to them. Nothing was built.
 - **Multiple patients per supporter install.** For a caregiver looking after two parents.
 - **Editing a logged dose's timestamp.** Currently `takenAt` is whenever the dose was marked, which is wrong if it was taken earlier. On a skipped row it means "when this was recorded", which the column name does not say.
 - **Unlocking older days.** v1 freezes everything on or before the last import, so an error more than one import old cannot be corrected. Consider a supporter-side override.

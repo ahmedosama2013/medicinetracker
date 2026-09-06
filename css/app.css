@@ -468,16 +468,34 @@ body.mode-none #app {
   display: flex;
 }
 
+/* Which tab you are on must be readable without seeing colour.
+ *
+ * The bar used to say it three ways that all reduce to one: the label turned
+ * blue, the icon turned blue, and a pale blue tint appeared behind the icon.
+ * For someone who cannot easily separate blue from grey -- which is most of
+ * the reason an elder taps the wrong tab -- that is no signal at all, and the
+ * 13px label and 13px glyph gave them nothing else to go on.
+ *
+ * So the current tab now differs in SHAPE first: a filled lozenge appears
+ * behind its icon, solid rather than tinted, with the glyph knocked out of it.
+ * A shape that is either there or not is legible in greyscale, at a glance,
+ * and from arm's length. Colour and a heavier label ride along on top as
+ * reinforcement rather than as the message.
+ *
+ * Everything also got bigger: a 64px bar, a 24px glyph inside a 56x32
+ * indicator, and 14px labels (15px in simple mode). The bar is the one piece
+ * of furniture on every screen, so it can afford the height. */
 .nav-inner .navlink {
   flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   gap: var(--space-1);
-  padding: var(--space-2) 0 var(--space-3);
-  min-height: var(--target-min);
-  color: var(--ink-3);
-  font-size: var(--text-xs);
+  padding: var(--space-2) 0;
+  min-height: 4rem;
+  color: var(--ink-2);
+  font-size: var(--text-sm);
   font-weight: 500;
   transition: color var(--dur) var(--ease), transform var(--dur-fast) var(--ease);
 }
@@ -485,30 +503,42 @@ body.mode-none #app {
 .nav-inner .navlink:active { transform: scale(0.94); }
 .nav-inner .navlink[aria-current="page"] { color: var(--primary); font-weight: 600; }
 
+/* The indicator itself. A lozenge rather than a circle so it reads as a
+   deliberate marker rather than a slightly larger icon. */
 .navlink-icon {
-  width: 1.5rem;
-  height: 1.5rem;
+  width: 3.5rem;
+  height: 2rem;
   border-radius: var(--r-pill);
-  transition: background var(--dur) var(--ease), transform var(--dur) var(--ease-out);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background var(--dur) var(--ease);
 }
 
 .nav-inner .navlink[aria-current="page"] .navlink-icon {
-  background: var(--primary-tint);
-  transform: translateY(-1px) scale(1.05);
+  background: var(--primary);
+  color: var(--on-primary);
 }
 
 .navlink-icon::before {
   content: "";
   display: block;
-  width: 100%;
-  height: 100%;
+  width: 1.5rem;
+  height: 1.5rem;
   background-color: currentColor;
   -webkit-mask-repeat: no-repeat;
   mask-repeat: no-repeat;
   -webkit-mask-position: center;
   mask-position: center;
-  -webkit-mask-size: 56%;
-  mask-size: 56%;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+}
+
+/* Simple mode reads the labels from further away and with less certainty
+   about what the glyphs mean, so the words get the extra size, not the icons. */
+body.mode-simple .nav-inner .navlink {
+  font-size: var(--text-base);
+  min-height: 4.5rem;
 }
 
 .navlink[data-icon="today"] .navlink-icon::before { -webkit-mask-image: var(--icon-today); mask-image: var(--icon-today); }

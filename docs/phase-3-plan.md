@@ -66,11 +66,7 @@ distinction — ui.md says the droplet glyph exists precisely because "liquids a
 drops are the things that must *not* go in a weekly organiser". `other` goes in
 the box; it is still a discrete thing.
 
-**The buy list is shared, but nothing is pushed.** Notifying a supporter needs
-item 24 (`push_subscriptions.user_id` is `not null` and FKs `auth.users`), and
-24–26 are one thread that should be done together or not at all. So a shortage
-appears on both Today screens and the supporter finds it next time they open the
-app. That is honest; a card that claims to have notified someone would not be.
+**~~The buy list is shared, but nothing is pushed.~~ Dropped — see item 22.**
 
 **The plan is frozen for the sitting.** Computed once when the session starts
 and stored. A supporter editing a medicine while someone else is halfway through
@@ -527,38 +523,29 @@ floor web push already requires, so the setup docs need no new caveat.
 
 ---
 
-## 22 — The buy list
+## 22 — The buy list — not built
 
-`0012_buy_list.sql`:
+Planned, then dropped before any of it was written. The reasoning that put it
+here still holds: filling the tray is the one moment the information exists,
+and nobody counts pills as a separate activity.
 
-```sql
-create table public.buy_list (
-  household_id uuid not null references public.households(id) on delete cascade,
-  medicine_id  uuid not null,
-  added_at     timestamptz not null default now(),
-  added_by     text not null check (added_by in ('patient','supporter')),
-  primary key (household_id, medicine_id),
-  foreign key (medicine_id, household_id)
-    references public.medicines(id, household_id) on delete cascade
-);
-```
+What does not hold is the step after that. Knowing you are short does not tell
+anyone *when to buy*, and that turns out to be the actual question. Households
+differ on how far ahead they stock up. Some have a relative who visits monthly
+and buys everything in one go, so "running low" on a Tuesday is not a task, it
+is noise until the next visit. And an elder often cannot say when a refill is
+due either — which was the assumption underneath surfacing it to them rather
+than to the supporter.
 
-Owner access through ordinary RLS on `app.my_household()`, mirrored by
-`js/sync.js` (the table joins the realtime publication in the same migration).
-Supporter access through three code-gated functions —
-`get_buy_list` / `add_to_buy_list` / `remove_from_buy_list` — polled by
-`js/supporter-sync.js` alongside everything else it already fetches. A new
-`buyList` IndexedDB store on both sides.
+So a "running low" card would be prompting a decision on information the app
+does not have, in a product whose whole discipline is not doing that. Left to
+the people involved. **No code, no table, no strings were written**, so there
+is nothing to remove; `next-steps.md` §6 records the decision where the idea
+originally came from.
 
-A card above the day on **both** Today screens: "Running low", the medicines, and
-a way to clear each. next-steps.md §6 is explicit that this warning belongs to
-the elder rather than the supporter, because a supporter abroad cannot buy
-medicine locally — but the supporter needs to see it too, so they know to ask.
-
-Either role can clear an entry. Whoever bought it clears it, and which of them
-that was is not information worth keeping.
-
-No push, per the decision above. The card is the delivery mechanism.
+This is also why item 24 does not get pulled forward. Supporter push identity
+was only needed to notify someone of a shortage, and there is no shortage to
+notify anyone about.
 
 ---
 
@@ -575,8 +562,8 @@ Each is a commit.
 4. **19 + 21 — the step screen and the wake lock.** Together because the wake
    lock is six lines and belongs to the same view's lifecycle.
 5. **20 — the check screen.**
-6. **22 — the buy list.** Migration, both access paths, the card, the button on
-   the step screen.
+6. ~~**22 — the buy list.**~~ Dropped; see item 22. The slot became **the
+   bottom bar**: which tab you are on now differs in shape, not only in colour.
 7. **Docs.** Every file listed under [Docs to update](#docs-to-update) below,
    in one pass, plus this file's own record of what departed from the plan.
 
@@ -603,8 +590,7 @@ where existing data changes shape. Pre-flight `select`, read the rows, then run
 it.
 
 **Two migrations touch `compute_day`.** 0011 adds fields to it. Nothing in 0012
-does, but a third change to that function during the phase would be a signal to
-stop and look at why.
+does, and with the buy list dropped there is no third migration in the phase.
 
 **`isCurrent()` applies here more than anywhere.** The organiser is a long-lived
 screen with awaits in it, on a device that is being refreshed by realtime, a
@@ -618,6 +604,32 @@ the tray.
 **Nothing here may reach the dose log.** Worth grepping `js/doses.js` callers at
 the end of the phase to confirm the organiser is not among them.
 
+## The bottom bar — done
+
+Not planned; it took the slot item 22 vacated, and it belongs to this phase
+because organiser mode added a third place an elder has to navigate to.
+
+The bar said which tab you were on three ways that all reduced to one: a blue
+label, a blue icon, and a pale blue tint behind the icon. For someone who
+cannot easily separate blue from grey — most of the reason an elder taps the
+wrong tab — that is no signal at all, and a 13px label beside a 13px glyph
+gave them nothing else.
+
+The current tab now differs in **shape**: a filled lozenge behind the icon,
+solid rather than tinted, glyph knocked out of it. Present or absent survives
+greyscale, a glance, and arm's length; colour and a heavier label reinforce it
+rather than carry it. Verified by rendering the bar under `grayscale(1)` —
+which is the test that matters, and the one the old bar would have failed
+outright.
+
+Sizes went up with it: a 64px bar (72px in simple mode), 24px glyphs, 14px
+labels (16px simple). Icons stayed. Four equal-width words are read rather
+than recognised, and the glyph is what makes a tab findable by shape before it
+is findable by word.
+
+Measured at 320px and 375px, in both roles, light and dark: no wrapping, no
+overflow, and nothing hidden behind the taller bar.
+
 ## Docs to update
 
 Commit 7. Listed here rather than in the order of work because the list is
@@ -629,19 +641,17 @@ long and the ordering is not interesting.
 - **ui.md** — the organiser screens, the step-counter-is-not-adherence rule, and
   the packet photo's place next to the pill tile.
 - **architecture.md** — `dose_qty` replacing `dosage`, the two new stores, the
-  frozen-plan rule, and the buy list's two access paths.
+  frozen-plan rule, and the routine tables' echo suppression.
 - **repo-structure.md** — `js/organiser.js`, `js/views/organiser.js`, the new
   migrations.
-- **next-steps.md** — §6's refill item is answered; strike it.
+- **next-steps.md** — §6's refill item is *decided against* rather than built;
+  already struck with the reasoning.
+- **ui.md** — the bottom bar's shape-not-colour rule; already written.
 - **v3-plan.md** — Phase 3 marked done, with what departed from the plan.
 
 ## Explicitly out of this phase
 
-- **Notifying the supporter of a shortage.** Item 24, Phase 4, one thread with
-  25 and 26.
-- **Stock or pill counting of any kind.** The buy list records "I am short of
-  this", not how many are left. next-steps.md §6 already rejected counting down
-  doses as the wrong model.
+- **Refill, stock and buy-lists of any kind.** See item 22.
 - **Any record of past sittings.** The organiser store holds the current week and
   is overwritten. A history of when the tray was filled is one step from a
   streak.

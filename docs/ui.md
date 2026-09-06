@@ -77,6 +77,30 @@ Responsive by being one column that grows. `#app` has a per-mode `max-width`
 and centres itself; 375px, 768px and 1280px are the same layout with different
 side margins, never a different arrangement.
 
+### The bottom bar
+
+One bar, both roles, tab sets differing by role.
+
+**Which tab you are on must be readable without seeing colour.** The bar used
+to say it three ways that all reduced to one — the label turned blue, the icon
+turned blue, and a pale blue tint appeared behind the icon. For someone who
+cannot easily separate blue from grey, which is most of the reason an elder
+taps the wrong tab, that is no signal at all; and a 13px label with a 13px
+glyph gave them nothing else to go on.
+
+So the current tab differs in **shape** first: a filled lozenge appears behind
+its icon, solid rather than tinted, with the glyph knocked out of it. A shape
+that is either present or absent survives greyscale, a glance, and arm's
+length. Colour and a heavier label ride on top as reinforcement, not as the
+message. The same rule as everywhere else in the app — a state is never
+carried by hue alone.
+
+The bar is 64px tall (72px in simple mode) with 14px labels (16px in simple
+mode). It is the one piece of furniture on every screen, so it can afford the
+height. Icons stay: text alone makes four equal-width words that are read
+rather than recognised, and the glyph is what makes a tab findable by shape
+before it is findable by word.
+
 ## Visual language
 
 > **The mistake worth not repeating.** The first v3 build looked far greyer
