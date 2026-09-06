@@ -189,27 +189,31 @@ Two sides to this: a Google Cloud OAuth client, and telling Supabase about it.
 1. Go to [console.cloud.google.com](https://console.cloud.google.com/home/dashboard) and create a project (or reuse one), if you don't already have one.
 2. Go to **APIs & Services > OAuth consent screen** (`console.cloud.google.com/auth/overview`). Choose **External** as the user type, fill in the required fields (app name, support email), and save.
 
-   Then decide the **publishing status**, because it decides who can sign in at all:
+   The consent screen has a **publishing status** — *Testing* or *In production*
+   — on the **Audience** page.
 
-   | | Who can sign in | Cost to you |
-   |---|---|---|
-   | **Testing** (default) | Accounts listed under **Audience → Test users**, max 100 — *plus anyone with an owner or editor role on the Google Cloud project*. Everyone else gets `403 access_denied` | One entry per person, added by you |
-   | **In production** | Anyone with a Google account | Every sign-in creates a household in *your* Supabase project |
+   Set it to **In production** if people outside your own Google accounts need
+   to sign in. That is the state this app wants: anyone signing in gets their
+   own household, which is the whole point of it being a hosted app rather than
+   a family spreadsheet.
 
-   **Read the status off the Audience page; do not infer it from whether a sign-in works.** An account with a role on the Cloud project is admitted whatever the status is, so a successful sign-in tells you nothing on its own — and neither does a failed one, which has several possible causes (see Troubleshooting).
+   Publishing does not put you through Google's verification review, which
+   applies to sensitive scopes — Gmail, Drive, contacts. Supabase's Google
+   provider asks only for `email`, `profile` and `openid`. If the console does
+   try to send you into verification, check the **Data access** page for a
+   scope that crept in.
 
-   **Publishing does not require Google's verification review.** That is only for sensitive scopes — Gmail, Drive, contacts. Supabase's Google provider asks for `email`, `profile` and `openid`, which are not sensitive, so "Publish App" is the whole step. (Confirm in the console; Google moves these rules around.)
+   **Do not infer who can sign in from the status alone.** Google's rules here
+   have changed more than once and the observed behaviour has not always matched
+   the documentation. The only reliable check is to actually sign in from an
+   account with no connection to this Cloud project — a private window is
+   enough. Do that before telling a collaborator they are blocked, or that they
+   are not.
 
-   Which to pick is a real choice, not a formality. **In production** is right as soon as anyone outside your Cloud project needs to sign in — a relative, a second household, a collaborator — and it saves adding each one by hand. **Testing** only buys you a gate against strangers finding the URL, and the thing that gate protects is free-tier storage, which photos are the only meaningful consumer of.
-
-   One Testing-mode caveat that sounds alarming and is not: Google expires *its* refresh tokens after 7 days. It does not sign anyone out, because Supabase issues its own session tokens after the initial sign-in and never returns to Google to refresh them.
-3. Go to **APIs & Services > Credentials > Create Credentials > OAuth client ID** (`console.cloud.google.com/auth/clients/create`).
-  - Application type: **Web application**.
-  - **Authorized JavaScript origins**: the **origin only, no path** — e.g. `https://YOUR-GITHUB-USERNAME.github.io`, plus `http://localhost:8000` and `http://localhost:8848` for local testing.
-  - **Authorized redirect URIs**: this has to match Supabase's callback URL exactly — get it from the Supabase side first (next step), then come back and paste it in here.
-4. Save. You'll get a **Client ID** and **Client Secret** — copy both.
-
-
+   The one cost of being open is that every sign-in creates a household in your
+   Supabase project. On the free tier the limit that matters is 1 GB of storage,
+   and photos are the only thing that consumes it meaningfully — roughly
+   60–120 KB each after compression.
 
 ### 3b. Supabase dashboard
 
