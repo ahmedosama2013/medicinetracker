@@ -105,22 +105,86 @@ async function cachePhoto(medicineId, path) {
   }
 }
 
+/* ---- Realtime echoes and bursts -------------------------------------------
+ *
+ * Postgres broadcasts every change to every subscriber, this device included.
+ * So a dose tap here came straight back as an event, and refreshing on it
+ * re-rendered the whole screen -- undoing the swap-only-the-tapped-slot
+ * behaviour js/views/day.js goes to real trouble to do, and which its comment
+ * explains: a full redraw re-reads the database, reloads every photo and jumps
+ * the scroll position under the person's thumb.
+ *
+ * It also produced the renders that used to stack up. A Done tap on a
+ * five-medicine slot is five row changes and was therefore five refreshes.
+ *
+ * The mirror still runs on every event -- the local cache must absorb the row
+ * either way. Only the redraw is skipped, and only for rows this device just
+ * wrote. Keyed strictly on row id and expired quickly: a refresh wrongly
+ * skipped costs one stale screen until the next event, while a mirror wrongly
+ * skipped would cost data.
+ */
+const ECHO_MS = 10_000;
+const localWrites = new Map();     // dose row id -> when it stops counting
+
+function markLocalWrite(id) {
+  if (!id) return;
+  if (localWrites.size > 200) {
+    const now = Date.now();
+    for (const [key, until] of localWrites) if (until < now) localWrites.delete(key);
+  }
+  localWrites.set(id, Date.now() + ECHO_MS);
+}
+
+/** True if this row is the echo of a write made on this device. Consumes it. */
+function isLocalEcho(id) {
+  const until = localWrites.get(id);
+  if (until === undefined) return false;
+  localWrites.delete(id);
+  return until >= Date.now();
+}
+
+/* Several events arriving together should cost one redraw, not one each: a
+ * supporter saving a medicine fires `medicines`, `schedules` and `slots` at
+ * once. Trailing, because the point is to let the burst finish. */
+const BURST_MS = 150;
+let refreshTimer = null;
+let routineTimer = null;
+
+function scheduleRefresh() {
+  if (refreshTimer) return;
+  refreshTimer = setTimeout(() => { refreshTimer = null; refresh(); }, BURST_MS);
+}
+
+function scheduleRoutineRefetch(householdId) {
+  if (routineTimer) return;
+  routineTimer = setTimeout(async () => {
+    routineTimer = null;
+    try {
+      await refetchRoutine(householdId);
+    } catch {
+      // The cache keeps its last good copy; the next event tries again.
+      return;
+    }
+    scheduleRefresh();
+  }, BURST_MS);
+}
+
 export function startRealtime(householdId) {
   const client = supabase();
   const channel = client
     .channel(`household-${householdId}`)
     .on('postgres_changes', { event: '*', schema: 'public', table: 'medicines', filter: `household_id=eq.${householdId}` },
-      () => refetchRoutine(householdId).then(refresh))
+      () => scheduleRoutineRefetch(householdId))
     .on('postgres_changes', { event: '*', schema: 'public', table: 'schedules', filter: `household_id=eq.${householdId}` },
-      () => refetchRoutine(householdId).then(refresh))
+      () => scheduleRoutineRefetch(householdId))
     .on('postgres_changes', { event: '*', schema: 'public', table: 'slots', filter: `household_id=eq.${householdId}` },
-      () => refetchRoutine(householdId).then(refresh))
+      () => scheduleRoutineRefetch(householdId))
     .on('postgres_changes', { event: '*', schema: 'public', table: 'dose_log', filter: `household_id=eq.${householdId}` },
-      payload => handleDoseChange(payload).then(refresh))
+      payload => handleDoseChange(payload).then(changed => { if (changed) scheduleRefresh(); }))
     .on('postgres_changes', { event: '*', schema: 'public', table: 'day_snapshots', filter: `household_id=eq.${householdId}` },
-      payload => handleSnapshotChange(payload).then(refresh))
+      payload => handleSnapshotChange(payload).then(scheduleRefresh))
     .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'households', filter: `id=eq.${householdId}` },
-      () => refetchHouseholdMeta(householdId).then(refresh))
+      () => refetchHouseholdMeta(householdId).then(scheduleRefresh))
     .subscribe();
 
   refetchRoutine(householdId);
@@ -131,9 +195,12 @@ export function startRealtime(householdId) {
   return () => client.removeChannel(channel);
 }
 
+/** Mirrors the row, and reports whether the screen needs redrawing for it. */
 async function handleDoseChange({ eventType, new: row, old: oldRow }) {
+  const id = eventType === 'DELETE' ? oldRow?.id : row?.id;
   if (eventType === 'DELETE') await store.deleteDoseLogRow(oldRow.id).catch(() => {});
   else await store.putDoseLogRow(mapDose(row));
+  return !isLocalEcho(id);
 }
 
 async function handleSnapshotChange({ eventType, new: row, old: oldRow }) {
@@ -187,6 +254,7 @@ window.addEventListener('online', flushOutbox);
 export async function logSlot(householdId, date, slotId, medicineIds) {
   const rows = await store.logSlot(date, slotId, medicineIds);
   for (const row of rows) {
+    markLocalWrite(row.id);
     await store.putOutboxItem({
       id: doseKey(date, slotId, row.medicineId), op: 'log',
       payload: {
@@ -203,7 +271,8 @@ export async function logSlot(householdId, date, slotId, medicineIds) {
 /** One medicine, one state. `status` of null clears it back to unmarked. */
 export async function setDose(householdId, date, slotId, medicineId, status) {
   if (status === null) {
-    await store.clearDose(date, slotId, medicineId);
+    const cleared = await store.clearDose(date, slotId, medicineId);
+    markLocalWrite(cleared?.id);
     await store.putOutboxItem({
       id: doseKey(date, slotId, medicineId), op: 'undo-one',
       payload: {
@@ -216,6 +285,7 @@ export async function setDose(householdId, date, slotId, medicineId, status) {
   }
 
   const row = await store.setDose(date, slotId, medicineId, status);
+  markLocalWrite(row.id);
   await store.putOutboxItem({
     id: doseKey(date, slotId, medicineId), op: 'log',
     payload: {
@@ -228,7 +298,8 @@ export async function setDose(householdId, date, slotId, medicineId, status) {
 }
 
 export async function undoSlot(householdId, date, slotId) {
-  const n = await store.undoSlot(date, slotId);
+  const removed = await store.undoSlot(date, slotId);
+  for (const row of removed) markLocalWrite(row.id);
 
   /* Drop per-medicine writes still queued for this slot. They have been
    * superseded, and left in place they would flush AFTER the slot delete --
@@ -245,5 +316,5 @@ export async function undoSlot(householdId, date, slotId) {
     payload: { household_id: householdId, local_date: date, slot_id: slotId },
   });
   flushOutbox();
-  return n;
+  return removed.length;
 }

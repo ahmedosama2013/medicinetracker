@@ -45,8 +45,14 @@ async function mayMark(settings) {
  * @param {Function} [onChange]  notified after a Done/Undo write. A notification
  *                               only: the slot has already updated itself, so a
  *                               caller must not re-render this day in response.
+ * @param {Function} [onStale]   called when this day's nodes have been detached
+ *                               from the document while a write was in flight,
+ *                               so an in-place update can no longer land. See
+ *                               redrawSlot.
  */
-export async function renderDay({ date, editable = true, lockReason = null, onChange = null }) {
+export async function renderDay({
+  date, editable = true, lockReason = null, onChange = null, onStale = null,
+}) {
   const [groups, log, settings] = await Promise.all([
     schedule.expectedFor(date),
     store.getDoseLogForDate(date),
@@ -260,6 +266,19 @@ export async function renderDay({ date, editable = true, lockReason = null, onCh
     // replaceWith quietly becomes a no-op.
     const previous = nodeBySlot.get(group.slotId);
     const next = buildSlot(group, opts);
+
+    /* If the whole day has been swapped out from under us -- something
+     * re-rendered the screen while this write was in flight, which is easy
+     * during a confirmation dialog -- then replaceWith writes into a detached
+     * tree and silently does nothing. The write itself succeeded, so the store
+     * is right and only the screen is wrong, which is the worst shape for a
+     * bug like this to take: it looks exactly like the tap being ignored.
+     * Hand it to the caller, which can re-render from the store. */
+    if (!previous?.isConnected) {
+      onStale?.();
+      return next;
+    }
+
     previous.replaceWith(next);
     return next;
   }

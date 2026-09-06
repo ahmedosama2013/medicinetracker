@@ -32,6 +32,29 @@ const POLL_MS = 60_000;
 /** Dose-log ranges already pulled this session, as [from, to] pairs. */
 const fetched = [];
 
+/* What the server looked like at the end of the last sync.
+ *
+ * Most polls change nothing -- the elder marks a handful of doses a day and the
+ * routine changes once a week. Calling back on every tick meant re-rendering
+ * the screen every sixty seconds regardless, which throws away scroll position,
+ * reloads every photo, and orphans any in-place slot update that happens to be
+ * mid-flight (a confirm dialog is open for seconds, and a re-render underneath
+ * it leaves the tap writing into a detached tree). So the caller is told only
+ * when something actually moved. */
+let lastSignature = null;
+
+function signatureOf(routine, rows) {
+  const meds = (routine?.medicines || [])
+    .map(m => `${m.id}:${m.name}:${m.strength}:${m.dosage}:${m.form}:${m.notes}:${m.archived}:${m.photoPath}`)
+    .sort().join('|');
+  const schedules = (routine?.schedules || [])
+    .map(s => `${s.id}:${s.slotId}:${s.time}:${s.active}:${JSON.stringify(s.frequency)}`)
+    .sort().join('|');
+  const slots = (routine?.slots || []).map(s => `${s.id}:${s.label}:${s.time}`).sort().join('|');
+  const doses = (rows || []).map(r => `${r.id}:${r.status}:${r.loggedBy}`).sort().join('|');
+  return `${meds}#${schedules}#${slots}#${doses}`;
+}
+
 /* When the cache last actually reached the server. Surfaced on the
  * supporter's Today, because polled data that presents itself as live is a
  * lie the person only discovers when it matters. */
@@ -135,17 +158,21 @@ async function pullRange(code, from, to) {
 }
 
 export async function ensureRange(code, from, to) {
-  if (!code || covered(from, to)) return;
-  await pullRange(code, from, to);
+  if (!code || covered(from, to)) return null;
+  const rows = await pullRange(code, from, to);
   fetched.push([from, to]);
+  return rows;
 }
 
 /** Everything, on entering supporter mode. */
 export async function hydrate(code) {
   const to = todayStr();
   const from = addDays(to, -INITIAL_DAYS);
-  await pullRoutine(code);
-  await ensureRange(code, from, to);
+  const routine = await pullRoutine(code);
+  const rows = await ensureRange(code, from, to);
+  // So the first poll does not report a change that is only "we had not looked
+  // before".
+  lastSignature = signatureOf(routine, rows);
 }
 
 /**
@@ -153,9 +180,13 @@ export async function hydrate(code) {
  * because its whole job is to notice that something changed -- including a
  * dose the elder has since undone, which only shows up as a row that has
  * stopped existing.
+ *
+ * Returns true when the server's view differs from the last sync. The cache is
+ * updated either way; the boolean is only about whether the screen has any
+ * reason to redraw.
  */
 export async function refresh(code) {
-  await pullRoutine(code);
+  const routine = await pullRoutine(code);
 
   const to = todayStr();
   const from = fetched.length
@@ -178,6 +209,11 @@ export async function refresh(code) {
 
   fetched.length = 0;
   fetched.push([from, to]);
+
+  const signature = signatureOf(routine, rows);
+  const changed = signature !== lastSignature;
+  lastSignature = signature;
+  return changed;
 }
 
 let timer = null;
@@ -187,8 +223,7 @@ export function startPolling(code, onUpdate) {
   const tick = async () => {
     if (document.visibilityState !== 'visible') return;
     try {
-      await refresh(code);
-      onUpdate?.();
+      if (await refresh(code)) onUpdate?.();
     } catch {
       // A failed poll is not worth interrupting anyone over; the screen keeps
       // showing the last good data and the next tick tries again.

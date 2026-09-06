@@ -155,11 +155,14 @@ export async function clearDose(date, slotId, medicineId) {
  * This clears skipped rows too. Undo on a slot means "put this slot back to
  * untouched", and leaving skips behind would make the button's effect depend
  * on invisible history -- the person would tap Undo and still see amber.
+ *
+ * Returns the rows it removed, not a count: js/sync.js needs their ids to
+ * recognise the Realtime echo of its own delete.
  */
 export async function undoSlot(date, slotId) {
   const rows = await getDoseLogForSlot(date, slotId);
   await db.delMany(STORES.doseLog, rows.map(r => r.id));
-  return rows.length;
+  return rows;
 }
 
 // ---- day snapshots --------------------------------------------------------

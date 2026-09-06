@@ -13,6 +13,7 @@ import { S } from '../strings.js';
 import * as supporter from '../supporter.js';
 import { el, clear, emptyState, toast } from '../ui.js';
 import { todayStr, formatLong } from '../date.js';
+import { refresh } from '../router.js';
 import { renderDay } from './day.js';
 
 /**
@@ -156,6 +157,10 @@ export async function todayView({ app, isCurrent = () => true }) {
       renderDay({
         date,
         editable: true,
+        // This day's nodes are gone -- something re-rendered underneath a
+        // write. Rebuild from the store rather than leaving the tap looking
+        // ignored.
+        onStale: () => refresh(),
         onChange: async () => {
           const next = await progressRail(date);
           if (rail && next) {
