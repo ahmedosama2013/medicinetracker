@@ -45,6 +45,14 @@ The consequence is intended: a supporter write needs connectivity and reports
 failure, rather than deferring silently. Marking a dose on someone else's
 behalf is not something to queue.
 
+**The cache belongs to a household, and leaving one clears it.**
+`store.clearHouseholdData()` runs on sign-out and on disconnect, before the
+settings are rewritten. `replaceMedicinesCache` overwrites medicines on the
+next sync, but `doseLog`, `daySnapshots` and `photos` are only ever added to —
+so without this, signing in with a different account or pairing to another
+household left the previous one's dose history and pill photos on the device
+and rendering in the calendar.
+
 **Realtime is not available to a supporter.** It respects RLS, and with no
 session they match no rows, so no events can ever arrive. `supporter-sync`
 polls while the app is visible instead, and the UI says when it last reached
@@ -52,6 +60,61 @@ the server rather than implying it is live. History is fetched a range at a
 time — 75 days on open, then `ensureRange` pulls a month the first time the
 calendar pages to it, because hollow rings do not read as "not loaded", they
 read as "they took nothing that month".
+
+### Rendering: one screen at a time (v3, Phase 2.5)
+
+Every view is `clear(app)` → `await` → `appendChild`, and for a long time
+nothing serialised them. Two overlapping renders therefore appended **two live
+copies of the same screen** — the same slots, the same medicines — which
+disappeared on reload because a reload runs exactly one render.
+
+`js/router.js` numbers each render and hands the view an `isCurrent()`
+predicate. **A view must check it after every await, before touching the DOM.**
+That is the contract; a new view that skips it reintroduces the bug. Where it
+was cheap, views also build detached and clear only once they hold everything,
+which removes the window rather than only guarding it.
+
+The router also catches a throwing view. Before, a rejection went nowhere and
+the person sat on the previous screen with no explanation.
+
+### What may re-render, and when
+
+The rule underneath all of this: **a screen that has already updated itself
+must not be redrawn for the change it just made.** `js/views/day.js` swaps one
+slot node on a dose change specifically to avoid re-reading the database,
+reloading every photo and jumping the scroll position — and two separate
+mechanisms used to undo that on every tap.
+
+- **Realtime echoes.** Postgres broadcasts to every subscriber including the
+  writer, so a Done tap on a five-medicine slot came back as five events and
+  five refreshes. `js/sync.js` mirrors every event into the cache — that part
+  is not optional — but skips the redraw for row ids this device wrote in the
+  last ten seconds, and coalesces bursts from separate tables into one refetch.
+- **The supporter's poll.** It called back every sixty seconds regardless.
+  `supporter-sync.refresh()` now returns whether the server's view actually
+  differs from the last sync, and the poll only re-renders when it does.
+
+An in-place update that finds its node detached (something re-rendered while a
+write was in flight — easy during a confirmation dialog) calls back to
+`onStale`, and the caller re-renders from the store. Silently doing nothing was
+the old behaviour and it read exactly like the tap being ignored.
+
+### Today has to mean today
+
+Every screen used to compute the date once, at mount. An installed PWA left on
+Today overnight showed yesterday in the morning and wrote doses to yesterday's
+`local_date` — which, once the freeze has advanced `locked_through`, is
+rejected, and the outbox cannot tell a rejection from being offline, so it
+retries forever.
+
+`js/main.js` watches for the day to change: a timer to the next local midnight
+for a phone left awake, and a `visibilitychange`/`focus` check for one that was
+asleep and had its timers throttled. The calendar re-reads both the date and
+the lock line on every draw rather than capturing them at mount.
+
+The same visibility trigger, and the Realtime `SUBSCRIBED` callback, backfill
+history on the elder's device. The client reconnects its websocket on its own
+but never replays what was missed.
 
 A nightly Postgres cron job (`app.run_daily_freeze`) replaces the old file-import-time freeze: it computes and stores "what was due" for each household's local yesterday, then advances a read-only lock line that trails the freeze by a couple of days, so the offline dose-log outbox always has slack to catch up into. Reminders are Web Push (VAPID), sent by a `pg_cron`-scheduled Edge Function querying "due, unlogged, unnotified" slots — see the schema for the exact query.
 
@@ -121,6 +184,25 @@ order and erase a dose the person recorded. See the migration header.
 ### 2. Dates are local strings, never timestamps
 
 All date maths goes through [js/date.js](../js/date.js) on `"YYYY-MM-DD"` strings. Never `new Date("2026-08-30")` — a bare date string parses as UTC and lands on the previous day west of Greenwich. Never add `86400000` to a timestamp — DST makes some local days 23 or 25 hours long. Day counting treats the local calendar parts as UTC, which makes every day exactly 24 hours without implying a timezone.
+
+And **never treat the date as fixed for the life of a screen.** A view that
+captures `todayStr()` at mount is correct until midnight and then quietly wrong
+in the worst possible way: it keeps accepting taps and writing them to
+yesterday. See "Today has to mean today" above.
+
+### 2b. Every write is one write
+
+Two rules that both exist because the same tap arrived twice:
+
+- **Only one outbox flush at a time.** Every dose write kicks off a flush
+  without awaiting it, so a burst of taps used to start a burst of flushes,
+  each holding a different snapshot of the queue and racing to the network.
+  Whichever landed last won, which is not necessarily the one the person tapped
+  last. Writes for a single dose are also chained in `js/views/day.js`, so the
+  last tap is the last write.
+- **A button that starts a round trip disables itself.** Medicine-form Save did
+  not, and two taps meant two medicines with the same name — `draft.id` was
+  still null on the second pass.
 
 ### 3. Retired: the file-based hand-off
 

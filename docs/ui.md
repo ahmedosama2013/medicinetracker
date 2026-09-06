@@ -195,6 +195,15 @@ unmarked: one tap too many is what got you there.
 The accessible label says what the **next** tap does, since the control cycles
 and a screen reader cannot see where it currently sits.
 
+**The target moves on the tap, not on the round trip.** It used to read its
+state from a map that was only updated once the write came back, so a second
+tap arriving first read the old state, computed the same "next", and was
+silently swallowed — and on the supporter's side, where the write goes straight
+out with no outbox behind it, the circle could sit unresponsive for a visible
+second with nothing to say it was busy. The state is applied optimistically and
+rolled back if the write fails. Writes for one dose are chained, so the last
+tap is the last write.
+
 Read-only days (the supporter's Today before they confirm, and the elder's
 frozen past days) show the same shape without the affordance: a dashed outline
 for unmarked, so "you cannot change this here" is visible before anyone tries.
@@ -344,8 +353,27 @@ All in [js/ui.js](../js/ui.js):
 - **Loading state** — a spinner and a live region. Supporter screens go through
   code-gated RPCs and, for photos, an edge function that can cold-start, so
   "tapped, nothing happened" is a real second or more.
+- **Busy buttons** — anything that starts a round trip disables itself and
+  shows a spinner in place of its label. This is not only politeness: two taps
+  on Save used to create two medicines with the same name.
 
-Every overlay traps Escape, moves focus inside on open, and is announced.
+Every overlay traps **Tab** as well as Escape, moves focus inside on open, and
+returns focus to whatever opened it on close. `aria-modal` tells a screen reader
+the page behind is inert and does nothing whatever about the tab order, so
+without the trap focus walked straight out into the screen behind — which for a
+keyboard or switch user is the difference between a modal and a decoration.
+
+### Nothing may say it worked when it did not
+
+The recurring failure in this app has not been crashes, it has been success
+messages. A nudge that reached nobody said "Reminder sent". Reminders reported
+themselves as off when the check had failed. A supporter's dose wrote correctly
+and the screen showed nothing.
+
+So: a state that could not be read is reported as **unknown**, not as its
+"safe" default; a send that reached nobody is not a send; and an in-place
+update that finds its node gone re-renders from the store rather than silently
+doing nothing.
 
 ## Colour and contrast
 

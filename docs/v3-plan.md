@@ -389,7 +389,8 @@ failure, organiser never logs doses, no aggregate adherence anywhere — go in
 
 ## Order of operations
 
-Phase 0 → 1 → 2 → 3, with Phase 4 items pulled forward opportunistically: item
+Phase 0 → 1 → 2 → **2.5** → 3, with Phase 4 items pulled forward
+opportunistically: item
 23 is cheap enough to land during Phase 3, since organiser mode wants the packet
 photo and the purpose line anyway. Items 24–26 are one thread and should be done
 together or not at all.
@@ -398,3 +399,16 @@ The riskiest single change is item 8, because it touches the outbox, the sync
 merge, and the calendar's counting at once. The riskiest sequencing mistake
 would be building organiser mode before item 23, which would mean building its
 step screen twice.
+
+**Phase 2.5 — Stability** was added after Phase 2 shipped and is not in the
+numbered list above; see [phase-2.5-plan.md](phase-2.5-plan.md). It is entirely
+fixes to what Phases 0-2 built, and it went before Phase 3 because organiser
+mode is the most stateful screen in the product and should not be built on a
+router that can render the same screen twice.
+
+**Done.** Nineteen items across seven commits, the largest being: renders are
+numbered so two can no longer append to the same screen; a screen is no longer
+redrawn for a change it has already made itself; the outbox flushes one at a
+time; the dose target moves on the tap; and the date is re-checked at midnight
+instead of being captured when a screen was first drawn. Phase 3 starts from
+here.

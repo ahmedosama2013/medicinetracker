@@ -82,14 +82,14 @@ Medicine Tracker/
 
 | File | Responsibility |
 |---|---|
-| `js/db.js` | `open`, `get`, `getAll`, `getAllFromIndex`, `put`, `putMany`, `del`, `delMany`, `clear`, `uuid`. Stands in for the `idb` library |
-| `js/store.js` | Reads used by every view (`getMedicines`, `getDoseLogForDate`, ...), the dose-log append-only rule, and a small set of cache-writer/outbox functions used only by `js/sync.js` |
+| `js/db.js` | `open`, `get`, `getAll`, `getAllFromIndex`, `put`, `putMany`, `del`, `delMany`, `clear`, `replaceAll`, `uuid`. Stands in for the `idb` library. `replaceAll` empties and refills a store in **one** transaction — a clear followed by a separate write leaves a window in which the routine is empty, and a read landing in it renders the elder's cold-start screen |
+| `js/store.js` | Reads used by every view (`getMedicines`, `getDoseLogForDate`, ...), the dose-log append-only rule, and a small set of cache-writer/outbox functions used only by `js/sync.js`. `clearHouseholdData()` wipes everything but settings, on sign-out and disconnect |
 | `js/auth.js` | Google sign-in, household create/resume, share-code rotation — simple-only |
 | `js/supporter.js` | `loadRoutine`, `saveMedicine`, `replaceSchedules`, `saveSlots`, photo actions, `loadDoseLog`/`loadHistory`/`logDose`/`unlogSlot`, `nudge` — every one code-gated, no session |
-| `js/supporter-sync.js` | `hydrate`, `ensureRange`, `refresh`, `startPolling`, `lastSync`. Fills the same cache `js/sync.js` does, but by polling — Realtime cannot reach a sessionless device |
+| `js/supporter-sync.js` | `hydrate`, `ensureRange`, `refresh`, `startPolling`, `lastSync`. Fills the same cache `js/sync.js` does, but by polling — Realtime cannot reach a sessionless device. `refresh` returns whether anything actually changed, so a tick that changed nothing does not re-render the screen |
 | `js/doses.js` | `setDose`, `logSlot`, `undoSlot`. The one place that knows the elder writes through the outbox and the supporter writes through RPCs |
 | `js/sync.js` | Supabase Realtime subscription that mirrors a household's tables into the local cache, plus the dose-log offline outbox |
-| `js/date.js` | `todayStr`, `addDays`, `daysBetween`, `dayOfWeek`, `monthGrid`, `formatTime`, `formatLong`. No UTC anywhere |
+| `js/date.js` | `todayStr`, `addDays`, `daysBetween`, `dayOfWeek`, `monthGrid`, `formatTime`, `formatLong`, `msUntilTomorrow`. No UTC anywhere |
 | `js/schedule.js` | `isDueOn`, `buildDay`, `dueOn`, `expectedFor`, `completionForDates`. The pure functions take plain arrays and can be called from the console; `isDueOn` is also ported into Postgres as `app.is_due` |
 | `js/photos.js` | `compress`, `objectUrl`/`release`, `blobToDataUrl`/`dataUrlToBlob` |
 | `js/ui.js` | `el()` for DOM building, plus `confirmDialog`, `alertDialog`, `openSheet`, `openPhotoViewer`, `toast`, `pickFile`, `pillTile`, `loadingState`, `applyTheme` |
@@ -100,6 +100,8 @@ Medicine Tracker/
 - **One module owns the local cache.** Views call `store.*`, never `db.*`. `js/sync.js` is the one exception permitted to write through `store.*`'s cache-writer functions.
 - **The supporter's cache is read-only.** Since v3 a supporter device does cache the routine and history (`js/supporter-sync.js`), so Today and Calendar can render. But supporter *writes* never touch the outbox — nothing there would flush it — they go out through `js/supporter.js` and are mirrored in afterwards. `js/doses.js` is the only module that knows this.
 - **Writes go through `js/doses.js`, not `js/sync.js`.** A view that calls `sync.*` directly works on the elder's device and silently does nothing useful on the supporter's.
+- **A view must check `isCurrent()` after every await, before touching the DOM.** The router passes it in and uses it to drop superseded renders. Skipping it reintroduces the two-copies-of-the-screen bug — see [architecture.md](architecture.md), "Rendering: one screen at a time".
+- **Read the node you are replacing before you build its replacement,** and read `document.activeElement` before the swap, not after. Both mistakes fake success: the builder registers what it creates so a later lookup hands back the new detached node, and removing a focused element resets `activeElement` to `<body>` immediately. Each has cost a day once already.
 - **No text outside `strings.js`.** Views reference `S.something`. This is what makes an Urdu translation a data change rather than a refactor.
 - **No HTML strings with data in them.** Everything goes through `el()` and `textContent`, so a medicine named `<img onerror=…>` is just a medicine with a silly name.
 - **Views return their cleanup.** A view that creates photo object URLs returns a function; the router calls it before rendering the next screen.
@@ -113,5 +115,10 @@ python3 icons/make-icons.py
 ```
 
 Writes the four PNGs from scratch using only `zlib` and `struct` — no Pillow, no ImageMagick. Paths are relative to the script, so it runs from any checkout.
+
+Credentials that are not safe to commit live **outside** the repository, in
+`~/.medicine-tracker/`. `js/config.js` is committed on purpose — the anon key
+and the VAPID public key are meant to be public and the deployed site needs
+them — which is why `.gitignore` says so explicitly rather than listing it.
 
 `apple-touch-icon.png` is a full opaque square because iOS composites onto black and applies its own corner mask. `favicon.svg` is not generated: it is hand-written to the same geometry, because a vector stays crisp at every tab-bar size and zoom level in under a kilobyte. `favicon-32.png` exists only for browsers that ignore SVG icons. If you change the mark, change both.

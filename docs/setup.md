@@ -316,7 +316,12 @@ Try the full loop:
 
 Push to `main`, then in the repo's GitHub settings go to **Settings > Pages** and set **Source** to **Deploy from a branch**, branch `main`, folder `/root`. (The repository needs to be public for this free option — see [GitHub's Pages docs](https://docs.github.com/en/pages) if you'd rather use a GitHub Actions-based deploy on a private repo instead.)
 
-`js/config.js`'s values are safe to commit, so there's nothing to inject at deploy time — same "push and it's live" simplicity as before. Remember to add the GitHub Pages URL to both the Google Cloud OAuth client's authorized origins/redirect URIs (step 3a) and Supabase's Site URL / Redirect URLs (step 3b) once you know the real URL.
+`js/config.js`'s values are safe to commit, so there's nothing to inject at deploy time — same "push and it's live" simplicity as before. It is deliberately **not** in `.gitignore`; the anon key and the VAPID public key are meant to be public, and the deployed site needs them. Remember to add the GitHub Pages URL to both the Google Cloud OAuth client's authorized origins/redirect URIs (step 3a) and Supabase's Site URL / Redirect URLs (step 3b) once you know the real URL.
+
+**The Google OAuth client secret is a different matter.** It goes into the
+Supabase provider page (step 3b) and nowhere else — not into this repository,
+not into a scratch file beside it. Keep your copy outside the working tree
+entirely; a note in `~/` is enough, and it is what this project does.
 
 ---
 
