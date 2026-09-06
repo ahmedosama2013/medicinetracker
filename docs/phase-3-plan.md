@@ -363,6 +363,51 @@ The store is local and never syncs. A half-filled tray is a fact about one
 sitting on one device, and two people filling the same tray from two phones is
 not a thing that happens.
 
+### 19 + 21 done
+
+`js/views/organiser.js`, route `#/organiser`, step in the query string. The
+entry is a card at the **bottom** of Today: filling the box is a weekly job at
+most, and a fifth nav tab would ask everyone to look past it every day. The
+card only appears once a household has ticked something under Pill box, so an
+elder who does not use one never sees it.
+
+**The step is in the hash and the plan is in the store**, which together are
+what make the screen survive being re-rendered. Verified by replacing the
+entire medicines cache mid-sitting and calling `refresh()`: the grid, the
+totals and the step counter did not move. That is the case the whole
+frozen-plan design exists for, and it is not one you would ever stumble into
+by hand.
+
+**The wake lock is module-level, not per-render.** Every step change is a full
+route render, so a per-render lock would be taken and dropped once per medicine
+and the screen would dim between them — the exact thing it exists to prevent.
+The cleanup only releases when `currentPath()` is no longer `#/organiser`,
+which works because the router runs cleanup *after* the hash has changed, so a
+step change is distinguishable from a departure. Verified against a stub that
+grants: one request on entry, none across three step changes, one release on
+leaving, a fresh one on re-entry.
+
+The real API could not be exercised — it is denied outright in an unfocused
+browser pane, so what ran here was the failure path. That path is correct (it
+fails silently and the screen still works), but **the lock has never actually
+been held**. It needs a real phone, alongside item 29's push check.
+
+Two smaller things:
+
+**A cell is three states, not two.** Due carries a dot with the amount in it
+(`½`, `2`); not-due is a dash. A twice-weekly medicine's five blank days would
+otherwise read as five days of work outstanding.
+
+**The start screen says the quiet part out loud** — "This does not mark
+anything as taken." Once, there, and nowhere else. Repeating it every step
+would nag; omitting it risks someone believing this screen marks doses and
+quietly stopping marking them on Today, which is the worst outcome available.
+
+Measured on a 375×812 phone: with a 7×2 tray everything fits on one screen,
+photo included. With 7×4 the grid clears the fold and the buttons need a
+thumb-scroll, which is why the packet is capped at 12rem rather than filling
+its 4:3 box.
+
 ---
 
 ## 20 — The check screen

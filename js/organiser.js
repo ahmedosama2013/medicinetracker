@@ -136,7 +136,6 @@ export function planWeek(startDate, { medicines = [], schedules = [], slots = []
 
   // ---- compartments: the same numbers, pivoted for checking ---------------
 
-  const stepById = new Map(steps.map(s => [s.medicineId, s]));
   const compartments = boxSlots.map(slot => ({
     slotId: slot.id,
     label: slot.label,
@@ -198,5 +197,8 @@ export function planWeek(startDate, { medicines = [], schedules = [], slots = []
   }
   outOfBox.sort((a, b) => a.name.localeCompare(b.name));
 
-  return { startDate, dates, boxSlots, steps, compartments, outOfBox, stepById };
+  /* Plain arrays and strings throughout, so the whole plan survives
+   * structuredClone into IndexedDB. It is stored, not recomputed: see
+   * store.startOrganiser for why the plan is frozen for the sitting. */
+  return { startDate, dates, boxSlots, steps, compartments, outOfBox };
 }

@@ -98,6 +98,34 @@ function nudgeButton(settings) {
   return el('div.nudge-wrap', [button, el('p.nudge-hint', { text: S.nudgeHint })]);
 }
 
+/* The way in to organiser mode: a card, not a tab.
+ *
+ * Filling the box is an occasional job -- weekly at most -- and a fifth thing
+ * in the nav would ask everyone to look past it every day. It only appears
+ * once the household has said which times of day go in a box, so an elder who
+ * does not use one never sees it at all.
+ */
+async function organiserCard() {
+  const [boxSlots, session] = await Promise.all([
+    store.getBoxSlots(), store.getOrganiser(),
+  ]);
+  if (!boxSlots.length) return null;
+
+  const total = session?.plan?.steps?.length || 0;
+  const remaining = total - (session?.done?.length || 0);
+  const midSitting = session && total > 0 && remaining > 0 && remaining < total;
+
+  return el('a.card.og-card', { href: '#/organiser' }, [
+    el('span.og-card-main', [
+      el('span.og-card-title', { text: S.organiserOpen }),
+      el('span.og-card-body', {
+        text: midSitting ? S.organiserResume(remaining) : S.organiserCardBody,
+      }),
+    ]),
+    el('span.role-chevron', { 'aria-hidden': 'true', text: '\u203a' }),
+  ]);
+}
+
 export async function todayView({ app, isCurrent = () => true }) {
   const date = todayStr();
   const settings = await store.getSettings();
@@ -158,8 +186,9 @@ export async function todayView({ app, isCurrent = () => true }) {
 
     // In parallel: both read the same stores, and the rail used to wait behind
     // the day for no reason.
-    const [railNode, rendered] = await Promise.all([
+    const [railNode, organiser, rendered] = await Promise.all([
       progressRail(date),
+      organiserCard(),
       // onChange swaps the rail and nothing else. renderDay already replaced
       // the tapped slot in place, and redrawing the day here would re-read the
       // database, reload every photo and jump the scroll position under the
@@ -203,6 +232,10 @@ export async function todayView({ app, isCurrent = () => true }) {
 
     cleanup = rendered.cleanup;
     app.appendChild(rendered.node);
+    // Below the day, not above it. Today's job is what to take today; filling
+    // next week's box is the thing you go looking for, not the thing you are
+    // interrupted by.
+    if (organiser) app.appendChild(organiser);
   }
 
   await draw();

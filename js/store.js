@@ -262,6 +262,43 @@ export async function replaceSchedulesCache(schedules) {
 export const putDoseLogRow = row => db.put(STORES.doseLog, row);
 export const deleteDoseLogRow = id => db.del(STORES.doseLog, id);
 
+// ---- organiser (local only, never synced) ----------------------------------
+
+/* One in-progress filling, under a fixed key, because there is one physical
+ * tray. Starting a different week replaces it rather than accumulating -- a
+ * history of when the box was filled is one step from a streak, and this app
+ * does not keep those.
+ *
+ * The plan is STORED, not recomputed on each step. A supporter editing a
+ * medicine while someone else is halfway through the tray must not change the
+ * grid under their hands, and a plan recomputed per render would do exactly
+ * that. Same reasoning as day_snapshots, different lifetime: this one is
+ * frozen for a sitting rather than for good.
+ */
+const ORGANISER_KEY = 'current';
+
+export const getOrganiser = () => db.get(STORES.organiser, ORGANISER_KEY);
+
+export async function startOrganiser(weekStart, plan) {
+  const session = { key: ORGANISER_KEY, weekStart, plan, done: [], startedAt: nowIso() };
+  await db.put(STORES.organiser, session);
+  return session;
+}
+
+/** Mark one medicine's step filled, or unfilled. Idempotent either way. */
+export async function setOrganiserStepDone(medicineId, done = true) {
+  const session = await getOrganiser();
+  if (!session) return null;
+  const set = new Set(session.done || []);
+  if (done) set.add(medicineId);
+  else set.delete(medicineId);
+  const next = { ...session, done: [...set] };
+  await db.put(STORES.organiser, next);
+  return next;
+}
+
+export const clearOrganiser = () => db.del(STORES.organiser, ORGANISER_KEY);
+
 /**
  * Everything belonging to a household, gone. Settings survive.
  *
@@ -283,6 +320,8 @@ export async function clearHouseholdData() {
     db.clear(STORES.daySnapshots),
     db.clear(STORES.photos),
     db.clear(STORES.outbox),
+    // A filling in progress belongs to the household being left.
+    db.clear(STORES.organiser),
   ]);
 }
 

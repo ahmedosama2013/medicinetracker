@@ -90,24 +90,8 @@ export function loadingState(message = S.loading) {
   ]);
 }
 
-// ---- pill identity --------------------------------------------------------
+// ---- how much to take -----------------------------------------------------
 
-/* A medicine has exactly one visual identity -- its photo -- and it appears at
- * every size, on every screen, in both roles. See css/app.css section 6.
- *
- * Only two glyphs exist so far: a pill and a droplet. The droplet earns its
- * place because liquids and drops are the things that must NOT go in a weekly
- * organiser, so the distinction is load-bearing later. Per-form glyphs for
- * capsule, inhaler and injection are a later refinement, not a fake one now. */
-const FORM_ICON = {
-  liquid: 'drop',
-  drops: 'drop',
-};
-
-/** Stable 0-5 tone for a medicine, so its fallback tile looks the same
- * everywhere. Not an attempt to guess the pill's real colour -- it cannot be
- * known from a name, and anywhere the real colour would matter the UI counts
- * instead. This is only a distinguishable, consistent marker. */
 /**
  * "2 tablets", "\u00bd tablet", "10 ml" -- how much to take, in words.
  *
@@ -126,20 +110,48 @@ export function doseText(medicine) {
 
   const qty = Number(medicine.doseQty);
   if (!Number.isFinite(qty) || qty <= 0) return '';
-
   const [one, many] = S.doseUnits[medicine.form] || S.doseUnits.other;
-  const whole = Math.floor(qty);
-  const fraction = S.doseFractions[Number((qty - whole).toFixed(2))];
-
-  const amount = fraction
-    ? (whole ? `${whole}${fraction}` : fraction)
-    : String(Number(qty.toFixed(2)));
-
   // Singular at or below one, so a scored tablet reads "half a tablet" rather
   // than the "½ tablets" a naive `=== 1` test produces.
-  return `${amount} ${qty <= 1 ? one : many}`;
+  return `${doseAmount(qty)} ${qty <= 1 ? one : many}`;
 }
 
+/**
+ * Just the number: "2", "½", "1½".
+ *
+ * Split out from doseText because the organiser grid puts this inside a dot
+ * roughly 28px across, where a unit will not fit and does not need to -- every
+ * cell in a medicine's row is the same medicine, so the noun is already in the
+ * heading above the grid.
+ */
+export function doseAmount(qty) {
+  const n = Number(qty);
+  if (!Number.isFinite(n) || n <= 0) return '';
+  const whole = Math.floor(n);
+  const fraction = S.doseFractions[Number((n - whole).toFixed(2))];
+  if (!fraction) return String(Number(n.toFixed(2)));
+  return whole ? `${whole}${fraction}` : fraction;
+}
+
+// ---- pill identity --------------------------------------------------------
+
+/* A medicine has exactly one visual identity -- its photo -- and it appears at
+ * every size, on every screen, in both roles. See css/app.css section 6.
+ *
+ * Only two glyphs exist so far: a pill and a droplet. The droplet earns its
+ * place because liquids and drops are the things that must NOT go in a weekly
+ * organiser -- which is exactly what js/organiser.js's BOX_FORMS keys off, so
+ * the distinction is load-bearing now rather than later. Per-form glyphs for
+ * capsule, inhaler and injection are a later refinement, not a fake one now. */
+const FORM_ICON = {
+  liquid: 'drop',
+  drops: 'drop',
+};
+
+/** Stable 0-5 tone for a medicine, so its fallback tile looks the same
+ * everywhere. Not an attempt to guess the pill's real colour -- it cannot be
+ * known from a name, and anywhere the real colour would matter the UI counts
+ * instead. This is only a distinguishable, consistent marker. */
 export function tileTone(id) {
   const text = String(id || '');
   let hash = 0;

@@ -252,6 +252,41 @@ export const S = {
   pillBoxNone: 'Nothing goes in a box, so filling one is not offered.',
   pillBoxNoSlots: 'No times of day are set up yet.',
 
+  // ---- organiser -------------------------------------------------------
+  organiserTitle: 'Fill the pill box',
+  organiserOpen: 'Fill the pill box',
+  /* The entry card on Today. Says what the job is, not what the screen is
+   * called -- someone looking at Today is not looking for a feature. */
+  organiserCardBody: 'One medicine at a time, so each box is only opened once.',
+  organiserResume: n => `Carry on \u2014 ${n} left`,
+  organiserWeekLabel: 'Week beginning',
+  organiserWeekHint: 'Seven days from this date.',
+  organiserCount: n => `${n} ${n === 1 ? 'medicine goes' : 'medicines go'} in the box.`,
+  organiserStart: 'Start',
+  organiserStartOver: 'Start a different week',
+  organiserStep: (i, n) => `${i} of ${n}`,
+  organiserTakeOut: 'Take out',
+  organiserNext: 'Next',
+  organiserBack: 'Back',
+  organiserFinish: 'Finish',
+  organiserDone: 'The box is filled.',
+  organiserFilled: 'Filled',
+  organiserMarkFilled: 'Mark as filled',
+  organiserUnfill: 'Not filled yet',
+  /* Two reasons, two sentences. A syrup cannot go in a tray at all; a tablet
+   * in an unticked time of day is out because of how this box is shaped, and
+   * that is a setting the person can go and change. */
+  organiserOutHeading: 'These stay out of the box',
+  organiserOutByForm: 'Taken from the packet',
+  organiserOutBySlot: labels => `${labels.join(' and ')} \u2014 not in the box`,
+  organiserNoBoxSlots: 'No times of day go in the pill box yet.',
+  organiserNoBoxSlotsHint: 'Choose them in Settings, under Pill box.',
+  organiserNothing: 'Nothing goes in the box this week.',
+  organiserNothingHint: 'Everything due is taken from its packet.',
+  /* Said once, on the start screen. Filling a tray is not taking a medicine,
+   * and someone who thinks this screen marks doses would stop marking them. */
+  organiserNotDoses: 'This does not mark anything as taken. It is only for filling the box.',
+
   // ---- slots -----------------------------------------------------------
   slotsTitle: 'Times of day',
   slotsIntro: 'These are the default times. A single medicine can be given its own time.',

@@ -18,6 +18,7 @@ import { calendarView } from './views/calendar.js';
 import { medicinesView } from './views/medicines.js';
 import { medicineFormView } from './views/medicine-form.js';
 import { settingsView, slotsView } from './views/settings.js';
+import { organiserView } from './views/organiser.js';
 
 const PREAUTH_PATHS = ['#/welcome', '#/signin', '#/pair'];
 
@@ -70,6 +71,10 @@ function registerRoutes() {
   router.register('#/calendar', { view: calendarView, modes: ['simple', 'supporter'] });
   router.register('#/medicines', { view: medicinesView, modes: ['supporter'] });
   router.register('#/medicine', { view: medicineFormView, modes: ['supporter'] });
+  /* Both roles: whoever is holding the tray fills it. Reached from a card on
+   * Today rather than a tab -- it is an occasional job, not a fifth place to
+   * look every day. */
+  router.register('#/organiser', { view: organiserView, modes: ['simple', 'supporter'] });
   router.register('#/settings', { view: settingsView, modes: ['simple', 'supporter'] });
   router.register('#/slots', { view: slotsView, modes: ['supporter'] });
 }

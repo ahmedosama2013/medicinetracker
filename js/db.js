@@ -6,7 +6,12 @@
  */
 
 const DB_NAME = 'medtrack';
-const DB_VERSION = 2;
+/* 2 -> 3 adds the `organiser` store. upgrade() below is version-agnostic --
+ * it only ever creates stores that are missing -- which is exactly enough for
+ * adding one, and not enough to add an index to an existing store or rewrite
+ * records. Anything needing either of those has to teach upgrade() about
+ * oldVersion first. */
+const DB_VERSION = 3;
 
 export const STORES = {
   medicines: 'medicines',
@@ -16,6 +21,7 @@ export const STORES = {
   daySnapshots: 'daySnapshots',
   settings: 'settings',
   outbox: 'outbox',
+  organiser: 'organiser',
 };
 
 let dbPromise = null;
@@ -45,6 +51,12 @@ function upgrade(db) {
   // Dose-log writes that couldn't reach Supabase yet -- see js/sync.js.
   if (!db.objectStoreNames.contains(STORES.outbox)) {
     db.createObjectStore(STORES.outbox, { keyPath: 'id' });
+  }
+  /* One in-progress pill-box filling. Local and never synced: a half-filled
+   * tray is a fact about one sitting at one kitchen table, and two people
+   * filling the same tray from two phones is not a thing that happens. */
+  if (!db.objectStoreNames.contains(STORES.organiser)) {
+    db.createObjectStore(STORES.organiser, { keyPath: 'key' });
   }
 }
 

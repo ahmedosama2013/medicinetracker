@@ -1948,3 +1948,135 @@ body.mode-simple .dialog-actions { flex-direction: column-reverse; }
 
 /* The "add a time of day" escape hatch inside a schedule card. */
 .sched-addslot { display: inline-block; margin-top: calc(var(--space-2) * -1); }
+
+/* ============================================================
+   Organiser mode (Phase 3)
+   ============================================================ */
+
+/* The way in, on Today. Below the day, because Today's job is today. */
+.og-card {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+  text-decoration: none;
+  color: inherit;
+}
+.og-card-main { flex: 1; display: flex; flex-direction: column; gap: 2px; }
+.og-card-title { font-weight: 600; }
+.og-card-body { color: var(--ink-3); font-size: var(--text-sm); }
+
+.og-week { text-align: center; color: var(--ink-3); font-size: var(--text-sm); margin: 0 0 var(--space-4); }
+.og-weeklabel { display: block; font-size: var(--text-sm); color: var(--ink-3); margin-bottom: var(--space-2); }
+.og-count { font-weight: 600; margin: 0 0 var(--space-2); }
+
+/* Said once, on the start screen. Quiet, because it is a clarification and
+   not a warning -- nothing has gone wrong. */
+.og-notdoses {
+  color: var(--ink-3);
+  font-size: var(--text-sm);
+  margin: 0 0 var(--space-4);
+}
+
+.og-progress {
+  text-align: center;
+  color: var(--ink-3);
+  font-size: var(--text-sm);
+  font-variant-numeric: tabular-nums;
+  margin: 0 0 var(--space-3);
+}
+
+/* The packet, at the size the question deserves: "which box do I reach for?"
+   is asked while looking at a shelf, not at a tablet in your palm. */
+/* Capped at 12rem rather than filling its 4:3 box. On a 375x812 phone with a
+   7x4 tray -- four compartment rows rather than two -- 14rem pushed the last
+   row of the grid to the very bottom edge; 12rem leaves it comfortably clear.
+   The buttons still need a thumb-scroll in that case, which is fine: you read
+   the grid, then you scroll to move on. The packet stays the largest thing on
+   the screen, it just stops being the only thing. */
+.og-packet {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  max-height: 12rem;
+  border-radius: var(--r-md);
+  background: var(--sunken);
+  overflow: hidden;
+  margin-bottom: var(--space-4);
+}
+.og-packet img { width: 100%; height: 100%; object-fit: contain; }
+.og-packet-none {
+  aspect-ratio: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-5) 0;
+}
+
+.og-name { font-size: var(--text-lg); font-weight: 600; margin: 0; text-align: center; }
+.og-strength { color: var(--ink-2); font-weight: 400; }
+.og-purpose { text-align: center; color: var(--ink-2); margin: var(--space-1) 0 0; }
+
+/* The instruction, as opposed to everything else on the screen, which is
+   reference. This is the number someone counts out of a box. */
+.og-total {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: var(--space-3);
+  margin: var(--space-5) 0;
+  padding: var(--space-4);
+  background: var(--surface-2, var(--sunken));
+  border-radius: var(--r-md);
+}
+.og-total-label { color: var(--ink-3); font-size: var(--text-sm); }
+.og-total-value {
+  font-size: var(--text-xl);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.015em;
+}
+
+/* Seven columns and a label. At 375px that leaves ~40px a column, which is
+   why the dot is 28px and the day heading is two letters. */
+.og-grid { display: flex; flex-direction: column; gap: var(--space-2); }
+.og-row { display: grid; grid-template-columns: 4.5rem repeat(7, 1fr); align-items: center; gap: 2px; }
+.og-rowlabel { display: flex; flex-direction: column; font-size: var(--text-xs); line-height: 1.2; }
+.og-rowname { font-weight: 500; }
+.og-rowtime { color: var(--ink-3); font-variant-numeric: tabular-nums; }
+
+.og-head .og-day { display: flex; flex-direction: column; align-items: center; font-size: var(--text-xs); }
+.og-dayname { color: var(--ink-3); text-transform: uppercase; letter-spacing: 0.03em; }
+.og-daynum { color: var(--ink-2); font-variant-numeric: tabular-nums; }
+
+.og-cell { display: flex; align-items: center; justify-content: center; min-height: 34px; }
+.og-dot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: #fff;
+  font-size: var(--text-xs);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+/* Not due is a dash, never an empty cell: a twice-weekly medicine's five
+   blank days would otherwise read as five days of work outstanding. */
+.og-dash { color: var(--ink-3); opacity: 0.6; }
+
+.og-actions {
+  display: flex;
+  gap: var(--space-3);
+  margin-top: var(--space-5);
+}
+.og-actions .btn { flex: 1; }
+.og-unfill { display: block; margin: var(--space-4) auto 0; }
+
+.og-out { display: flex; flex-direction: column; gap: var(--space-3); }
+.og-outrow { display: flex; align-items: center; gap: var(--space-3); }
+.og-outmain { display: flex; flex-direction: column; gap: 2px; }
+.og-outname { font-weight: 500; }
+.og-outstrength { color: var(--ink-2); font-weight: 400; }
+.og-outwhy { color: var(--ink-3); font-size: var(--text-sm); }
