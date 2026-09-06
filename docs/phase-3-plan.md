@@ -630,6 +630,51 @@ is findable by word.
 Measured at 320px and 375px, in both roles, light and dark: no wrapping, no
 overflow, and nothing hidden behind the taller bar.
 
+## The elder's cold start — fixed
+
+Reported from real use: sign in on a device whose cache had been wiped — a
+fresh install, or the sign-out that clears it — and Today showed the
+share-code cold-start screen even though the account already had medicines.
+Navigating away and back fixed it.
+
+The cause is a boot ordering that had been there since the sync rearchitecture.
+`js/main.js` renders first, then `startRealtime` fires `refetchRoutine` and
+`refetchHistory` — and **nothing re-rendered when they landed**. The medicines
+were in the database a second later and nowhere in the DOM.
+
+The same file has always hydrated the *supporter* before its first render, with
+a comment saying exactly this would otherwise happen. The elder's side never
+got the equivalent.
+
+Fixed by redrawing after the boot refetch rather than awaiting before it. That
+trade matters: the elder opens this app every day with a warm cache, and making
+them wait on the network for a screen that is already correct would be a daily
+cost paid to fix an occasional one. So both refetchers now report whether the
+server actually differed — signature-compared against the cache, the same
+technique `js/supporter-sync.js` uses on the polling side — and the screen is
+rebuilt only when it did.
+
+`backfill()` got the same treatment, since it runs on every reconnect and every
+return to visibility and used to redraw unconditionally. Picking the phone up,
+glancing at Today and putting it down again rebuilt the screen each time,
+reloading every photo and losing the scroll position, to show what was already
+there.
+
+**And one latent bug found while debugging it.** `backfilling` was a boolean
+cleared only in a `finally`. A fetch that never settles — no response, no
+rejection, exactly what one bar of signal produces — means the `finally` never
+runs and backfill is disabled for the rest of the page's life. The one
+mechanism whose whole job is recovering from a bad connection would have been
+switched off by a bad connection. It is a timestamp now, and a run older than
+30s no longer blocks a new one.
+
+> Worth recording how nearly this was missed: the first three attempts to test
+> the backfill path all reported "no redraw", which looked like a pass. It was
+> not — the browser pane reports `visibilityState: "hidden"`, so the handler
+> was correctly returning early and *nothing was running at all*. A test that
+> cannot distinguish "behaved correctly" from "never executed" is not a test.
+> Counting the actual fetches is what separated them.
+
 ## Docs to update
 
 Commit 7. Listed here rather than in the order of work because the list is

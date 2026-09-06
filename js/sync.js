@@ -51,9 +51,38 @@ function mapSnapshot(row) {
   return { date: row.local_date, slots: row.slots };
 }
 
+/* What the local cache currently holds, as one comparable string.
+ *
+ * Used to answer "did that refetch actually change anything?" -- see the boot
+ * sequence in startRealtime. Cheap at this data volume, and deliberately built
+ * from the same fields the views render, so a change nobody can see does not
+ * cost a redraw. Mirrors signatureOf in js/supporter-sync.js, which exists for
+ * the same reason on the polling side. */
+function routineSignature(medicines, schedules, slots) {
+  const meds = medicines.map(m => [
+    m.id, m.name, m.strength, m.doseQty, m.form, m.notes, m.purpose,
+    m.archived, m.photoPath, m.packetPhotoPath,
+  ].join(':')).sort().join('|');
+  const scheds = schedules.map(x => [
+    x.id, x.medicineId, x.slotId, x.time, x.active, JSON.stringify(x.frequency),
+  ].join(':')).sort().join('|');
+  const slotSig = slots.map(x => [x.id, x.label, x.time, x.inBox].join(':')).sort().join('|');
+  return `${meds}#${scheds}#${slotSig}`;
+}
+
+async function cachedRoutineSignature() {
+  const [medicines, schedules, slots] = await Promise.all([
+    store.getMedicines(), store.getActiveSchedules(), store.getSlots(),
+  ]);
+  return routineSignature(medicines, schedules, slots);
+}
+
 /** Full refetch of a table the elder's device only ever reads (never writes
  * locally), replacing the local cache wholesale -- simplest correct option
- * at this data volume (a handful of medicines per household). */
+ * at this data volume (a handful of medicines per household).
+ *
+ * Returns whether the cache actually changed, so the caller can decide about
+ * redrawing. */
 async function refetchRoutine(householdId) {
   const client = supabase();
   const [medsRes, schedRes, slotsRes] = await Promise.all([
@@ -64,17 +93,23 @@ async function refetchRoutine(householdId) {
 
   const previous = await store.getMedicines();
   const previousPaths = new Map(previous.map(m => [m.id, m]));
+  const before = await cachedRoutineSignature();
 
   const medicines = (medsRes.data || []).map(mapMedicine);
+  const schedules = (schedRes.data || []).map(mapSchedule);
+  const slots = (slotsRes.data || []).map(mapSlot);
   await store.replaceMedicinesCache(medicines);
-  await store.replaceSchedulesCache((schedRes.data || []).map(mapSchedule));
-  await store.saveSettings({ slots: (slotsRes.data || []).map(mapSlot) });
+  await store.replaceSchedulesCache(schedules);
+  await store.saveSettings({ slots });
+  const changed = routineSignature(medicines, schedules.filter(x => x.active), slots) !== before;
 
   for (const medicine of medicines) {
     const was = previousPaths.get(medicine.id);
     await syncPhoto(medicine, 'pill', medicine.photoPath, was?.photoPath);
     await syncPhoto(medicine, 'packet', medicine.packetPhotoPath, was?.packetPhotoPath);
   }
+
+  return changed;
 }
 
 /* One photo of one kind. Re-attempts even when the path looks unchanged:
@@ -99,13 +134,29 @@ async function refetchHistory(householdId) {
     client.from('day_snapshots').select('*').eq('household_id', householdId),
   ]);
   const rows = (doseRes.data || []).map(mapDose);
+  const snapshots = (snapRes.data || []).map(mapSnapshot);
+
+  const sig = xs => xs.map(r => `${r.id}:${r.status}:${r.loggedBy}`).sort().join('|');
+  const before = sig(await store.getDoseLog());
+
   await Promise.all(rows.map(store.putDoseLogRow));
-  await store.putSnapshots((snapRes.data || []).map(mapSnapshot));
+  await store.putSnapshots(snapshots);
+
+  /* Only the dose rows are compared. Snapshots are a record of frozen past
+   * days and cannot change what today's screen shows, so a nightly freeze
+   * landing while the app is open is not a reason to redraw under someone. */
+  return sig(rows) !== before;
 }
 
 async function refetchHouseholdMeta(householdId) {
   const { data } = await supabase().from('households').select('locked_through, timezone').eq('id', householdId).single();
-  if (data) await store.saveSettings({ lockedThrough: data.locked_through, timezone: data.timezone });
+  if (!data) return false;
+  const before = await store.getSettings();
+  await store.saveSettings({ lockedThrough: data.locked_through, timezone: data.timezone });
+  // The lock line moves once a night, and moving it changes which past days
+  // the calendar will still accept a correction on -- so it is worth a redraw,
+  // and only then.
+  return before.lockedThrough !== data.locked_through;
 }
 
 async function cachePhoto(medicineId, kind, path) {
@@ -204,20 +255,39 @@ function scheduleRoutineRefetch(householdId, rowId) {
  * -- so an elder whose phone slept all night saw nothing the supporter had
  * changed until the app was restarted. And subscribe() was called with no
  * status callback, so a channel that failed to rejoin at all was invisible. */
-let backfilling = false;
+/* A timestamp rather than a boolean, and this is not fussiness.
+ *
+ * The flag exists to stop two backfills overlapping, and it was only ever
+ * cleared in the `finally`. A fetch that never settles -- no response, no
+ * rejection, which is precisely what a phone with one bar of signal produces
+ * -- means the `finally` never runs and backfill is disabled for the rest of
+ * the page's life. The one mechanism whose entire job is recovering from a
+ * bad connection would have been switched off by a bad connection.
+ *
+ * So a run older than the timeout no longer blocks a new one. Two overlapping
+ * backfills are harmless: both replace the same caches with the same server
+ * state. */
+const BACKFILL_STUCK_MS = 30_000;
+let backfillingSince = 0;
 
 async function backfill(householdId) {
-  if (backfilling) return;
-  backfilling = true;
+  if (backfillingSince && Date.now() - backfillingSince < BACKFILL_STUCK_MS) return;
+  backfillingSince = Date.now();
   try {
-    await Promise.all([
-      refetchRoutine(householdId).catch(() => {}),
-      refetchHistory(householdId).catch(() => {}),
-      refetchHouseholdMeta(householdId).catch(() => {}),
+    /* Only when something actually came back different. This runs on every
+     * reconnect and every return to visibility -- an elder who picks the phone
+     * up, looks at Today and puts it down again would otherwise get the screen
+     * rebuilt under them each time, reloading every photo and losing their
+     * scroll position, to show exactly what was already there. Same rule the
+     * supporter's poll follows. */
+    const changed = await Promise.all([
+      refetchRoutine(householdId).catch(() => false),
+      refetchHistory(householdId).catch(() => false),
+      refetchHouseholdMeta(householdId).catch(() => false),
     ]);
-    scheduleRefresh();
+    if (changed.some(Boolean)) scheduleRefresh();
   } finally {
-    backfilling = false;
+    backfillingSince = 0;
   }
 }
 
@@ -257,8 +327,26 @@ export function startRealtime(householdId) {
   };
   document.addEventListener('visibilitychange', onVisible);
 
-  refetchRoutine(householdId);
-  refetchHistory(householdId);
+  /* Boot. These used to be fired and forgotten, and nothing re-rendered when
+   * they landed -- so an elder signing in on a device whose cache had been
+   * wiped (a fresh install, or the sign-out that clears it) got the cold-start
+   * screen with their share code on it, and kept it until they navigated
+   * somewhere and back. Their medicines were already on screen a second later
+   * in the database and nowhere in the DOM.
+   *
+   * js/main.js has always hydrated the SUPPORTER before its first render for
+   * exactly this reason; the elder's side never got the equivalent. Redrawing
+   * afterwards rather than awaiting before is the better trade here: the elder
+   * opens this app every day with a warm cache, and making them wait on the
+   * network for a screen that is already correct would be a daily cost to fix
+   * an occasional one. So it renders from cache immediately and redraws only
+   * if the server actually turned out to differ. */
+  Promise.all([
+    refetchRoutine(householdId).catch(() => false),
+    refetchHistory(householdId).catch(() => false),
+  ]).then(([routineChanged, historyChanged]) => {
+    if (routineChanged || historyChanged) scheduleRefresh();
+  });
   refetchHouseholdMeta(householdId);
   flushOutbox();
 
