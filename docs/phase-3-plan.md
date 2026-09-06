@@ -291,6 +291,46 @@ five blank days read as work outstanding.
 `startDate` defaults to today, with a date picker. People fill on the day they
 happen to have time, not on a fixed weekday.
 
+### 18b done
+
+`js/organiser.js`, pure, no imports beyond `schedule.isDueOn` and `date.js`.
+`planWeek(startDate, { medicines, schedules, slots })` returns `steps`,
+`compartments` and `outOfBox`, plus the seven dates and the box slots.
+
+**`steps` and `compartments` are the same numbers pivoted twice, computed in
+one place.** Filling asks "where does this medicine go?"; checking asks "what
+should be in this compartment?" Deriving the second from the first in a view
+would let the two screens disagree, which on a check screen is worse than
+useless — it is a screen whose entire job is agreeing with the tray.
+
+**A medicine can be in `steps` and `outOfBox` at once, and must be.** One due
+morning and afternoon with only morning ticked gets boxed for the morning and
+taken from the packet at lunchtime. Suppressing either half loses a dose. The
+two out-of-box reasons stay distinct for the same kind of reason: a syrup is
+out because of what it is, a tablet in an unticked slot is out because of how
+this household's box is shaped — and the second is a setting the person can go
+and change.
+
+Exercised with 31 assertions against a hand-built routine covering all three
+frequency types, half tablets, archived medicines, inactive schedules, a
+schedule pointing at a removed slot, a medicine split across box and non-box
+slots, no box slots at all, an empty routine, and a week crossing a month
+boundary.
+
+One real fix came out of that: **totals were accumulating floats.** `dose_qty`
+is `numeric(4,2)`, so a tenth is a legal dose, and seven of them summed to
+`0.7000000000000001` — a total nobody can count out against a pile of tablets.
+Rounded to two places. Quarters and halves were always exact and unaffected,
+which is exactly why writing the case down found it and using the app would
+not have.
+
+> **Worth deciding in Phase 4, not here.** `organiser.js` is the first module
+> in this app that is both pure and genuinely intricate, and those 31 checks
+> live in a scratch file that is now gone. next-steps.md §6 says automated
+> tests would have to be browser-based to keep the no-build-step, no-
+> `package.json` constraint — that decision is still open, and inventing a
+> convention mid-phase is the wrong time to close it.
+
 ---
 
 ## 19 — The step screen
