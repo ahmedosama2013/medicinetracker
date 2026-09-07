@@ -16,6 +16,14 @@ Everything deliberately deferred from v1. Ordered roughly by value. Nothing here
 
 ## 1. Reminders
 
+> **Historical.** This section is the diagnosis, not the design. Reminders
+> shipped as Web Push (the second option in the table below), not ntfy, and
+> the ladder has since grown a follow-up and a nightly catch-all. For what the
+> app actually sends today — timings, wording, configuration, and how to debug
+> a reminder that never arrives — see **[notifications.md](notifications.md)**.
+> Kept because the ntfy-can't-reach-a-phone finding is still why the shipped
+> design looks the way it does.
+
 Deferred because there was no delivery path, not because it was low priority. This is pain point number one and should be the first thing picked up after v1 ships.
 
 ### The blocker

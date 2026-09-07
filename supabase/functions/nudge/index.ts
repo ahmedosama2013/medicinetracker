@@ -24,6 +24,7 @@
 // CLI still lists it as ACTIVE. See docs/setup.md.
 import { createClient } from 'npm:@supabase/supabase-js@2'
 import webpush from 'npm:web-push@3.6.7'
+import { nudgeNotification } from '../_shared/messages.ts'
 
 const supabase = createClient(
   Deno.env.get('SUPABASE_URL')!,
@@ -154,17 +155,16 @@ Deno.serve(async (req) => {
 
     let sent = 0
     const failures: string[] = []
+    // Wording lives in ../_shared/messages.ts with every other push string,
+    // under the four rules at the top of that file -- including the one this
+    // message exists to obey: never "you forgot", because the supporter
+    // cannot see whether the dose was taken and simply not marked.
+    const { title, body } = nudgeNotification()
     for (const sub of subs) {
       try {
         await webpush.sendNotification(
           { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth_key } },
-          JSON.stringify({
-            title: 'Medicine Tracker',
-            // Deliberately not "you forgot": the supporter cannot see whether
-            // the dose was taken and simply not marked, and this app never
-            // reads as judgement (docs/ui.md).
-            body: 'A quick check on your medicines',
-          }),
+          JSON.stringify({ title, body }),
         )
         sent += 1
       } catch (err) {

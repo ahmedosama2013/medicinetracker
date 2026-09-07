@@ -1,8 +1,14 @@
-/* Every user-visible string in the app.
+/* Every user-visible string in the app's own screens.
  *
  * One file so Urdu can be added later without hunting through views: the plan
- * is a second object of the same shape and a language setting. Nothing else in
- * the codebase should contain display text.
+ * is a second object of the same shape and a language setting.
+ *
+ * The one exception, and it is not a leak: push notification bodies live in
+ * `supabase/functions/_shared/messages.ts`. Those are built server-side in
+ * Deno and never reach the browser, so they cannot be read from here -- and
+ * they answer to four extra rules (never name a medicine, never say "taken",
+ * slot name in the title only, deterministic wording) that only apply to text
+ * landing on a lock screen. See docs/notifications.md.
  */
 
 export const APP_VERSION = '1.2.0';

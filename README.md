@@ -79,6 +79,7 @@ Free at this app's scale (a handful of households): Supabase's free tier covers 
 | [docs/architecture.md](docs/architecture.md) | How it works: data model, the rules that must not be broken |
 | [docs/repo-structure.md](docs/repo-structure.md) | What every file does |
 | [docs/ui.md](docs/ui.md) | Every screen, and the design rules behind them |
+| [docs/notifications.md](docs/notifications.md) | Every push the app sends: when it fires, what it says, and where to change the wording |
 | [docs/phase-3-plan.md](docs/phase-3-plan.md) | Organiser mode: the plan for the phase currently being built |
 | [docs/medicine-tracker-plan-v3.md](docs/medicine-tracker-plan-v3.md) | Historical: the original local-only build spec, superseded by the online-sync design above |
 | [docs/next-steps.md](docs/next-steps.md) | Everything deliberately deferred (reminders and two-way sync are now done) |
