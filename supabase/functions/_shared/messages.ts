@@ -49,16 +49,16 @@
 export const PUSH_COPY = {
   /** Stage 1: the slot's own time, anything in it still unmarked. */
   stage1: [
-    'A gentle reminder — ready whenever you are.',
-    'These are due now, whenever suits you.',
-    'Ready for you when you are.',
+    '🌤️ Ready whenever you are.',
+    '✨ These are ready for you.',
+    '⏰ Time to grab these — no rush.',
   ],
 
   /** Stage 2: one hour later (per household), still unmarked. */
   stage2: [
-    'Still here whenever you get a moment.',
-    'These are still waiting — no rush.',
-    'A second gentle nudge, nothing more.',
+    '🌸 Still here whenever you get a moment.',
+    '💫 Just a gentle nudge — no rush.',
+    '🌤️ These are still waiting for you.',
   ],
 
   /* The nightly catch-all. Names no slot and no medicine -- it covers the
@@ -66,32 +66,39 @@ export const PUSH_COPY = {
    * "here is what you owe". The third variant carries rule 2 out loud. */
   nightlyTitle: 'Before the day ends',
   nightly: [
-    "Some of today's medicines aren't ticked off yet. A quick look?",
-    "One last check — today isn't fully marked.",
-    "If you've taken everything today, it's worth marking it before bed.",
+    "🌙 A few things from today aren't marked yet — quick look?",
+    '✨ Almost bedtime — anything left to mark off?',
+    "🌟 If you've taken everything today, worth marking it off.",
   ],
 
   /* The supporter's manual nudge. Deliberately one wording rather than
    * three: it is occasional and person-initiated, so day-to-day variety buys
-   * nothing, and a single string keeps rule 4 trivially satisfied. */
+   * nothing, and a single string keeps rule 4 trivially satisfied. Kept
+   * plain on purpose -- an earlier draft ("someone's thinking of you") read
+   * as more intimate than a household utility app should ever sound. */
   nudgeTitle: 'Medicine Tracker',
-  nudge: "Someone's thinking of you — a quick check on your medicines.",
+  nudge: '👋 A quick check on your medicines?',
 
-  /* Stage 3: a supporter's own escalation, some time after the elder's
-   * stage-2 follow-up (delay is per-subscription -- see 0017). Never "still
-   * hasn't taken it" -- the supporter can see this even less than the elder's
-   * own notifications can, so rule 2 matters most here. */
+  /* Stage 3: a supporter's own escalation, some time after the SLOT's own
+   * time (delay is per-subscription -- see 0020, which corrected this from
+   * an earlier version anchored on the elder's own stage-2 delay instead).
+   * Never "still hasn't taken it" -- the supporter can see this even less
+   * than the elder's own notifications can, so rule 2 matters most here.
+   * Elder-facing copy above stays calm on purpose (docs/ui.md); a
+   * supporter's own copy can carry more energy since it's a check-in
+   * between two people who both opted into it, not a reminder aimed at
+   * someone who may already feel watched. */
   escalation: [
-    'Still not marked. A quick check might help.',
-    "This hasn't been marked yet — maybe worth a call?",
-    'Still waiting to be marked off. A check-in could help.',
+    '👀 Still not marked — worth a quick call?',
+    '📞 Nothing logged yet! Maybe check in?',
+    '💛 A little check-in could go a long way right now.',
   ],
 
   /* The nightly catch-all, addressed to a supporter instead of the elder. */
   nightlyForSupporter: [
-    "Some of today's medicines aren't marked yet. Worth checking in?",
-    'Not everything today is marked off yet — a call might help.',
-    'A few things from today are still unmarked.',
+    '📋 A few things today are still unmarked!',
+    "🌙 Not everything's marked yet — worth a call before bed?",
+    '💛 A quick check-in before the day wraps up?',
   ],
 } as const;
 

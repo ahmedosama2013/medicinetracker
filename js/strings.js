@@ -373,19 +373,19 @@ export const S = {
   notificationsUnknownHint: 'This usually means the app has not finished starting up. Turning them on again is safe.',
 
   // ---- supporter notifications -------------------------------------------
-  settingsSupporterNotifications: 'Notify me',
-  supporterNotificationsHint: 'A check-in on your phone if a slot is still unmarked a while after their own reminder.',
-  supporterNotificationsOffLabel: 'Notifications are off',
-  supporterNotificationsOnLabel: 'Notifications are on',
+  settingsSupporterNotifications: '🔔 Check-in alerts',
+  supporterNotificationsHint: "We'll nudge you if something's still unmarked a while after it was due.",
+  supporterNotificationsOffLabel: 'Check-in alerts are off',
+  supporterNotificationsOnLabel: 'Check-in alerts are on',
   supporterNotificationsUnknownLabel: 'Notifications could not be checked',
   supporterNotificationsUnknownHint: 'This usually means the app has not finished starting up. Turning them on again is safe.',
   supporterNotificationsTurnOn: 'Turn on',
   supporterNotificationsTurnOff: 'Turn off',
-  escalationDelayLabel: 'Notify me if still unmarked',
-  escalationDelay30m: '30 minutes after their reminder',
-  escalationDelay1h: '1 hour after their reminder',
-  escalationDelay2h: '2 hours after their reminder',
-  escalationDelay3h: '3 hours after their reminder',
+  escalationDelayLabel: "Nudge me if it's still unmarked...",
+  escalationDelay30m: "30 minutes after it's due",
+  escalationDelay1h: "1 hour after it's due",
+  escalationDelay2h: "2 hours after it's due",
+  escalationDelay3h: "3 hours after it's due",
 
   // ---- misc ------------------------------------------------------------
   loading: 'Loading',

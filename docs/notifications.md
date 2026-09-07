@@ -77,13 +77,21 @@ stage 1, because suppressing a reminder at its own due time would be wrong.
 A supporter opts in separately, on their own device's Settings screen —
 turning the elder's reminders on does not turn a supporter's on, and vice
 versa. Two things a supporter can receive, both independent of whether the
-elder has push turned on at all (they only read `slot_time` and
-`households.followup_after`, both plain schedule data):
+elder has push turned on at all (they only read `slot_time`, the same plain
+schedule data the elder's own ladder reads):
 
 | Rung | Fires | Condition | Title |
 |---|---|---|---|
-| **Escalation** | slot time + `followup_after` (1 h) + **`escalation_after`** (per subscription: 30 m / 1 h / 2 h / 3 h, default 1 h) | still unmarked | `<elder name> — <slot label> medicines` |
+| **Escalation** | slot time + **`escalation_after`** (per subscription: 30 m / 1 h / 2 h / 3 h, default 1 h) | still unmarked | `<elder name> — <slot label> medicines` |
 | **Nightly** | same `nightly_summary_time` as the elder's | any medicine in any of the day's due slots is unmarked | `<elder name> — today's medicines` |
+
+**Escalation is anchored on the slot's own time, not on `households.followup_after`
+(the elder's own stage-2 delay).**
+[`0020`](../supabase/migrations/0020_escalation_from_slot_time.sql) corrected
+an earlier version that stacked the two: picking "30 minutes" meant 1h30m
+after the slot (the elder's 1-hour follow-up, plus 30 minutes on top) — a
+number the supporter never sees and shouldn't need to reason about. "30
+minutes" now means exactly that, from the slot's own time.
 
 **`escalation_after` is per subscription, not per household**, and is the one
 timing value in this whole system with a Settings UI (a fixed 4-way picker,
@@ -146,6 +154,16 @@ today's medicines`) rather than the constant `Medicine Tracker`, so a lock
 screen reads without expanding. The app name is already in the icon and the
 notification's app attribution.
 
+**Tone is deliberately split by audience.** Elder-facing bodies (stage 1,
+stage 2, nightly) stay calm — soft emoji, no exclamation marks, nothing that
+could read as an alarm, matching `docs/ui.md`'s "must never read as judgement"
+rule for the app generally. Supporter-facing bodies (escalation, nightly,
+nudge) carry more energy — this is a check-in between two people who both
+opted in, not a reminder aimed at someone who may already feel watched. The
+nudge in particular was toned down from an early draft ("someone's thinking of
+you") that read as more intimate than a household utility app should sound;
+its final wording is plain on purpose.
+
 ## Timing configuration
 
 Two columns on `households`, added by
@@ -153,7 +171,7 @@ Two columns on `households`, added by
 
 | Column | Default | Meaning |
 |---|---|---|
-| `followup_after` | `1 hour` | how long after the slot's time stage 2 (and a supporter's escalation clock) starts counting |
+| `followup_after` | `1 hour` | how long after the slot's time stage 2 fires. Elder-only — a supporter's own escalation clock does not read this column (see below) |
 | `nightly_summary_time` | `23:50` | the nightly message's local time, **and** the stage-2 cutoff |
 
 **SQL-only by design — there is no UI and no `grant update`.** Same reasoning
@@ -171,7 +189,7 @@ to "SQL-only":
 
 | Column | Default | Meaning |
 |---|---|---|
-| `escalation_after` | `1 hour` | per-subscription delay past `followup_after` before a supporter's escalation fires. One of four fixed values (`30 minutes`/`1 hour`/`2 hours`/`3 hours`), set from the supporter's own Settings picker |
+| `escalation_after` | `1 hour` | per-subscription delay past the **slot's own time** before a supporter's escalation fires — independent of `followup_after`. One of four fixed values (`30 minutes`/`1 hour`/`2 hours`/`3 hours`), set from the supporter's own Settings picker |
 
 Three fire windows remain function arguments rather than columns, because they
 are properties of the job rather than of a household or a subscription:
@@ -200,10 +218,12 @@ the bug.**
 
 `0014` also moved the anchor from stage 1's delivery time to the slot's own
 time, so the follow-up no longer inherits stage 1's lateness. A supporter's
-escalation clock is built the same way — anchored to the slot's own time, not
-to whether stage 1 or stage 2 actually arrived — for the same reason: a
-supporter can turn escalation on at any point in the day and still get caught
-up correctly rather than needing an elder-side message to have already fired.
+escalation clock is anchored the same way — directly to the slot's own time,
+not to `followup_after` or to whether stage 1 or stage 2 actually arrived
+(`0020`, correcting an earlier version that stacked escalation on top of
+`followup_after`) — for the same reason: a supporter can turn escalation on at
+any point in the day and still get caught up correctly, rather than needing an
+elder-side message to have already fired.
 
 ## One table, two audiences
 
