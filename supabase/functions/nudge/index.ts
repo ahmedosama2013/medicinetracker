@@ -82,7 +82,7 @@ const corsHeaders = {
  * elderly person's phone. An hour also blocked the legitimate case: nudge, no
  * response, reasonably want to try once more twenty minutes later. Fifteen
  * minutes absorbs the burst and permits the follow-up. */
-const COOLDOWN_MINUTES = 0
+const COOLDOWN_MINUTES = 10
 
 async function householdIdForCode(code: string): Promise<string> {
   const normalized = (code ?? '').toUpperCase().replace(/[\s-]/g, '')
