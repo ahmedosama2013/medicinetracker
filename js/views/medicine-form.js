@@ -241,7 +241,6 @@ export async function medicineFormView({ app, query, isCurrent = () => true }) {
     const input = el('input', {
       type: 'file',
       accept: 'image/*',
-      capture: 'environment',
       hidden: true,
       id: `f-photo-${kind}`,
       onchange: async e => {

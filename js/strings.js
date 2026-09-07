@@ -168,7 +168,7 @@ export const S = {
   fieldNotesPlaceholder: 'e.g. take with food',
   fieldPhoto: 'Photo of the pill',
   fieldPacketPhoto: 'Photo of the packet',
-  takePhoto: 'Take a photo',
+  takePhoto: 'Add a photo',
   retakePhoto: 'Change photo',
   removePhoto: 'Remove photo',
   photoOptional: 'Optional, but it is what makes the pills easy to identify.',
