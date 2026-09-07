@@ -10,6 +10,7 @@ import { el, clear, field, toast } from '../ui.js';
 
 export async function pairView({ app }) {
   clear(app);
+  supporter.preload();
   let code = '';
   let error = null;
   let busy = false;
@@ -58,9 +59,15 @@ export async function pairView({ app }) {
       });
       window.location.replace(router.HOME.supporter);
       window.location.reload();
-    } catch {
+    } catch (err) {
       busy = false;
-      error = S.pairCodeInvalid;
+      // app.household_by_code raises exactly this message for a code that
+      // doesn't match any household (see supabase/migrations/0001_init.sql).
+      // Anything else -- a dropped connection, a module that failed to load
+      // -- is not the code's fault and must not be reported as if it were.
+      error = /that code is not valid/i.test(err?.message || '')
+        ? S.pairCodeInvalid
+        : S.pairConnectionError;
       draw();
     }
   }

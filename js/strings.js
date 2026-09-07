@@ -36,6 +36,7 @@ export const S = {
   pairCodeLabel: 'Code',
   pairCodeRequired: 'Enter the code first.',
   pairCodeInvalid: 'That code is not valid. Check it and try again.',
+  pairConnectionError: 'Could not connect. Check your internet connection and try again.',
   pairConnect: 'Connect',
 
   // ---- navigation -------------------------------------------------------

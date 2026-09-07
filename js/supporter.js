@@ -18,6 +18,10 @@ import { blobToDataUrl } from './photos.js';
  * that needs the data. */
 const codeClient = () => import('./supabase-code.js');
 
+/* Fire-and-forget from the pairing screen, so the fetch races the person
+ * typing their code instead of starting cold the moment they press Connect. */
+export const preload = () => { codeClient(); };
+
 async function call(fn, args) {
   const { restClient } = await codeClient();
   const { data, error } = await restClient().rpc(fn, args);
