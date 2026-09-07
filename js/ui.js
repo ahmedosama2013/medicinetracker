@@ -470,6 +470,63 @@ export function emptyState(title, body) {
   ]);
 }
 
+// ---- the share code: copy and WhatsApp ------------------------------------
+
+/* Shared by the Settings screen and Today's cold-start (before any medicine
+ * has been added, where the code is the one thing on the page that matters).
+ * Same behaviour everywhere the code appears; each caller only supplies its
+ * own layout around it. */
+
+/** Copies the share code. Silent about *why* it might fail -- an insecure
+ * context or a denied permission are both rare enough here (the app is
+ * already installed and running over HTTPS) that a generic error reads fine. */
+export async function copyCode(code) {
+  if (!code) return;
+  try {
+    await navigator.clipboard.writeText(code);
+    toast(S.codeCopied);
+  } catch {
+    toast(S.errGeneric);
+  }
+}
+
+/* Copies the code AND opens WhatsApp's own compose screen with it already
+ * written into the message -- belt and braces for whichever of the two the
+ * person actually uses to get it to their helper. wa.me with no phone number
+ * opens WhatsApp's contact picker rather than a specific chat, which is the
+ * right target here: neither caller knows who the helper is. */
+export async function shareCodeOnWhatsapp(code) {
+  if (!code) return;
+  await copyCode(code);
+  window.open(`https://wa.me/?text=${encodeURIComponent(S.shareCodeMessage(code))}`, '_blank');
+}
+
+/* A fixed literal, never interpolated -- the one thing the `html` prop above
+ * is for. WhatsApp's own brand green rather than a themed colour: this button
+ * launches one specific external app, and staying recognisable as that app's
+ * own icon matters more than matching the rest of the page. */
+export function whatsappIcon() {
+  return el('span.whatsapp-icon', {
+    html: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2 22l5.25-1.38a9.9 9.9 0 0 0 4.79 1.22h.01c5.46 0 9.91-4.45 9.91-9.91C21.96 6.45 17.5 2 12.04 2zm5.83 14.02c-.24.68-1.4 1.32-1.93 1.4-.5.08-1.11.11-1.79-.11-.41-.13-.94-.3-1.62-.6-2.85-1.23-4.71-4.08-4.85-4.27-.14-.19-1.16-1.54-1.16-2.94 0-1.4.73-2.09.99-2.37.26-.28.57-.35.76-.35.19 0 .38 0 .55.01.18.01.41-.07.64.49.24.58.81 2 .88 2.14.07.14.12.31.02.5-.1.19-.15.31-.29.48-.14.17-.3.38-.43.51-.14.14-.29.29-.12.57.17.28.75 1.24 1.61 2 1.11.99 2.04 1.3 2.32 1.44.28.14.44.12.6-.07.16-.19.68-.79.86-1.06.18-.28.36-.23.6-.14.24.09 1.55.73 1.82.87.27.14.45.21.51.32.06.11.06.65-.18 1.33z"/></svg>',
+  });
+}
+
+/** The code as a tap-to-copy control, plus a WhatsApp button beside it.
+ * `codeClass` lets each caller supply its own size/weight for the code itself
+ * (the Settings chip and Today's cold-start display look nothing alike);
+ * the WhatsApp button is the same everywhere. */
+export function shareCodeRow(code, codeClass = 'setting-value.setting-code') {
+  return el('div.code-row', [
+    el(`button.${codeClass}`, {
+      type: 'button', text: code, onclick: () => copyCode(code),
+    }),
+    el('button.whatsapp-btn', {
+      type: 'button', 'aria-label': S.shareCodeWhatsapp,
+      onclick: () => shareCodeOnWhatsapp(code),
+    }, [whatsappIcon()]),
+  ]);
+}
+
 /** A hidden file input, clicked programmatically. Resolves with a File or null. */
 export function pickFile(accept) {
   return new Promise(resolve => {

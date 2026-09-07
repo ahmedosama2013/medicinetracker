@@ -11,7 +11,7 @@
  * landing on a lock screen. See docs/notifications.md.
  */
 
-export const APP_VERSION = '1.2.0';
+export const APP_VERSION = '0.0.1';
 
 export const S = {
   appName: 'Medicine Tracker',
@@ -53,7 +53,11 @@ export const S = {
   // added something there is nothing to show, so the empty state carries the
   // next step instead of describing the emptiness.
   coldStartTitle: 'Almost ready',
-  coldStartBody: 'Show this code to whoever is helping you. Once they enter it on their phone, your medicines will appear here on their own.',
+  // coldStartBody: 'Show this code to whoever is helping you. Once they enter it on their phone, your medicines will appear here on their own.',
+  // A second paragraph, not appended to coldStartBody above -- text: sets
+  // textContent, which cannot carry a line break, so this has to be its own
+  // element to land on its own line. See js/views/today.js.
+  coldStartCodeHint: "Click on the code to copy it or tap the WhatsApp icon to send it to whoever's helping you. They will add your medicines to their app and you will be able to see them here.",
   coldStartCodeLabel: 'Your code',
   coldStartWaiting: 'Nothing to do until then.',
   done: 'Done',
@@ -346,7 +350,10 @@ export const S = {
   settingsAccount: 'Account',
   settingsSignedInAs: 'Signed in as',
   settingsShareCode: 'Your code',
-  settingsShareCodeHint: 'Share this with anyone helping you, so they can add and update your medicines.',
+  settingsShareCodeHint: "Tap to copy, or tap the WhatsApp icon to send it to whoever's helping you.",
+  codeCopied: 'Code copied',
+  shareCodeWhatsapp: 'Send your code on WhatsApp',
+  shareCodeMessage: code => `Here's my Medicine Tracker code: ${code}. Enter it in the app to help me with my medicines.`,
   settingsRotateCode: 'Get a new code',
   settingsRotateCodeHint: 'Anyone using the old code loses access.',
   settingsRotateCodeConfirm: 'Anyone using your current code will no longer be able to update your medicines. Continue?',
@@ -360,7 +367,7 @@ export const S = {
   settingsDisconnectHint: 'You can reconnect any time with the code.',
   settingsDisconnectConfirm: 'This device will stop being able to update this household’s medicines until reconnected with a code.',
 
-  settingsNotifications: 'Reminders',
+  settingsNotifications: '🔔 Reminders',
   notificationsHint: 'A gentle reminder when it is time for medicines that have not been marked done.',
   notificationsOffLabel: 'Reminders are off',
   notificationsOnLabel: 'Reminders are on',

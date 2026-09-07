@@ -237,6 +237,13 @@ export async function renderDay({
       ? formatTime(medicine.time)
       : null;
 
+    /* Strength and how much to take, joined so they read as one line next to
+     * the name -- "500mg · 1 tablet" -- rather than the dose sitting a line
+     * down next to unrelated notes. Skipped replaces the dose amount here,
+     * in the same spot it occupied before this moved up a line. */
+    const strengthAndDose = [medicine.strength, state === 'skipped' ? S.skipped : doseText(medicine)]
+      .filter(Boolean).join(' · ');
+
     row.appendChild(el('button.med-open', {
       type: 'button',
       onclick: () => openMedicineSheet({
@@ -245,19 +252,19 @@ export async function renderDay({
       }),
     }, [
       tileFor(medicine, { state }),
-      // Name and strength share a line, dosage and notes share the next. With
-      // five or six medicines in one slot, a four-line card pushes the Done
-      // button off the screen.
+      // Name, strength and how much to take share a line -- "Paracetamol ·
+      // 500mg · 1 tablet" -- so the dose is read alongside the medicine
+      // rather than a line down, next to unrelated notes. Notes (and
+      // whatever else is left) share the next line. With five or six
+      // medicines in one slot, a four-line card pushes the Done button off
+      // the screen.
       el('span.med-main', [
         el('span.med-line', [
           el('span.med-name', { text: medicine.name }),
-          medicine.strength ? el('span.med-strength', { text: ` ${medicine.strength}` }) : null,
+          strengthAndDose ? el('span.med-strength', { text: strengthAndDose }) : null,
         ]),
         el('span.med-line.med-sub', [
           ownTime ? el('span.med-at', { text: ownTime }) : null,
-          state === 'skipped'
-            ? el('span.med-skip-note', { text: S.skipped })
-            : (doseText(medicine) ? el('span.med-dosage', { text: doseText(medicine) }) : null),
           medicine.notes ? el('span.med-notes', { text: medicine.notes }) : null,
           state && settings.role === 'simple' && byWhom.get(keyOf(group.slotId, medicine.medicineId)) === 'supporter'
             ? el('span.med-bywhom', { text: S.markedByHelper })

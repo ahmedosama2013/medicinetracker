@@ -39,7 +39,7 @@
  * about a specific person, `households.display_name`, which the supporter's
  * own Settings screen shows them today, so this is not a new exposure. Rule 3
  * still applies to the slot label -- it just now shares the title with the
- * name rather than owning it alone: `"<name> — <slot label> medicines"`. The
+ * name rather than owning it alone: `"<name> - <slot label> medicines"`. The
  * body stays as generic and gender-neutral as the elder's own copy ("their",
  * never "her"/"his" -- the app has no pronoun for the elder).
  */
@@ -51,13 +51,13 @@ export const PUSH_COPY = {
   stage1: [
     '🌤️ Ready whenever you are.',
     '✨ These are ready for you.',
-    '⏰ Time to grab these — no rush.',
+    '⏰ Time to grab these - no rush.',
   ],
 
   /** Stage 2: one hour later (per household), still unmarked. */
   stage2: [
     '🌸 Still here whenever you get a moment.',
-    '💫 Just a gentle nudge — no rush.',
+    '💫 Just a gentle nudge - no rush.',
     '🌤️ These are still waiting for you.',
   ],
 
@@ -66,8 +66,8 @@ export const PUSH_COPY = {
    * "here is what you owe". The third variant carries rule 2 out loud. */
   nightlyTitle: 'Before the day ends',
   nightly: [
-    "🌙 A few things from today aren't marked yet — quick look?",
-    '✨ Almost bedtime — anything left to mark off?',
+    "🌙 A few things from today aren't marked yet - quick look?",
+    '✨ Almost bedtime - anything left to mark off?',
     "🌟 If you've taken everything today, worth marking it off.",
   ],
 
@@ -77,7 +77,7 @@ export const PUSH_COPY = {
    * plain on purpose -- an earlier draft ("someone's thinking of you") read
    * as more intimate than a household utility app should ever sound. */
   nudgeTitle: 'Medicine Tracker',
-  nudge: '👋 A quick check on your medicines?',
+  nudge: '👋 Someone is reminding you to take your medicines',
 
   /* Stage 3: a supporter's own escalation, some time after the SLOT's own
    * time (delay is per-subscription -- see 0020, which corrected this from
@@ -89,7 +89,7 @@ export const PUSH_COPY = {
    * between two people who both opted into it, not a reminder aimed at
    * someone who may already feel watched. */
   escalation: [
-    '👀 Still not marked — worth a quick call?',
+    '👀 Still not marked - worth a quick call?',
     '📞 Nothing logged yet! Maybe check in?',
     '💛 A little check-in could go a long way right now.',
   ],
@@ -97,7 +97,7 @@ export const PUSH_COPY = {
   /* The nightly catch-all, addressed to a supporter instead of the elder. */
   nightlyForSupporter: [
     '📋 A few things today are still unmarked!',
-    "🌙 Not everything's marked yet — worth a call before bed?",
+    "🌙 Not everything's marked yet - worth a call before bed?",
     '💛 A quick check-in before the day wraps up?',
   ],
 } as const;
@@ -169,7 +169,7 @@ export function escalationNotification(
   slotId: string,
 ): Notification {
   return {
-    title: `${elderName} — ${slotLabel} medicines`,
+    title: `${elderName} - ${slotLabel} medicines`,
     body: pick(PUSH_COPY.escalation, `${localDate}|${slotId}|escalation`),
   };
 }
@@ -181,7 +181,7 @@ export function nightlyNotificationForSupporter(
   householdId: string,
 ): Notification {
   return {
-    title: `${elderName} — today's medicines`,
+    title: `${elderName} - today's medicines`,
     body: pick(PUSH_COPY.nightlyForSupporter, `${localDate}|${householdId}|supporter`),
   };
 }

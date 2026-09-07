@@ -11,7 +11,7 @@ import * as schedule from '../schedule.js';
 import * as supporterSync from '../supporter-sync.js';
 import { S } from '../strings.js';
 import * as supporter from '../supporter.js';
-import { el, append, clear, emptyState, toast } from '../ui.js';
+import { el, append, clear, emptyState, toast, shareCodeRow } from '../ui.js';
 import { todayStr, formatLong, getTimezone } from '../date.js';
 import { refresh } from '../router.js';
 import { renderDay } from './day.js';
@@ -153,9 +153,12 @@ export async function todayView({ app, isCurrent = () => true }) {
       if (settings.role === 'simple' && settings.shareCode) {
         app.appendChild(el('div.coldstart', [
           el('p.empty-title', { text: S.coldStartTitle }),
-          el('p.coldstart-body', { text: S.coldStartBody }),
+          el('div.coldstart-body', [
+            el('p', { text: S.coldStartBody }),
+            el('p', { text: S.coldStartCodeHint }),
+          ]),
           el('p.coldstart-label', { text: S.coldStartCodeLabel }),
-          el('p.coldstart-code', { text: settings.shareCode }),
+          shareCodeRow(settings.shareCode, 'coldstart-code'),
           el('p.coldstart-foot', { text: S.coldStartWaiting }),
         ]));
         return;
@@ -211,7 +214,7 @@ export async function todayView({ app, isCurrent = () => true }) {
     clear(app);
     app.appendChild(head);
     if (rail) app.appendChild(rail);
-    app.appendChild(el('p.page-sub', { text: S.tapForPhoto }));
+    app.appendChild(el('p.page-sub.tap-hint', { text: S.tapForPhoto }));
 
     if (settings.role === 'supporter') {
       append(app, otherDayLine(date));

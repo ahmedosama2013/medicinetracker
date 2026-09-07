@@ -27,7 +27,7 @@ const authLib = () => import('../auth.js');
 const pushLib = () => import('../push.js');
 const supporterPushLib = () => import('../supporter-push.js');
 import { S, APP_VERSION } from '../strings.js';
-import { el, clear, section, toast, confirmDialog, field, applyTheme, loadingState, emptyState } from '../ui.js';
+import { el, clear, section, toast, confirmDialog, field, applyTheme, loadingState, emptyState, shareCodeRow } from '../ui.js';
 import { timeToMinutes } from '../date.js';
 import { go, refresh } from '../router.js';
 
@@ -323,7 +323,7 @@ export async function settingsView({ app, isCurrent = () => true }) {
       settingRow({
         label: S.settingsShareCode,
         hint: S.settingsShareCodeHint,
-        control: el('span.setting-value.setting-code', { text: settings.shareCode || '' }),
+        control: settings.shareCode ? shareCodeRow(settings.shareCode) : null,
       }),
       actionRow({
         label: S.settingsRotateCode,

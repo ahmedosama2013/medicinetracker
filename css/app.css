@@ -705,8 +705,8 @@ body.mode-simple .nav-inner .navlink {
    accidental skip has to announce itself. */
 
 .dose {
-  width: 1.875rem;
-  height: 1.875rem;
+  width: 2.25rem;
+  height: 2.25rem;
   flex: none;
   border-radius: var(--r-pill);
   border: 1.5px solid var(--line-strong);
@@ -720,7 +720,7 @@ body.mode-simple .nav-inner .navlink {
   transition: background var(--dur) var(--ease), border-color var(--dur) var(--ease),
     color var(--dur) var(--ease), transform var(--dur-fast) var(--ease-out);
 }
-.dose .icon { width: 1.0625rem; height: 1.0625rem; }
+.dose .icon { width: 1.25rem; height: 1.25rem; }
 .dose:active { transform: scale(0.88); }
 
 .dose[data-state="taken"] {
@@ -734,7 +734,10 @@ body.mode-simple .nav-inner .navlink {
   color: var(--on-skip);
 }
 
-body.mode-simple .dose { width: 2.125rem; height: 2.125rem; }
+/* Bigger again on the elder's own phone -- a larger, easier-to-hit target,
+   in the same spirit as everything else this mode already lifts. */
+body.mode-simple .dose { width: 2.625rem; height: 2.625rem; }
+body.mode-simple .dose .icon { width: 1.4375rem; height: 1.4375rem; }
 
 /* Same shape without the affordance: a read-out, not a control. Unmarked is a
    dashed outline rather than the solid one a tappable target gets, so "you
@@ -764,6 +767,12 @@ body.mode-simple .dose { width: 2.125rem; height: 2.125rem; }
   margin-top: var(--space-1);
   margin-bottom: var(--space-4);
 }
+
+/* Today's own "tap a medicine to see its photo" line, not the shared muted
+   subtitle style -- a modifier rather than changing .page-sub itself, which
+   also carries the supporter's plain "Times of day" intro on the slots
+   screen. */
+.tap-hint { font-weight: 700; color: var(--ink-2); }
 
 .day-head {
   display: flex;
@@ -1244,8 +1253,6 @@ input:focus, select:focus, textarea:focus {
 .slot-done .med-open:hover,
 .slot-marked .med-open:hover { background: transparent; }
 
-.med-skip-note { color: var(--skip-ink); font-weight: 500; }
-
 /* Only the photo desaturates. A fallback tile is already carrying the amber
    badge, and draining its tone as well would leave the row looking disabled
    rather than decided. */
@@ -1281,6 +1288,7 @@ input:focus, select:focus, textarea:focus {
 .med-sub { color: var(--ink-3); font-size: var(--text-sm); gap: var(--space-3); }
 
 .med-skipped .med-name { text-decoration: line-through; color: var(--ink-3); }
+.med-skipped .med-strength { color: var(--skip-ink); font-weight: 500; }
 .med-skipped .med-sub { color: var(--skip-ink); }
 
 .slot-foot { padding: var(--space-2) var(--space-4) var(--space-4); }
@@ -1301,11 +1309,17 @@ input:focus, select:focus, textarea:focus {
   padding: var(--space-6) var(--space-2);
   animation: rise-in var(--dur-slow) var(--ease-out);
 }
+/* Now a wrapper around two paragraphs (js/views/today.js), not a <p> itself --
+   text: sets textContent, which cannot carry a line break, so the second
+   sentence needed its own element to land on its own line. The gap between
+   them is set here, deliberately smaller than the space below the whole
+   block: they are two sentences of one explanation, not two separate ideas. */
 .coldstart-body {
   color: var(--ink-2);
   max-width: 22rem;
   margin: var(--space-2) auto var(--space-6);
 }
+.coldstart-body p + p { margin-top: var(--space-2); }
 .coldstart-label {
   color: var(--ink-3);
   font-size: var(--text-sm);
@@ -1315,14 +1329,27 @@ input:focus, select:focus, textarea:focus {
   display: inline-block;
   font-size: var(--text-3xl);
   font-weight: 600;
+  font-family: inherit;
   letter-spacing: 0.18em;
   font-variant-numeric: tabular-nums;
   text-indent: 0.18em;          /* the tracking is trailing space; recentre it */
   color: var(--primary-ink);
   background: var(--primary-tint);
+  border: none;
   border-radius: var(--r-lg);
   padding: var(--space-4) var(--space-5);
+  cursor: pointer;
+  transition: transform var(--dur-fast) var(--ease-out);
 }
+.coldstart-code:active { transform: scale(0.97); }
+
+/* .code-row (js/ui.js's shareCodeRow) is a block-level flex row, so it fills
+   .coldstart's full width by default rather than sitting centred the way a
+   plain inline .coldstart-code paragraph used to. */
+.coldstart .code-row { justify-content: center; margin-top: var(--space-2); }
+.coldstart .whatsapp-btn { width: 3rem; height: 3rem; }
+.coldstart .whatsapp-icon { width: 1.625rem; height: 1.625rem; }
+
 .coldstart-foot {
   color: var(--ink-3);
   font-size: var(--text-sm);
@@ -1367,7 +1394,7 @@ input:focus, select:focus, textarea:focus {
 .cal-nav:active { transform: scale(0.92); }
 
 .cal-title {
-  font-weight: 600;
+  font-weight: 700;
   font-size: var(--text-lg);
   border: none;
   background: none;
@@ -1396,7 +1423,7 @@ input:focus, select:focus, textarea:focus {
   text-align: center;
   color: var(--ink-3);
   font-size: var(--text-xs);
-  font-weight: 500;
+  font-weight: 700;
   margin-bottom: var(--space-2);
 }
 
@@ -1414,7 +1441,7 @@ input:focus, select:focus, textarea:focus {
   position: relative;
   cursor: pointer;
   font-size: var(--text-sm);
-  font-weight: 500;
+  font-weight: 700;
   font-variant-numeric: tabular-nums;
   transition: background var(--dur) var(--ease), transform var(--dur-fast) var(--ease-out);
 }
@@ -1441,6 +1468,7 @@ input:focus, select:focus, textarea:focus {
   padding-top: var(--space-3);
   border-top: 1px solid var(--line);
   font-size: var(--text-xs);
+  font-weight: 700;
   color: var(--ink-3);
   flex-wrap: wrap;
 }
@@ -1486,11 +1514,38 @@ input:focus, select:focus, textarea:focus {
   letter-spacing: 0.12em;
   font-weight: 600;
   font-size: var(--text-md);
+  font-family: inherit;
   background: var(--primary-tint);
   color: var(--primary-ink);
   padding: 0.35rem 0.7rem;
+  border: none;
   border-radius: var(--r-sm);
+  cursor: pointer;
+  transition: transform var(--dur-fast) var(--ease-out);
 }
+.setting-code:active { transform: scale(0.96); }
+
+/* The code and the WhatsApp button, side by side with real space between
+   them -- see shareCodeRow() in js/views/settings.js for why. */
+.code-row { display: flex; align-items: center; gap: var(--space-3); }
+
+.whatsapp-btn {
+  width: 2.5rem;
+  height: 2.5rem;
+  flex: none;
+  border: none;
+  border-radius: var(--r-pill);
+  background: #25d366;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  cursor: pointer;
+  transition: transform var(--dur-fast) var(--ease-out);
+}
+.whatsapp-btn:active { transform: scale(0.92); }
+.whatsapp-icon { width: 1.375rem; height: 1.375rem; display: flex; }
+.whatsapp-icon svg { width: 100%; height: 100%; fill: white; }
 
 .fatal { text-align: center; padding: var(--space-6) var(--space-4); }
 .fatal h1 { font-size: var(--text-xl); margin-bottom: var(--space-3); }

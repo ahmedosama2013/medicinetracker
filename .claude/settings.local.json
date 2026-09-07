@@ -7,7 +7,9 @@
       "Bash(mkdir -p \"/home/umerbutt/personal/Medicine Tracker/supabase/migrations\" \"/home/umerbutt/personal/Medicine Tracker/supabase/functions/send-reminders\" \"/home/umerbutt/personal/Medicine Tracker/supabase/functions/supporter-photo\")",
       "WebSearch",
       "WebFetch(domain:supabase.com)",
-      "Bash(grep -v \"^\\\\.\\\\.$\\\\|^\\\\.$\\\\|^\\\\.git$\")"
+      "Bash(grep -v \"^\\\\.\\\\.$\\\\|^\\\\.$\\\\|^\\\\.git$\")",
+      "Bash(npx supabase *)",
+      "Bash(npx --yes typescript@5 tsc --version)"
     ]
   }
 }
