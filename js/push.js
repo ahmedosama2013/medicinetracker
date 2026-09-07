@@ -4,27 +4,7 @@
 
 import { supabase } from './supabase.js';
 import { VAPID_PUBLIC_KEY } from './config.js';
-
-/* navigator.serviceWorker.ready never resolves if no worker ever activates --
- * a failed sw.js fetch, a hard-reloaded tab. Awaiting it unguarded left the
- * Settings screen as a lone heading, indefinitely, with nothing to say so. */
-const SW_READY_MS = 4000;
-
-function serviceWorkerReady() {
-  return Promise.race([
-    navigator.serviceWorker.ready,
-    new Promise((_, reject) => {
-      setTimeout(() => reject(new Error('The app has not finished starting up.')), SW_READY_MS);
-    }),
-  ]);
-}
-
-function urlBase64ToUint8Array(base64) {
-  const padding = '='.repeat((4 - (base64.length % 4)) % 4);
-  const base64safe = (base64 + padding).replace(/-/g, '+').replace(/_/g, '/');
-  const raw = atob(base64safe);
-  return Uint8Array.from([...raw].map(c => c.charCodeAt(0)));
-}
+import { serviceWorkerReady, urlBase64ToUint8Array } from './push-shared.js';
 
 /**
  * Subscribed means BOTH the browser has a push subscription and the server has

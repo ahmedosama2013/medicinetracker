@@ -32,6 +32,16 @@
  *      the one thing a gentle nudge must never do. pick() below is a pure
  *      function of a key the caller derives from the notification's identity,
  *      so a retry is byte-identical while the words still vary day to day.
+ *
+ * A SUPPORTER-FACING MESSAGE NAMES THE ELDER, BY DESIGN. Every message above
+ * is written to the elder and never identifies them -- there is no one else
+ * it could be about. A message TO a supporter is different: it is already
+ * about a specific person, `households.display_name`, which the supporter's
+ * own Settings screen shows them today, so this is not a new exposure. Rule 3
+ * still applies to the slot label -- it just now shares the title with the
+ * name rather than owning it alone: `"<name> — <slot label> medicines"`. The
+ * body stays as generic and gender-neutral as the elder's own copy ("their",
+ * never "her"/"his" -- the app has no pronoun for the elder).
  */
 
 // ---- the copy -------------------------------------------------------------
@@ -66,6 +76,23 @@ export const PUSH_COPY = {
    * nothing, and a single string keeps rule 4 trivially satisfied. */
   nudgeTitle: 'Medicine Tracker',
   nudge: "Someone's thinking of you — a quick check on your medicines.",
+
+  /* Stage 3: a supporter's own escalation, some time after the elder's
+   * stage-2 follow-up (delay is per-subscription -- see 0017). Never "still
+   * hasn't taken it" -- the supporter can see this even less than the elder's
+   * own notifications can, so rule 2 matters most here. */
+  escalation: [
+    'Still not marked. A quick check might help.',
+    "This hasn't been marked yet — maybe worth a call?",
+    'Still waiting to be marked off. A check-in could help.',
+  ],
+
+  /* The nightly catch-all, addressed to a supporter instead of the elder. */
+  nightlyForSupporter: [
+    "Some of today's medicines aren't marked yet. Worth checking in?",
+    'Not everything today is marked off yet — a call might help.',
+    'A few things from today are still unmarked.',
+  ],
 } as const;
 
 // ---- assembling one notification ------------------------------------------
@@ -121,4 +148,33 @@ export function nightlyNotification(localDate: string, householdId: string): Not
 /** The supporter's nudge. */
 export function nudgeNotification(): Notification {
   return { title: PUSH_COPY.nudgeTitle, body: PUSH_COPY.nudge };
+}
+
+/**
+ * A supporter's stage-3 escalation. Keyed without the subscription id: two
+ * supporters watching the same slot should be free to land on the same
+ * variant, since each only ever sees their own notification.
+ */
+export function escalationNotification(
+  slotLabel: string,
+  elderName: string,
+  localDate: string,
+  slotId: string,
+): Notification {
+  return {
+    title: `${elderName} — ${slotLabel} medicines`,
+    body: pick(PUSH_COPY.escalation, `${localDate}|${slotId}|escalation`),
+  };
+}
+
+/** The nightly catch-all, for a supporter subscription. */
+export function nightlyNotificationForSupporter(
+  elderName: string,
+  localDate: string,
+  householdId: string,
+): Notification {
+  return {
+    title: `${elderName} — today's medicines`,
+    body: pick(PUSH_COPY.nightlyForSupporter, `${localDate}|${householdId}|supporter`),
+  };
 }

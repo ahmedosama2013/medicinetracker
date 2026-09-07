@@ -1,20 +1,28 @@
 // Cron-triggered (see README in this directory for the pg_cron setup step).
 // Every decision about *what* to send already happened in Postgres -- this
-// function just delivers. Two claims, in one function on one cron:
+// function just delivers. Three claims, in one function on one cron:
 //
-//   claim_due_notifications  slot reminders, stage 1 at the slot's time and
-//                            stage 2 an hour later (0014)
-//   claim_daily_summary      the nightly catch-all at ~23:50 (0015)
+//   claim_due_notifications       slot reminders, stage 1 at the slot's time
+//                                  and stage 2 an hour later (0014)
+//   claim_supporter_escalations   a supporter's own stage 3, some time after
+//                                  stage 2, per subscription (0017)
+//   claim_daily_summary           the nightly catch-all at ~23:50, to both
+//                                  the elder and any supporter (0015, 0018)
 //
-// One function rather than two because they share everything that is
+// One function rather than three because they share everything that is
 // awkward: the VAPID bootstrap, the dead-endpoint cleanup, a deploy step and
-// a cron entry. Neither claim knows the other exists.
+// a cron entry. None of the three claims know the others exist.
 //
-// No wording lives in this file. See ../_shared/messages.ts and the four
-// rules at the top of it.
+// No wording lives in this file. See ../_shared/messages.ts and the rules at
+// the top of it.
 import { createClient } from 'npm:@supabase/supabase-js@2'
 import webpush from 'npm:web-push@3.6.7'
-import { nightlyNotification, slotNotification } from '../_shared/messages.ts'
+import {
+  escalationNotification,
+  nightlyNotification,
+  nightlyNotificationForSupporter,
+  slotNotification,
+} from '../_shared/messages.ts'
 
 const supabase = createClient(
   Deno.env.get('SUPABASE_URL')!,
@@ -97,11 +105,11 @@ Deno.serve(async () => {
   const vapidError = ensureVapid()
   if (vapidError) return new Response(`push not configured: ${vapidError}`, { status: 500 })
 
-  /* The two claims run independently and both failures are collected rather
+  /* The three claims run independently and every failure is collected rather
    * than returned early. An earlier version returned 500 the moment a claim
-   * errored, which -- once there were two of them -- would have meant a
+   * errored, which -- once there were more than one -- would have meant a
    * broken slot-reminder query silently cancelling that night's summary as
-   * well. One failing job should not take the other down with it. */
+   * well. One failing job should not take the others down with it. */
   const problems: string[] = []
   let sent = 0
 
@@ -125,12 +133,34 @@ Deno.serve(async () => {
     }
   }
 
-  // ---- the nightly catch-all ----------------------------------------------
+  // ---- a supporter's own escalation ---------------------------------------
+  const { data: escalations, error: escalationError } =
+    await supabase.rpc('claim_supporter_escalations')
+  if (escalationError) problems.push(`claim_supporter_escalations: ${escalationError.message}`)
+
+  for (const row of escalations ?? []) {
+    const { title, body } = escalationNotification(
+      row.slot_label, row.elder_name, row.local_date, row.slot_id,
+    )
+    if (await deliver(row, title, body)) {
+      sent += 1
+      await supabase.rpc('mark_supporter_escalation_sent', {
+        p_subscription_id: row.subscription_id,
+        p_date: row.local_date,
+        p_slot: row.slot_id,
+        p_time: row.slot_time,
+      })
+    }
+  }
+
+  // ---- the nightly catch-all, elder and supporter alike -------------------
   const { data: summaries, error: summaryError } = await supabase.rpc('claim_daily_summary')
   if (summaryError) problems.push(`claim_daily_summary: ${summaryError.message}`)
 
   for (const row of summaries ?? []) {
-    const { title, body } = nightlyNotification(row.local_date, row.household_id)
+    const { title, body } = row.role === 'supporter'
+      ? nightlyNotificationForSupporter(row.elder_name, row.local_date, row.household_id)
+      : nightlyNotification(row.local_date, row.household_id)
     if (await deliver(row, title, body)) {
       sent += 1
       await supabase.rpc('mark_daily_summary_sent', {

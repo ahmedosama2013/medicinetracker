@@ -372,6 +372,21 @@ export const S = {
   notificationsUnknownLabel: 'Reminders could not be checked',
   notificationsUnknownHint: 'This usually means the app has not finished starting up. Turning them on again is safe.',
 
+  // ---- supporter notifications -------------------------------------------
+  settingsSupporterNotifications: 'Notify me',
+  supporterNotificationsHint: 'A check-in on your phone if a slot is still unmarked a while after their own reminder.',
+  supporterNotificationsOffLabel: 'Notifications are off',
+  supporterNotificationsOnLabel: 'Notifications are on',
+  supporterNotificationsUnknownLabel: 'Notifications could not be checked',
+  supporterNotificationsUnknownHint: 'This usually means the app has not finished starting up. Turning them on again is safe.',
+  supporterNotificationsTurnOn: 'Turn on',
+  supporterNotificationsTurnOff: 'Turn off',
+  escalationDelayLabel: 'Notify me if still unmarked',
+  escalationDelay30m: '30 minutes after their reminder',
+  escalationDelay1h: '1 hour after their reminder',
+  escalationDelay2h: '2 hours after their reminder',
+  escalationDelay3h: '3 hours after their reminder',
+
   // ---- misc ------------------------------------------------------------
   loading: 'Loading',
   errGeneric: 'Something went wrong.',

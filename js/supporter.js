@@ -68,6 +68,25 @@ export const logDose = (code, date, slotId, medicineId, status) =>
 export const unlogSlot = (code, date, slotId) =>
   call('unlog_slot', { p_code: code, p_date: date, p_slot_id: slotId });
 
+// ---- push notifications (see supabase/migrations/0016_supporter_push_subscriptions.sql) ----
+
+export const subscribePush = (code, sub, escalationAfter) =>
+  call('subscribe_push', {
+    p_code: code, p_endpoint: sub.endpoint,
+    p_p256dh: sub.keys.p256dh, p_auth_key: sub.keys.auth,
+    p_escalation_after: escalationAfter,
+  });
+
+export const unsubscribePush = (code, endpoint) =>
+  call('unsubscribe_push', { p_code: code, p_endpoint: endpoint });
+
+/** Zero or one row: empty means this endpoint has no live supporter subscription. */
+export const pushSubscriptionStatus = (code, endpoint) =>
+  call('push_subscription_status', { p_code: code, p_endpoint: endpoint });
+
+export const setPushEscalation = (code, endpoint, escalationAfter) =>
+  call('set_push_escalation', { p_code: code, p_endpoint: endpoint, p_escalation_after: escalationAfter });
+
 /** Ask the elder's phone to buzz. Rate limited server-side; see the function. */
 export async function nudge(code) {
   const { functionsClient } = await codeClient();

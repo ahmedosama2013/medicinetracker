@@ -139,6 +139,11 @@ Deno.serve(async (req) => {
       .select('id, endpoint, p256dh, auth_key')
       .eq('household_id', householdId)
       .eq('notify_due', true)
+      // This button buzzes the ELDER's phone. Once a supporter's own
+      // subscription could live in this same table (0016), leaving this
+      // unfiltered would have also buzzed the supporter's own phone the
+      // moment they pressed it.
+      .eq('role', 'patient')
       .is('disabled_at', null)
 
     if (subsErr) {

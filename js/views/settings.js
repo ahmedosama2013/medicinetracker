@@ -10,16 +10,22 @@
 import * as store from '../store.js';
 import * as supporter from '../supporter.js';
 
-/* Loaded on use rather than at the top, and only ever down an elder branch.
+/* Loaded on use rather than at the top.
  *
- * Both of these reach js/supabase.js and therefore the full Supabase client --
- * auth, realtime, storage -- which a supporter device can use none of. Settings
- * is registered as a route at boot like every other view, so a static import
- * here meant every supporter downloaded the whole auth stack to render a screen
- * whose account section they never see. Same reasoning as the js/sync.js import
- * further down, which has worked this way for longer. */
+ * auth.js and push.js reach js/supabase.js and therefore the full Supabase
+ * client -- auth, realtime, storage -- which a supporter device can use none
+ * of, so those two stay elder-branch-only. Settings is registered as a route
+ * at boot like every other view, so a static import here meant every
+ * supporter downloaded the whole auth stack to render a screen whose account
+ * section they never see. Same reasoning as the js/sync.js import further
+ * down, which has worked this way for longer.
+ *
+ * supporter-push.js is the one exception -- it is reached from the supporter
+ * branch on purpose, and imports only js/supporter.js (the code-gated client),
+ * never js/supabase.js. */
 const authLib = () => import('../auth.js');
 const pushLib = () => import('../push.js');
+const supporterPushLib = () => import('../supporter-push.js');
 import { S, APP_VERSION } from '../strings.js';
 import { el, clear, section, toast, confirmDialog, field, applyTheme, loadingState, emptyState } from '../ui.js';
 import { timeToMinutes } from '../date.js';
@@ -119,6 +125,24 @@ async function toggleNotifications(householdId, button) {
   refresh();
 }
 
+/* Same shape as toggleNotifications above, but `state` is an object
+ * (`{ escalationAfter }`) rather than a bare `true` when on -- `if (state)`
+ * still does the right thing for all four of isSubscribed's return values:
+ * null and false both fall through to subscribe(), same as the elder path's
+ * "unknown means try turning it on" rule. */
+async function toggleSupporterNotifications(code, button) {
+  busy(button);
+  try {
+    const push = await supporterPushLib();
+    const state = await push.isSubscribed(code);
+    if (state) await push.unsubscribe(code);
+    else await push.subscribe(code, DEFAULT_ESCALATION_AFTER);
+  } catch (err) {
+    toast(err.message || S.errGeneric);
+  }
+  refresh();
+}
+
 // ---- the view -------------------------------------------------------------
 
 /* Three states, not a switch: "match my phone" is the default and has to stay
@@ -128,6 +152,42 @@ const THEMES = [
   { value: 'light', label: () => S.themeLight },
   { value: 'dark', label: () => S.themeDark },
 ];
+
+/* Values are the exact text Postgres hands back for these four intervals
+ * (confirmed against the live database) -- matching the server's own
+ * canonical form means "is this chip currently selected" is a plain string
+ * comparison, nothing normalises on the way in or out. */
+const DEFAULT_ESCALATION_AFTER = '01:00:00';
+const ESCALATION_DELAYS = [
+  { value: '00:30:00', label: () => S.escalationDelay30m },
+  { value: DEFAULT_ESCALATION_AFTER, label: () => S.escalationDelay1h },
+  { value: '02:00:00', label: () => S.escalationDelay2h },
+  { value: '03:00:00', label: () => S.escalationDelay3h },
+];
+
+/* Only rendered once notifications are on -- picking a delay for a
+ * notification that will never arrive is a setting with nothing to control. */
+function escalationDelaySection(code, current) {
+  const chips = el('div.chips', ESCALATION_DELAYS.map(d => el('button.chip', {
+    type: 'button',
+    text: d.label(),
+    'aria-pressed': String(current === d.value),
+    onclick: async () => {
+      try {
+        const push = await supporterPushLib();
+        await push.setEscalation(code, d.value);
+        refresh();
+      } catch {
+        toast(S.errGeneric);
+      }
+    },
+  })));
+
+  return el('div', [
+    el('p.setting-hint', { text: S.escalationDelayLabel, style: 'margin-bottom: 0.75rem;' }),
+    chips,
+  ]);
+}
 
 /* Shown in both roles, because whoever is holding the tray fills it -- the
  * supporter when they visit, the elder the rest of the time. It writes through
@@ -232,6 +292,7 @@ export async function settingsView({ app, isCurrent = () => true }) {
   ]);
   if (!isCurrent()) return;
   const role = settings.role;
+  const code = role === 'simple' ? settings.shareCode : settings.supporterCode;
 
   clear(app);
   app.appendChild(el('h1.page-title', { text: S.settingsTitle }));
@@ -284,6 +345,21 @@ export async function settingsView({ app, isCurrent = () => true }) {
       }),
     ]));
   } else {
+    /* Same reasoning as the elder branch above: isSubscribed waits on the
+     * service worker and makes a network call, and this screen should not
+     * sit as a bare heading for however long that takes. */
+    const pending = loadingState();
+    app.appendChild(pending);
+
+    const push = await supporterPushLib();
+    const notifState = await push.isSubscribed(code).catch(() => null);
+    if (!isCurrent()) return;
+    pending.remove();
+
+    const notifOn = !!notifState;
+    const notifUnknown = notifState === null;
+    const currentDelay = (notifOn && notifState.escalationAfter) || DEFAULT_ESCALATION_AFTER;
+
     app.appendChild(section(S.settingsConnection, [
       settingRow({
         label: S.settingsConnectedTo,
@@ -295,6 +371,18 @@ export async function settingsView({ app, isCurrent = () => true }) {
         buttonLabel: S.settingsDisconnect,
         onClick: () => disconnect(),
       }),
+    ]));
+
+    app.appendChild(section(S.settingsSupporterNotifications, [
+      actionRow({
+        label: notifUnknown ? S.supporterNotificationsUnknownLabel
+          : notifOn ? S.supporterNotificationsOnLabel : S.supporterNotificationsOffLabel,
+        hint: notifUnknown ? S.supporterNotificationsUnknownHint : S.supporterNotificationsHint,
+        buttonLabel: notifOn ? S.supporterNotificationsTurnOff : S.supporterNotificationsTurnOn,
+        primary: !notifOn,
+        onClick: button => toggleSupporterNotifications(code, button),
+      }),
+      notifOn ? escalationDelaySection(code, currentDelay) : null,
     ]));
 
     /* Its own section rather than buried under Connection: changing what
@@ -312,7 +400,6 @@ export async function settingsView({ app, isCurrent = () => true }) {
 
   /* Above Appearance and below each role's own sections: it is routine setup
    * about the household, not a preference of this device. */
-  const code = role === 'simple' ? settings.shareCode : settings.supporterCode;
   if (code) app.appendChild(pillBoxSection(settings, code, organiser));
 
   app.appendChild(appearanceSection(settings.theme));
