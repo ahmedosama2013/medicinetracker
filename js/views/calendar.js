@@ -137,13 +137,23 @@ export async function calendarView({ app, isCurrent = () => true }) {
 
     const cells = monthGrid(cursor.y, cursor.m);
 
-    /* A supporter's history is fetched a range at a time rather than mirrored
-     * live, so paging to a month nobody has looked at yet has to go and get
-     * it. Without this the rings would silently render hollow -- which does
-     * not read as "not loaded", it reads as "they took nothing all month". */
+    /* History is fetched a range at a time on both devices, so paging to a
+     * month nobody has looked at yet has to go and get it. Without this the
+     * rings would silently render hollow -- which does not read as "not
+     * loaded", it reads as "they took nothing all month".
+     *
+     * The elder's device joined this: its cache used to hold every dose row
+     * the household had, so any month was already local. It now mirrors a
+     * recent window and pages back the same way the supporter does. */
+    const first = cells[0].date;
+    const last = cells[cells.length - 1].date;
     if (settings.role === 'supporter' && settings.supporterCode) {
-      await supporterSync
-        .ensureRange(settings.supporterCode, cells[0].date, cells[cells.length - 1].date)
+      await supporterSync.ensureRange(settings.supporterCode, first, last).catch(() => {});
+    } else if (settings.role === 'simple' && settings.householdId) {
+      /* Imported here rather than at the top: js/sync.js reaches the full
+       * Supabase client, and a supporter opens this same view. */
+      await import('../sync.js')
+        .then(sync => sync.ensureHistoryRange(settings.householdId, first, last))
         .catch(() => {});
     }
 

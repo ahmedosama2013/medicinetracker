@@ -3,8 +3,6 @@
 
 import * as store from './store.js';
 import * as router from './router.js';
-import * as auth from './auth.js';
-import * as sync from './sync.js';
 import * as supporterSync from './supporter-sync.js';
 import { S } from './strings.js';
 import { el, clear, applyTheme } from './ui.js';
@@ -19,6 +17,25 @@ import { medicinesView } from './views/medicines.js';
 import { medicineFormView } from './views/medicine-form.js';
 import { settingsView, slotsView } from './views/settings.js';
 import { organiserView } from './views/organiser.js';
+
+/* The elder's half of the data layer, loaded on the branch that needs it.
+ *
+ * Both of these reach js/supabase.js, which is the full Supabase client:
+ * auth, realtime, storage, postgrest and functions, around 71KB. A supporter
+ * device can use two of those five -- it has no session, Realtime respects RLS
+ * so it would receive nothing, and photos arrive as signed URLs from an edge
+ * function rather than from storage. It talks to Supabase through the ~7KB
+ * code-gated client in js/supabase-code.js instead.
+ *
+ * Static imports here put the whole 71KB on every supporter's critical path,
+ * because boot runs before anything knows which role the device is. Gating
+ * them on the role that actually calls them is the entire point; keep it that
+ * way, and keep the same discipline in js/doses.js and the views.
+ *
+ * Nothing is lost for the elder: these load during boot either way, just a
+ * few milliseconds later and in parallel with the first render. */
+const authLib = () => import('./auth.js');
+const syncLib = () => import('./sync.js');
 
 const PREAUTH_PATHS = ['#/welcome', '#/signin', '#/pair'];
 
@@ -94,6 +111,7 @@ function registerServiceWorker() {
  * but no local role yet: create the household on first sign-in, or resume
  * the one this account already owns (a reinstall, or a second browser). */
 async function completeSimpleSignIn(session) {
+  const auth = await authLib();
   let household = await auth.getMyHousehold();
   if (!household) {
     const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -162,7 +180,7 @@ async function boot() {
     // Returning from the Google OAuth redirect: no local role yet, but a
     // session may now exist. Never blocks boot on a slow/offline network --
     // a failure here just leaves onboarding showing, same as before sign-in.
-    const session = await auth.getSession().catch(() => null);
+    const session = await authLib().then(auth => auth.getSession()).catch(() => null);
     if (session) {
       await completeSimpleSignIn(session).catch(() => {});
       settings = await store.getSettings();
@@ -175,6 +193,17 @@ async function boot() {
   applyTheme(settings.theme);
 
   const mode = settings.role;
+
+  /* Started here, awaited much later (below, and in js/doses.js).
+   *
+   * js/sync.js is the elder's biggest download by far -- it reaches the full
+   * Supabase client -- and index.html cannot preload it, because the same HTML
+   * is served to supporters who must not fetch it at all. Kicking it off the
+   * moment the role is known gets it moving in parallel with the first render
+   * instead of after it, which is roughly where a static import used to have
+   * it, without putting it back on every device's critical path. */
+  const elderData = mode === 'simple' ? syncLib() : null;
+  elderData?.catch(() => {});
   /* Before the first render, and before anything asks what day it is. Both
    * devices run on the household's clock -- see js/date.js. */
   setTimezone(settings.timezone);
@@ -199,7 +228,12 @@ async function boot() {
    * "No medicines yet" for a second on every cold start. Failure is not fatal
    * -- the views fall back to whatever the last session cached. */
   if (mode === 'supporter' && settings.supporterCode) {
-    await supporterSync.hydrate(settings.supporterCode).catch(() => {});
+    await supporterSync.hydrate(settings.supporterCode, {
+      // Photos are fetched after this resolves, so the first paint does not
+      // wait on them. This lands them on screen when they arrive rather than
+      // at the next poll, up to a minute later.
+      onPhotos: () => router.refresh(),
+    }).catch(() => {});
   }
 
   await router.start();
@@ -207,7 +241,7 @@ async function boot() {
   watchTheDate();
 
   if (mode === 'simple' && settings.householdId) {
-    sync.startRealtime(settings.householdId);
+    elderData.then(sync => sync.startRealtime(settings.householdId)).catch(() => {});
   }
 
   /* No Realtime for a supporter: it respects RLS and a supporter has no

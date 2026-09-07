@@ -91,37 +91,57 @@ function mapDose(row) {
  * to its generated tile, which is exactly what that tile is for.
  */
 async function cachePhotos(code, medicines, previous) {
-  await Promise.all(medicines.flatMap(medicine => {
+  const results = await Promise.all(medicines.flatMap(medicine => {
     const was = previous.get(medicine.id);
     return [
       cachePhoto(code, medicine.id, 'pill', medicine.photoPath, was?.photoPath),
       cachePhoto(code, medicine.id, 'packet', medicine.packetPhotoPath, was?.packetPhotoPath),
     ];
   }));
+  // Whether the cache on disk actually moved. The caller redraws only on true:
+  // after the first run this is normally false, and a redraw that changes
+  // nothing visible still costs the person their scroll position.
+  return results.some(Boolean);
 }
 
+/** Returns true when this call changed what is stored for that photo. */
 async function cachePhoto(code, medicineId, kind, path, previousPath) {
   if (!path) {
-    if (previousPath) await store.deletePhoto(medicineId, kind).catch(() => {});
-    return;
+    if (previousPath) {
+      await store.deletePhoto(medicineId, kind).catch(() => {});
+      return true;
+    }
+    return false;
   }
   // Re-attempt when the path is unchanged but nothing is cached: a failed
   // download must not be remembered as a success.
   const cached = await store.getPhotoBlob(medicineId, kind).catch(() => null);
-  if (cached && path === previousPath) return;
+  if (cached && path === previousPath) return false;
 
   try {
     const url = await supporter.getPhotoUrl(code, medicineId, kind);
-    if (!url) return;
+    if (!url) return false;
     const res = await fetch(url);
-    if (!res.ok) return;
+    if (!res.ok) return false;
     await store.putPhoto(medicineId, kind, await res.blob());
+    return true;
   } catch {
     // Stays missing locally until the next sync; the tile covers it.
+    return false;
   }
 }
 
-/** Medicines, schedules and slots. Cheap enough to replace wholesale. */
+/**
+ * Medicines, schedules and slots. Cheap enough to replace wholesale.
+ *
+ * Returns the routine plus the photo download as an unstarted job, rather than
+ * awaiting it here. Photos are the slow half by a wide margin -- two round
+ * trips each for a supporter (a signed URL, then the file) against one RPC for
+ * everything above -- and no caller needs them to draw a correct screen: a
+ * medicine with no cached photo falls back to its generated tile. Handing the
+ * job back lets hydrate() paint first and let them arrive after, while
+ * refresh() keeps awaiting them as it always did.
+ */
 async function pullRoutine(code) {
   const routine = await supporter.loadRoutine(code);
 
@@ -151,8 +171,7 @@ async function pullRoutine(code) {
     setTimezone(timezone);
   }
 
-  await cachePhotos(code, medicines, previousPaths);
-  return routine;
+  return { routine, photos: () => cachePhotos(code, medicines, previousPaths) };
 }
 
 /**
@@ -170,7 +189,7 @@ async function pullRange(code, from, to) {
    * delete history a wider earlier fetch already put there. Removals are
    * reconciled by refresh() below, which knows the full server-side set. */
   const rows = (doses || []).map(mapDose);
-  for (const row of rows) await store.putDoseLogRow(row);
+  await store.putDoseLogRows(rows);
   if (history?.snapshots?.length) await store.putSnapshots(history.snapshots);
   await store.saveSettings({ lockedThrough: history?.lockedThrough || null });
 
@@ -185,15 +204,31 @@ export async function ensureRange(code, from, to) {
   return rows;
 }
 
-/** Everything, on entering supporter mode. */
-export async function hydrate(code) {
+/**
+ * Everything, on entering supporter mode.
+ *
+ * Awaited before the first render (see js/main.js), so what it waits for is
+ * what the person waits for on a cold start. That is the routine and the dose
+ * rows -- one RPC each -- and deliberately not the photos, which used to sit in
+ * front of the first paint at two round trips apiece and turned a cold open on
+ * a phone connection into seconds of blank screen.
+ *
+ * `onPhotos` is called once, later, and only if the photo cache actually
+ * changed; wire it to a redraw so the tiles fill in without waiting for the
+ * next poll a minute away.
+ */
+export async function hydrate(code, { onPhotos } = {}) {
   const to = todayStr();
   const from = addDays(to, -INITIAL_DAYS);
-  const routine = await pullRoutine(code);
+  const { routine, photos } = await pullRoutine(code);
   const rows = await ensureRange(code, from, to);
   // So the first poll does not report a change that is only "we had not looked
   // before".
   lastSignature = signatureOf(routine, rows);
+
+  /* Started, pointedly not awaited: hydrate resolves and the screen draws
+   * while these are still in flight. Failure is already swallowed per photo. */
+  photos().then(changed => { if (changed) onPhotos?.(); }).catch(() => {});
 }
 
 /**
@@ -207,7 +242,12 @@ export async function hydrate(code) {
  * reason to redraw.
  */
 export async function refresh(code) {
-  const routine = await pullRoutine(code);
+  const { routine, photos } = await pullRoutine(code);
+  /* Awaited here, unlike hydrate: a poll has no first paint to protect, and
+   * the redraw it may trigger should have the new photos already on disk.
+   * After the first run this is a no-op -- every photo is guarded on its path
+   * having actually changed. */
+  await photos();
 
   const to = todayStr();
   const from = fetched.length

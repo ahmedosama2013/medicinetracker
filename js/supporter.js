@@ -2,11 +2,25 @@
  * every call passes the household's share code, which the server resolves
  * to a household id itself. See supabase/migrations/0001_init.sql. */
 
-import { supabase } from './supabase.js';
 import { blobToDataUrl } from './photos.js';
 
+/* Loaded on first use rather than at the top.
+ *
+ * This module is reached statically from Today, Medicines and Settings, so a
+ * top-level import would put the code-gated client on every device's boot --
+ * including the elder's, which already has the full Supabase client and needs
+ * only ONE call from here (set_slot_in_box, shared by both roles). That is
+ * ~7KB of second HTTP client downloaded to make one RPC that may never happen.
+ *
+ * The module is memoized by the module system and the clients inside it are
+ * memoized too, so this costs one extra microtask per call and nothing else.
+ * A supporter fetches it as part of the first hydrate, still before any paint
+ * that needs the data. */
+const codeClient = () => import('./supabase-code.js');
+
 async function call(fn, args) {
-  const { data, error } = await supabase().rpc(fn, args);
+  const { restClient } = await codeClient();
+  const { data, error } = await restClient().rpc(fn, args);
   if (error) throw new Error(error.message || 'That could not be saved.');
   return data;
 }
@@ -52,7 +66,8 @@ export const unlogSlot = (code, date, slotId) =>
 
 /** Ask the elder's phone to buzz. Rate limited server-side; see the function. */
 export async function nudge(code) {
-  const { data, error } = await supabase().functions.invoke('nudge', { body: { code } });
+  const { functionsClient } = await codeClient();
+  const { data, error } = await functionsClient().invoke('nudge', { body: { code } });
   // A 429 arrives as an error with the body attached, so the cooldown has to
   // be read out of it rather than treated as a failure.
   if (error) {
@@ -64,7 +79,8 @@ export async function nudge(code) {
 }
 
 async function photoAction(action, body) {
-  const { data, error } = await supabase().functions.invoke('supporter-photo', {
+  const { functionsClient } = await codeClient();
+  const { data, error } = await functionsClient().invoke('supporter-photo', {
     body: { action, ...body },
   });
   if (error) throw new Error('That photo could not be saved.');

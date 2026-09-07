@@ -8,6 +8,17 @@
 <link rel="manifest" href="./manifest.webmanifest">
 <link rel="stylesheet" href="./css/app.css">
 
+<!-- The Supabase client comes from esm.sh, so the first paint waits on a
+     third-party origin: DNS, TLS, then the module itself. Preconnect pays that
+     handshake in parallel with the CSS rather than at the end of the chain.
+
+     Preconnect only, deliberately no modulepreload. The two roles need
+     different clients -- the elder the full one, a supporter the ~10x smaller
+     code-gated pair -- and this same HTML is served to both, so any preload
+     here would hand one role the download the role split exists to avoid.
+     Each side starts its own, as early as it knows which it is. -->
+<link rel="preconnect" href="https://esm.sh" crossorigin>
+
 <meta name="theme-color" content="#f3f1ea" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#171613" media="(prefers-color-scheme: dark)">
 <meta name="color-scheme" content="light dark">

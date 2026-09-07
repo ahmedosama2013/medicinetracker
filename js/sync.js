@@ -11,7 +11,7 @@
 import { supabase } from './supabase.js';
 import * as store from './store.js';
 import { refresh } from './router.js';
-import { setTimezone } from './date.js';
+import { setTimezone, todayStr, addDays } from './date.js';
 
 /* Enumerates columns explicitly, which is exactly why every new medicine
  * column has to be added here as well as to the migration -- a column missing
@@ -104,11 +104,18 @@ async function refetchRoutine(householdId) {
   await store.saveSettings({ slots });
   const changed = routineSignature(medicines, schedules.filter(x => x.active), slots) !== before;
 
-  for (const medicine of medicines) {
+  /* In parallel, not one after another. `changed` is already decided above, so
+   * these downloads hold up nothing but this function's return -- and the
+   * caller redraws on that return, so a serial loop over a household's photos
+   * was the elder waiting on the slowest possible ordering of a job with no
+   * ordering requirement. Same downloads, same guards, at once. */
+  await Promise.all(medicines.flatMap(medicine => {
     const was = previousPaths.get(medicine.id);
-    await syncPhoto(medicine, 'pill', medicine.photoPath, was?.photoPath);
-    await syncPhoto(medicine, 'packet', medicine.packetPhotoPath, was?.packetPhotoPath);
-  }
+    return [
+      syncPhoto(medicine, 'pill', medicine.photoPath, was?.photoPath),
+      syncPhoto(medicine, 'packet', medicine.packetPhotoPath, was?.packetPhotoPath),
+    ];
+  }));
 
   return changed;
 }
@@ -126,22 +133,78 @@ async function syncPhoto(medicine, kind, path, previousPath) {
   await cachePhoto(medicine.id, kind, path);
 }
 
-/** Dose history and calendar freezes: fetched in full once on startup, then
- * kept current by the Realtime subscription below. */
-async function refetchHistory(householdId) {
+/* How much history the elder's device pulls without being asked.
+ *
+ * This used to be "all of it": every dose row and every frozen day the
+ * household had ever recorded, refetched in full on boot, on every reconnect
+ * and on every return to visibility. At roughly fifteen rows a day that is a
+ * query with no ceiling, and the one part of this app that gets slower every
+ * week it is used -- while `dose_log_day_idx (household_id, local_date)` sat
+ * in the schema unused, because an unfiltered select has no date to index on.
+ *
+ * Seventy-five days covers Today and a couple of months of calendar paging.
+ * Anything older is fetched by ensureRange when the person actually pages back
+ * to it. Same number the supporter has always used; see INITIAL_DAYS in
+ * js/supporter-sync.js. */
+const HISTORY_DAYS = 75;
+
+/** Dose-log ranges already pulled this session, as [from, to] pairs. */
+const fetchedHistory = [];
+
+function coveredHistory(from, to) {
+  return fetchedHistory.some(([f, t]) => f <= from && t >= to);
+}
+
+/* Fetch a window and merge it in.
+ *
+ * Merge, never replace: a narrow range must not evict history a wider fetch
+ * already put there. Nothing is deleted here at all, which is not a gap -- on
+ * this device a dose that stops existing arrives as a Realtime DELETE and is
+ * removed by handleDoseChange. That was already true when this fetched
+ * everything; bounding the window does not change who owns removals. */
+async function pullHistoryRange(householdId, from, to) {
   const client = supabase();
   const [doseRes, snapRes] = await Promise.all([
-    client.from('dose_log').select('*').eq('household_id', householdId),
-    client.from('day_snapshots').select('*').eq('household_id', householdId),
+    client.from('dose_log').select('*').eq('household_id', householdId)
+      .gte('local_date', from).lte('local_date', to),
+    client.from('day_snapshots').select('*').eq('household_id', householdId)
+      .gte('local_date', from).lte('local_date', to),
   ]);
   const rows = (doseRes.data || []).map(mapDose);
-  const snapshots = (snapRes.data || []).map(mapSnapshot);
+  await store.putDoseLogRows(rows);
+  await store.putSnapshots((snapRes.data || []).map(mapSnapshot));
+  return rows;
+}
 
+/**
+ * A month the calendar has paged back to, beyond the window boot pulls.
+ *
+ * The supporter's calendar has always done this; the elder's never needed to,
+ * because its cache held every row there was. Now that it does not, paging to
+ * an old month without this would render hollow rings -- which do not read as
+ * "not loaded", they read as "they took nothing all month".
+ */
+export async function ensureHistoryRange(householdId, from, to) {
+  if (!householdId || coveredHistory(from, to)) return;
+  await pullHistoryRange(householdId, from, to);
+  fetchedHistory.push([from, to]);
+}
+
+/** Recent dose history and calendar freezes: pulled on startup, then kept
+ * current by the Realtime subscription below. */
+async function refetchHistory(householdId) {
+  const to = todayStr();
+  const from = addDays(to, -HISTORY_DAYS);
+
+  /* Compared over the same window that was fetched. Against the whole local
+   * cache it would count every row older than the window as "missing from the
+   * server" and report a change on every single backfill. */
   const sig = xs => xs.map(r => `${r.id}:${r.status}:${r.loggedBy}`).sort().join('|');
-  const before = sig(await store.getDoseLog());
+  const inWindow = r => r.date >= from && r.date <= to;
+  const before = sig((await store.getDoseLog()).filter(inWindow));
 
-  await Promise.all(rows.map(store.putDoseLogRow));
-  await store.putSnapshots(snapshots);
+  const rows = await pullHistoryRange(householdId, from, to);
+  if (!coveredHistory(from, to)) fetchedHistory.push([from, to]);
 
   /* Only the dose rows are compared. Snapshots are a record of frozen past
    * days and cannot change what today's screen shows, so a nightly freeze

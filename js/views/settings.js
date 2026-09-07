@@ -8,9 +8,18 @@
  */
 
 import * as store from '../store.js';
-import * as auth from '../auth.js';
 import * as supporter from '../supporter.js';
-import * as pushLib from '../push.js';
+
+/* Loaded on use rather than at the top, and only ever down an elder branch.
+ *
+ * Both of these reach js/supabase.js and therefore the full Supabase client --
+ * auth, realtime, storage -- which a supporter device can use none of. Settings
+ * is registered as a route at boot like every other view, so a static import
+ * here meant every supporter downloaded the whole auth stack to render a screen
+ * whose account section they never see. Same reasoning as the js/sync.js import
+ * further down, which has worked this way for longer. */
+const authLib = () => import('../auth.js');
+const pushLib = () => import('../push.js');
 import { S, APP_VERSION } from '../strings.js';
 import { el, clear, section, toast, confirmDialog, field, applyTheme, loadingState, emptyState } from '../ui.js';
 import { timeToMinutes } from '../date.js';
@@ -59,7 +68,7 @@ async function rotateCode(button) {
   if (!ok) return;
   busy(button);
   try {
-    const code = await auth.rotateShareCode();
+    const code = await (await authLib()).rotateShareCode();
     await store.saveSettings({ shareCode: code });
     toast(S.settingsRotateCodeDone);
     refresh();
@@ -74,7 +83,7 @@ async function signOut() {
     title: S.settingsSignOut, body: S.settingsSignOutConfirm, confirmLabel: S.settingsSignOut, danger: true,
   });
   if (!ok) return;
-  await auth.signOut();
+  await (await authLib()).signOut();
   /* Wipe first, then forget who we were. An interrupted sign-out then leaves a
    * device with no role and no data, rather than a new role and the previous
    * household's history still in the calendar. */
@@ -101,8 +110,9 @@ async function disconnect() {
 async function toggleNotifications(householdId, button) {
   busy(button);
   try {
-    if (await pushLib.isSubscribed() === true) await pushLib.unsubscribe();
-    else await pushLib.subscribe(householdId);
+    const push = await pushLib();
+    if (await push.isSubscribed() === true) await push.unsubscribe();
+    else await push.subscribe(householdId);
   } catch (err) {
     toast(err.message || S.errGeneric);
   }
@@ -233,9 +243,10 @@ export async function settingsView({ app, isCurrent = () => true }) {
     const pending = loadingState();
     app.appendChild(pending);
 
+    const [auth, push] = await Promise.all([authLib(), pushLib()]);
     const [session, notifState] = await Promise.all([
       auth.getSession().catch(() => null),
-      pushLib.isSubscribed().catch(() => null),
+      push.isSubscribed().catch(() => null),
     ]);
     if (!isCurrent()) return;
     pending.remove();

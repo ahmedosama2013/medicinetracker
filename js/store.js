@@ -260,6 +260,12 @@ export async function replaceSchedulesCache(schedules) {
 }
 
 export const putDoseLogRow = row => db.put(STORES.doseLog, row);
+
+/* The same write for a whole batch, in ONE transaction. A sync pulls dose rows
+ * by the range -- seventy-five days of them on a supporter's first open -- and
+ * putDoseLogRow opens a fresh transaction per row, so that arrived as hundreds
+ * of them on the boot path. Same rows, same result, one commit. */
+export const putDoseLogRows = rows => db.putMany(STORES.doseLog, rows);
 export const deleteDoseLogRow = id => db.del(STORES.doseLog, id);
 
 // ---- organiser (local only, never synced) ----------------------------------

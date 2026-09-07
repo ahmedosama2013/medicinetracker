@@ -18,14 +18,27 @@
  */
 
 import * as store from './store.js';
-import * as sync from './sync.js';
 import * as supporter from './supporter.js';
 
 const isSupporter = settings => settings.role === 'supporter';
 
+/* Imported on use, not at the top, and only down the elder's branch.
+ *
+ * js/sync.js pulls in the full Supabase client -- auth, realtime and storage
+ * included -- and a supporter device can use none of it. A static import here
+ * put all of that on a supporter's critical path, because this module is
+ * reached from Today, which every device opens on. The elder loads it the
+ * first time a dose is written, by which point the same module has already
+ * been fetched by boot.
+ *
+ * See the identical note in js/views/settings.js, which has done this since
+ * before the rest of the app caught up. */
+const elderSync = () => import('./sync.js');
+
 /** One medicine, one state. `status` of null clears it back to unmarked. */
 export async function setDose(settings, date, slotId, medicineId, status) {
   if (!isSupporter(settings)) {
+    const sync = await elderSync();
     return sync.setDose(settings.householdId, date, slotId, medicineId, status);
   }
   await supporter.logDose(settings.supporterCode, date, slotId, medicineId, status);
@@ -39,6 +52,7 @@ export async function setDose(settings, date, slotId, medicineId, status) {
 /** Marks every medicine in the slot that is not already marked. */
 export async function logSlot(settings, date, slotId, medicineIds) {
   if (!isSupporter(settings)) {
+    const sync = await elderSync();
     return sync.logSlot(settings.householdId, date, slotId, medicineIds);
   }
 
@@ -59,6 +73,7 @@ export async function logSlot(settings, date, slotId, medicineIds) {
 /** Back to untouched, skips included -- same contract as the elder's Undo. */
 export async function undoSlot(settings, date, slotId) {
   if (!isSupporter(settings)) {
+    const sync = await elderSync();
     return sync.undoSlot(settings.householdId, date, slotId);
   }
   const n = await supporter.unlogSlot(settings.supporterCode, date, slotId);

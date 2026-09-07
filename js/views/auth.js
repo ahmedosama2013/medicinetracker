@@ -2,7 +2,6 @@
  * after the redirect back is handled in js/main.js's boot sequence, since
  * the OAuth round trip reloads the app fresh. */
 
-import * as auth from '../auth.js';
 import { S } from '../strings.js';
 import { el, clear, toast } from '../ui.js';
 
@@ -15,6 +14,11 @@ export async function signInView({ app }) {
       type: 'button',
       onclick: async () => {
         try {
+          /* Imported on the tap, not at the top. js/auth.js brings in the full
+           * Supabase client, and main.js registers every view up front -- so a
+           * static import here meant a supporter device, which can never sign
+           * in, downloaded the auth stack to render a screen it never sees. */
+          const auth = await import('../auth.js');
           await auth.signInWithGoogle();
         } catch {
           toast(S.errGeneric);
