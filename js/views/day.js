@@ -347,7 +347,7 @@ export async function renderDay({
     const allTaken = resolved && states.every(s => s === 'taken');
     const showRows = expanded === null ? !resolved : expanded;
 
-    const slotNode = el(`div.slot${allTaken ? '.slot-done' : resolved ? '.slot-marked' : ''}`);
+    const slotNode = el(`div.slot${allTaken ? '.slot-done' : resolved ? '.slot-marked' : ''}${group.slotId === nowSlotId && !resolved ? '.slot-current' : ''}`);
     nodeBySlot.set(group.slotId, slotNode);
 
     const band = timeOfDay(group.time);

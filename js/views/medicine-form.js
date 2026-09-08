@@ -15,7 +15,7 @@ import * as supporter from '../supporter.js';
 import * as supporterSync from '../supporter-sync.js';
 import * as photosLib from '../photos.js';
 import { S } from '../strings.js';
-import { el, clear, loadingState, field, section, toast, busyOverlay } from '../ui.js';
+import { el, clear, loadingState, field, section, toast, busyOverlay, icon } from '../ui.js';
 import { todayStr, formatTime } from '../date.js';
 import { go } from '../router.js';
 import { archiveMedicine } from './medicines.js';
@@ -263,13 +263,13 @@ export async function medicineFormView({ app, query, isCurrent = () => true }) {
       hint: kind === 'packet' ? S.packetPhotoOptional : S.photoOptional,
       control: el('div.photo-picker', [
         preview,
+        kind === 'pill' ? el('p.photo-guidance', { text: S.photoGuidance }) : null,
         input,
         el('div.btn-row', [
           el('button.btn', {
             type: 'button',
-            text: has ? S.retakePhoto : S.takePhoto,
             onclick: () => input.click(),
-          }),
+          }, [icon('camera'), el('span', { text: has ? S.retakePhoto : S.takePhoto })]),
           has ? el('button.btn.btn-quiet', {
             type: 'button',
             text: S.removePhoto,

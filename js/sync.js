@@ -460,6 +460,19 @@ const doseKey = (date, slotId, medicineId) => `dose:${date}:${slotId}:${medicine
 let flushing = null;
 let flushDirty = false;
 
+/* Dose taps are local-first. This tiny event lets Today say so honestly without
+ * redrawing the day or making the person wait for a network round trip. */
+async function emitOutboxStatus() {
+  const pending = (await store.getOutbox()).length;
+  window.dispatchEvent(new CustomEvent('medtrack-outbox-change', {
+    detail: { pending, online: navigator.onLine },
+  }));
+}
+
+export async function outboxStatus() {
+  return { pending: (await store.getOutbox()).length, online: navigator.onLine };
+}
+
 function flushOutbox() {
   if (flushing) {
     // Something was queued after this flush read the outbox. Go round again
@@ -505,6 +518,7 @@ async function drainOutbox() {
           .eq('slot_id', item.payload.slot_id);
       }
       await store.deleteOutboxItem(item.id);
+      await emitOutboxStatus();
     } catch {
       // Stays queued. A real rejection (e.g. writing into a locked day) looks
       // the same as "offline" here -- both just retry on the next flush.
@@ -512,7 +526,8 @@ async function drainOutbox() {
   }
 }
 
-window.addEventListener('online', flushOutbox);
+window.addEventListener('online', () => { emitOutboxStatus(); flushOutbox(); });
+window.addEventListener('offline', emitOutboxStatus);
 
 /** Writes locally first (identical feel to today), then queues the push to
  * Supabase so a lost connection never drops a logged dose. */
@@ -529,6 +544,7 @@ export async function logSlot(householdId, date, slotId, medicineIds) {
       },
     });
   }
+  await emitOutboxStatus();
   flushOutbox();
   return rows;
 }
@@ -545,6 +561,7 @@ export async function setDose(householdId, date, slotId, medicineId, status) {
         slot_id: slotId, medicine_id: medicineId,
       },
     });
+    await emitOutboxStatus();
     flushOutbox();
     return null;
   }
@@ -558,6 +575,7 @@ export async function setDose(householdId, date, slotId, medicineId, status) {
       slot_id: slotId, local_date: date, taken_at: row.takenAt, status,
     },
   });
+  await emitOutboxStatus();
   flushOutbox();
   return row;
 }
@@ -580,6 +598,7 @@ export async function undoSlot(householdId, date, slotId) {
     id: `undo:${date}:${slotId}`, op: 'undo',
     payload: { household_id: householdId, local_date: date, slot_id: slotId },
   });
+  await emitOutboxStatus();
   flushOutbox();
   return removed.length;
 }

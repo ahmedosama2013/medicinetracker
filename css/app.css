@@ -570,6 +570,8 @@ body.mode-simple .nav-inner .navlink {
   --icon-moon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M20.5 14.4A8.6 8.6 0 0 1 9.6 3.5a8.7 8.7 0 1 0 10.9 10.9z'/%3E%3C/svg%3E");
   --icon-plus: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M11 4h2v7h7v2h-7v7h-2v-7H4v-2h7z'/%3E%3C/svg%3E");
   --icon-drop: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2.5c4 4.8 6.5 8.3 6.5 11.4A6.5 6.5 0 0 1 5.5 13.9c0-3.1 2.5-6.6 6.5-11.4z'/%3E%3C/svg%3E");
+  --icon-bell: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M5 17h14l-2-3v-4a5 5 0 0 0-10 0v4zm5 3h4' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --icon-camera: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M4 7h4l1.5-2h5L16 7h4v12H4z' fill='none' stroke='black' stroke-width='2' stroke-linejoin='round'/%3E%3Ccircle cx='12' cy='13' r='3.5' fill='none' stroke='black' stroke-width='2'/%3E%3C/svg%3E");
 }
 
 .icon {
@@ -596,6 +598,8 @@ body.mode-simple .nav-inner .navlink {
 .icon[data-icon="people"] { -webkit-mask-image: var(--icon-people); mask-image: var(--icon-people); }
 .icon[data-icon="box"] { -webkit-mask-image: var(--icon-box); mask-image: var(--icon-box); }
 .icon[data-icon="drop"] { -webkit-mask-image: var(--icon-drop); mask-image: var(--icon-drop); }
+.icon[data-icon="bell"] { -webkit-mask-image: var(--icon-bell); mask-image: var(--icon-bell); }
+.icon[data-icon="camera"] { -webkit-mask-image: var(--icon-camera); mask-image: var(--icon-camera); }
 .icon[data-icon="plus"] { -webkit-mask-image: var(--icon-plus); mask-image: var(--icon-plus); }
 .icon[data-icon="sun"] { -webkit-mask-image: var(--icon-sun); mask-image: var(--icon-sun); }
 .icon[data-icon="sunset"] { -webkit-mask-image: var(--icon-sunset); mask-image: var(--icon-sunset); }
@@ -772,7 +776,9 @@ body.mode-simple .dose .icon { width: 1.4375rem; height: 1.4375rem; }
    subtitle style -- a modifier rather than changing .page-sub itself, which
    also carries the supporter's plain "Times of day" intro on the slots
    screen. */
-.tap-hint { font-weight: 700; color: var(--ink-2); }
+.tap-hint { font-weight: 700; color: var(--ink-2); margin-bottom: var(--space-1); }
+.tap-dose-hint { margin-top: 0; }
+.today-complete { margin: var(--space-3) 0; color: var(--taken-ink); font-weight: 600; text-align: center; }
 
 .day-head {
   display: flex;
@@ -997,6 +1003,7 @@ input:focus, select:focus, textarea:focus {
 .chip:active { transform: scale(0.95); }
 
 .photo-picker { display: flex; flex-direction: column; gap: var(--space-3); align-items: flex-start; }
+.photo-guidance { margin: calc(var(--space-2) * -1) 0 0; color: var(--ink-2); font-size: var(--text-sm); }
 
 .photo-preview {
   width: 100%;
@@ -1618,7 +1625,7 @@ input:focus, select:focus, textarea:focus {
   justify-content: center;
 }
 .role-icon .icon { width: 1.625rem; height: 1.625rem; }
-.role-icon-accent { background: var(--attn-tint); color: var(--attn); }
+.role-icon-supporter { background: var(--accent-tint); color: var(--accent-ink); }
 
 .role-text { flex: 1; }
 .role-name { display: block; font-weight: 600; font-size: var(--text-md); }
@@ -2040,8 +2047,8 @@ body.mode-simple .dialog-actions { flex-direction: column-reverse; }
 /* The supporter's nudge. Quiet, not primary: the primary action on this screen
    is reading what happened, and a loud button invites tapping something whose
    whole design is about not being tapped repeatedly. */
-.nudge-wrap { margin: 0 0 var(--space-4); }
-.nudge { background: var(--surface); border-color: var(--line-strong); }
+.nudge-wrap { margin: 0 0 var(--space-4); text-align: center; }
+.nudge { background: var(--surface); border-color: var(--line-strong); display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2); }
 .nudge-hint {
   text-align: center;
   color: var(--ink-3);
@@ -2506,3 +2513,22 @@ body.mode-simple .dialog-actions { flex-direction: column-reverse; }
   from { opacity: 0; transform: translateY(5px); }
   to { opacity: 1; transform: translateY(0); }
 }
+
+
+/* The latest unresolved slot is a quiet orientation cue. It never moves the
+   schedule or suppresses anything -- it simply helps the current moment stand
+   out among a full day of equally available slots. */
+.slot-current {
+  border-color: var(--primary-line);
+  box-shadow: 0 0 0 3px var(--primary-tint);
+}
+.slot-current .slot-head { background: var(--primary-tint); }
+
+.sync-status {
+  margin: calc(var(--space-2) * -1) 0 var(--space-3);
+  color: var(--ink-2);
+  font-size: var(--text-sm);
+  text-align: center;
+}
+
+.slots-save-hint { text-align: center; margin: 0 0 var(--space-4); }

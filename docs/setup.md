@@ -51,6 +51,8 @@ npx supabase db push
 npx supabase functions deploy send-reminders
 npx supabase functions deploy supporter-photo --no-verify-jwt
 npx supabase functions deploy nudge --no-verify-jwt
+# Must include --no-verify-jwt: this browser-called function performs its own auth after CORS preflight.
+npx supabase functions deploy test-notification --no-verify-jwt
 ```
 
 ### Which Supabase project is this checkout pointing at?
@@ -260,11 +262,14 @@ npx supabase secrets set VAPID_PUBLIC_KEY=... VAPID_PRIVATE_KEY=... VAPID_CONTAC
 npx supabase functions deploy send-reminders
 npx supabase functions deploy supporter-photo --no-verify-jwt
 npx supabase functions deploy nudge --no-verify-jwt
+# Must include --no-verify-jwt: this browser-called function performs its own auth after CORS preflight.
+npx supabase functions deploy test-notification --no-verify-jwt
 ```
 
 - `send-reminders` sends the actual push notifications, cron-triggered (next step). It is called server-side by cron with the service-role key, so it keeps JWT verification.
 - `supporter-photo` handles photo upload/delete/viewing for a supporter's device, which has no login session to use Supabase Storage directly.
 - `nudge` sends the supporter's "have you taken them?" push.
+- `test-notification` lets a signed-in elder send one harmless test push to their own subscribed device.
 
 **`--no-verify-jwt` on the last two is load-bearing, not optional.** Both are
 called from a supporter's browser, which has no Supabase session — the share

@@ -11,7 +11,7 @@ import * as schedule from '../schedule.js';
 import * as supporterSync from '../supporter-sync.js';
 import { S } from '../strings.js';
 import * as supporter from '../supporter.js';
-import { el, append, clear, emptyState, toast, shareCodeRow } from '../ui.js';
+import { el, append, clear, emptyState, toast, shareCodeRow, icon } from '../ui.js';
 import { todayStr, formatLong, getTimezone } from '../date.js';
 import { refresh } from '../router.js';
 import { renderDay } from './day.js';
@@ -26,24 +26,36 @@ import { renderDay } from './day.js';
  * standing in your kitchen is orientation; knowing "68% this month" is a
  * report card, and this app never issues one.
  */
-async function progressRail(date) {
+async function dayState(date) {
   const [groups, log] = await Promise.all([
     schedule.expectedFor(date),
     store.getDoseLogForDate(date),
   ]);
+  const marked = new Set(log.map(r => `${r.slotId}|${r.medicineId}`));
+  const states = groups.map(g => g.medicines.every(m => marked.has(`${g.slotId}|${m.medicineId}`)));
+  return { groups, states };
+}
+
+async function progressRail(date) {
+  const { groups, states } = await dayState(date);
   if (groups.length < 2) return null;      // one slot: a rail says nothing
 
   // A segment fills when the slot is *resolved*, not when it is all-taken: a
   // deliberately skipped medicine is dealt with, and leaving the segment
   // hollow would nag about a decision the person already made.
-  const marked = new Set(log.map(r => `${r.slotId}|${r.medicineId}`));
-  const states = groups.map(g => g.medicines.every(m => marked.has(`${g.slotId}|${m.medicineId}`)));
   const done = states.filter(Boolean).length;
 
   return el('div', [
     el('div.rail', states.map(on => el(`span.rail-seg${on ? '.is-on' : ''}`))),
     el('p.rail-count', { text: S.doneOfSlots(done, states.length) }),
   ]);
+}
+
+async function completionMessage(date) {
+  const { groups, states } = await dayState(date);
+  return groups.length && states.every(Boolean)
+    ? el('p.today-complete', { role: 'status', text: S.todayAllMarked })
+    : null;
 }
 
 /* The supporter's phone may be on a different date to the household.
@@ -81,9 +93,8 @@ function freshnessLine() {
  * server (a client-side one is a suggestion), but a button that stays tappable
  * invites the tapping the server is there to absorb. */
 function nudgeButton(settings) {
-  const button = el('button.btn.btn-block.nudge', {
+  const button = el('button.btn.nudge', {
     type: 'button',
-    text: S.nudge,
     onclick: async () => {
       button.disabled = true;
       try {
@@ -110,7 +121,7 @@ function nudgeButton(settings) {
        * next few seconds can help, and the server's limit should be a
        * backstop rather than something a person meets by accident. */
     },
-  });
+  }, [icon('bell'), el('span', { text: S.nudge })]);
 
   return el('div.nudge-wrap', [button, el('p.nudge-hint', { text: S.nudgeHint })]);
 }
@@ -175,11 +186,15 @@ export async function todayView({ app, isCurrent = () => true }) {
     }
 
     let rail;
+    let completion;
+    let completionHost;
+    let statusHost;
 
     // In parallel: both read the same stores, and the rail used to wait behind
     // the day for no reason.
-    const [railNode, rendered] = await Promise.all([
+    const [railNode, completionNode, rendered] = await Promise.all([
       progressRail(date),
+      completionMessage(date),
       // onChange swaps the rail and nothing else. renderDay already replaced
       // the tapped slot in place, and redrawing the day here would re-read the
       // database, reload every photo and jump the scroll position under the
@@ -197,6 +212,9 @@ export async function todayView({ app, isCurrent = () => true }) {
             rail.replaceWith(next);
             rail = next;
           }
+          const nextCompletion = await completionMessage(date);
+          clear(completionHost);
+          if (nextCompletion) completionHost.appendChild(nextCompletion);
         },
       }),
     ]);
@@ -209,12 +227,52 @@ export async function todayView({ app, isCurrent = () => true }) {
     }
 
     rail = railNode;
+    completion = completionNode;
 
     cleanup();
     clear(app);
     app.appendChild(head);
     if (rail) app.appendChild(rail);
+    completionHost = el('div.today-complete-host');
+    if (completion) completionHost.appendChild(completion);
+    app.appendChild(completionHost);
     app.appendChild(el('p.page-sub.tap-hint', { text: S.tapForPhoto }));
+    app.appendChild(el('p.page-sub.tap-dose-hint', { text: S.tapDoseHint }));
+
+    if (settings.role === 'simple') {
+      statusHost = el('div.sync-status-host');
+      const sync = await import('../sync.js');
+      let pendingTimer = null;
+      const showPending = () => {
+        pendingTimer = null;
+        if (!statusHost.isConnected) return;
+        clear(statusHost);
+        statusHost.appendChild(el('p.sync-status', { role: 'status', text: S.syncPending }));
+      };
+      const updateSyncStatus = ({ detail } = {}) => {
+        const pending = detail?.pending;
+        if (pending == null) return;
+        clearTimeout(pendingTimer);
+        pendingTimer = null;
+        clear(statusHost);
+        if (!pending) return;
+        // A successful online flush is usually almost immediate. Do not flash a
+        // line in and out for that normal case; show it at once only when the
+        // browser knows it is offline, otherwise after five real seconds.
+        if (detail.online === false) showPending();
+        else pendingTimer = window.setTimeout(showPending, 5000);
+      };
+      const initial = await sync.outboxStatus();
+      updateSyncStatus({ detail: initial });
+      window.addEventListener('medtrack-outbox-change', updateSyncStatus);
+      const priorCleanup = cleanup;
+      cleanup = () => {
+        clearTimeout(pendingTimer);
+        window.removeEventListener('medtrack-outbox-change', updateSyncStatus);
+        priorCleanup();
+      };
+      app.appendChild(statusHost);
+    }
 
     if (settings.role === 'supporter') {
       append(app, otherDayLine(date));
@@ -222,7 +280,8 @@ export async function todayView({ app, isCurrent = () => true }) {
       app.appendChild(nudgeButton(settings));
     }
 
-    cleanup = rendered.cleanup;
+    const statusCleanup = cleanup;
+    cleanup = () => { statusCleanup(); rendered.cleanup(); };
     app.appendChild(rendered.node);
   }
 

@@ -79,6 +79,11 @@ export const PUSH_COPY = {
   nudgeTitle: 'Medicine Tracker',
   nudge: '👋 Someone is reminding you to take your medicines',
 
+  // A deliberate one-off action from the elder's own Settings screen. It
+  // confirms delivery without mentioning medicines on the lock screen.
+  testTitle: 'Medicine Tracker',
+  test: 'This is a test reminder. Check that it appeared on this phone.',
+
   /* Stage 3: a supporter's own escalation, some time after the SLOT's own
    * time (delay is per-subscription -- see 0020, which corrected this from
    * an earlier version anchored on the elder's own stage-2 delay instead).
@@ -155,6 +160,11 @@ export function nightlyNotification(localDate: string, householdId: string): Not
 /** The supporter's nudge. */
 export function nudgeNotification(): Notification {
   return { title: PUSH_COPY.nudgeTitle, body: PUSH_COPY.nudge };
+}
+
+/** A device-specific test, requested by its signed-in owner. */
+export function testNotification(): Notification {
+  return { title: PUSH_COPY.testTitle, body: PUSH_COPY.test };
 }
 
 /**

@@ -130,6 +130,17 @@ async function toggleNotifications(householdId, button) {
  * still does the right thing for all four of isSubscribed's return values:
  * null and false both fall through to subscribe(), same as the elder path's
  * "unknown means try turning it on" rule. */
+async function sendTestNotification(button) {
+  busy(button, S.notificationsTesting);
+  try {
+    await (await pushLib()).testNotification();
+    toast(S.notificationsTestSent);
+  } catch (err) {
+    toast(err.message || S.errGeneric);
+  }
+  refresh();
+}
+
 async function toggleSupporterNotifications(code, button) {
   busy(button);
   try {
@@ -343,6 +354,12 @@ export async function settingsView({ app, isCurrent = () => true }) {
         primary: !notifOn,
         onClick: button => toggleNotifications(settings.householdId, button),
       }),
+      notifOn ? actionRow({
+        label: S.notificationsTestLabel,
+        hint: S.notificationsTestHint,
+        buttonLabel: S.notificationsTestButton,
+        onClick: sendTestNotification,
+      }) : null,
     ]));
   } else {
     /* Same reasoning as the elder branch above: isSubscribed waits on the
@@ -418,10 +435,6 @@ export async function slotsView({ app, isCurrent = () => true }) {
   const settings = await store.getSettings();
   const code = settings.supporterCode;
 
-  /* Something on screen before the network is touched. Every other supporter
-   * screen got this in Phase 2; this one was missed, so the previous screen
-   * simply stayed put for the whole round trip -- and a failure threw out of
-   * the view with nothing to explain it. */
   clear(app);
   app.appendChild(el('h1.page-title', { text: S.slotsTitle }));
   const pending = loadingState();
@@ -440,30 +453,41 @@ export async function slotsView({ app, isCurrent = () => true }) {
   }
   if (!isCurrent()) return;
 
-  const slots = [...routine.slots].sort((a, b) => timeToMinutes(a.time) - timeToMinutes(b.time));
+  // This is a draft. Changing inputs never writes or reorders the page beneath
+  // the finger; the one Save action below makes the consequence explicit.
+  const slots = [...routine.slots]
+    .sort((a, b) => timeToMinutes(a.time) - timeToMinutes(b.time))
+    .map(slot => ({ ...slot, draftKey: slot.id }));
   const schedules = routine.schedules;
   const errors = {};
+  let saving = false;
 
-  /* Archived medicines keep their schedules -- archiving hides a medicine, it
-   * does not rewrite its routine -- so counting active schedules alone told
-   * the person that removing a slot would affect medicines that stopped
-   * appearing months ago. */
   const liveMedicines = new Set(routine.medicines.filter(m => !m.archived).map(m => m.id));
   const usageCount = slotId => schedules
     .filter(s => s.slotId === slotId && s.active && liveMedicines.has(s.medicineId)).length;
 
-  /* Saving happens on blur and on picking a time -- no Save button -- so it
-   * has to say something, or changing a slot time is indistinguishable from
-   * changing nothing. Returns false rather than throwing: the callers are
-   * event handlers, and a rejection there goes nowhere. */
-  async function persist() {
+  async function saveSlots(button) {
+    if (saving) return;
+    for (const key of Object.keys(errors)) delete errors[key];
+    for (const slot of slots) {
+      if (!slot.label.trim()) errors[`label-${slot.draftKey}`] = S.errSlotLabel;
+    }
+    if (Object.keys(errors).length) {
+      draw();
+      app.querySelector('.input-invalid')?.focus();
+      return;
+    }
+
+    saving = true;
+    busy(button, S.saving);
     try {
-      await supporter.saveSlots(code, slots);
+      await supporter.saveSlots(code, slots.map(({ draftKey, ...slot }) => slot));
       toast(S.saved);
-      return true;
+      refresh();
     } catch {
+      saving = false;
       toast(S.errGeneric);
-      return false;
+      draw();
     }
   }
 
@@ -476,92 +500,61 @@ export async function slotsView({ app, isCurrent = () => true }) {
       danger: true,
     });
     if (!ok) return;
-
-    // Schedules using the slot are deactivated server-side, never deleted:
-    // dose_log rows point at them, and history must survive a routine change.
     slots.splice(slots.indexOf(slot), 1);
-    if (await persist()) refresh();
-    else draw();          // put the removed slot back on screen
+    draw();
   }
 
   function draw() {
     clear(app);
     app.appendChild(el('h1.page-title', { text: S.slotsTitle }));
     app.appendChild(el('p.page-sub', { text: S.slotsIntro }));
+    app.appendChild(el('p.setting-hint.slots-save-hint', { text: S.slotsSaveHint }));
 
     for (const slot of slots) {
       const used = usageCount(slot.id);
       app.appendChild(section(null, [
         el('div.field-inline', [
           field({
-            id: `slot-label-${slot.id}`,
+            id: `slot-label-${slot.draftKey}`,
             label: S.slotLabel,
-            error: errors[`label-${slot.id}`],
+            error: errors[`label-${slot.draftKey}`],
             control: el('input', {
-              type: 'text',
-              id: `slot-label-${slot.id}`,
-              value: slot.label,
-              class: errors[`label-${slot.id}`] ? 'input-invalid' : '',
-              oninput: e => { slot.label = e.target.value; },
-              onchange: async e => {
-                if (!e.target.value.trim()) {
-                  errors[`label-${slot.id}`] = S.errSlotLabel;
-                  draw();
-                  return;
-                }
-                delete errors[`label-${slot.id}`];
-                await persist();
-              },
+              type: 'text', id: `slot-label-${slot.draftKey}`, value: slot.label,
+              class: errors[`label-${slot.draftKey}`] ? 'input-invalid' : '',
+              oninput: e => { slot.label = e.target.value; delete errors[`label-${slot.draftKey}`]; },
             }),
           }),
           field({
-            id: `slot-time-${slot.id}`,
+            id: `slot-time-${slot.draftKey}`,
             label: S.slotTime,
             control: el('input', {
-              type: 'time',
-              id: `slot-time-${slot.id}`,
-              value: slot.time,
-              onchange: async e => {
-                if (!e.target.value) return;
-                slot.time = e.target.value;
-                await persist();
-                draw();   // re-sorts: slots are ordered by time
-              },
+              type: 'time', id: `slot-time-${slot.draftKey}`, value: slot.time,
+              oninput: e => { slot.time = e.target.value; },
             }),
           }),
         ]),
         el('p.field-hint', {
-          text: used
-            ? `${used} medicine ${used === 1 ? 'time uses' : 'times use'} this`
-            : 'Not used by any medicine',
+          text: used ? `${used} medicine ${used === 1 ? 'time uses' : 'times use'} this` : 'Not used by any medicine',
         }),
         slots.length > 1 ? el('button.btn-link', {
-          type: 'button',
-          text: S.removeSlot,
-          onclick: () => removeSlot(slot),
+          type: 'button', text: S.removeSlot, onclick: () => removeSlot(slot),
         }) : null,
       ]));
     }
 
     app.appendChild(el('button.btn.btn-block', {
-      type: 'button',
-      text: S.addSlot,
-      onclick: async () => {
-        slots.push({
-          id: null,
-          label: 'New time',
-          time: '12:00',
-          order: slots.length + 1,
-          builtIn: false,
-        });
-        if (await persist()) refresh();   // the server assigns the real id
-        else { slots.pop(); draw(); }
+      type: 'button', text: S.addSlot,
+      onclick: () => {
+        slots.push({ id: null, draftKey: `new-${Date.now()}`, label: 'New time', time: '12:00', order: slots.length + 1, builtIn: false });
+        draw();
       },
     }));
 
-    app.appendChild(el('a.btn.btn-quiet.btn-block', {
-      href: '#/settings', text: S.back, style: 'margin-top: 1rem;',
-    }));
+    const saveButton = el('button.btn.btn-primary.btn-block', {
+      type: 'button', text: S.saveSlots, onclick: () => saveSlots(saveButton),
+    });
+    app.appendChild(saveButton);
+    app.appendChild(el('a.btn.btn-quiet.btn-block', { href: '#/settings', text: S.back, style: 'margin-top: 1rem;' }));
   }
 
   draw();

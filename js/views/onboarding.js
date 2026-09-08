@@ -106,7 +106,7 @@ export async function welcomeView({ app }) {
     ]),
 
     el('a.role-btn', { href: '#/pair' }, [
-      el('span.role-icon.role-icon-accent', icon('pill')),
+      el('span.role-icon.role-icon-supporter', icon('people')),
       el('span.role-text', [
         el('span.role-name', { text: S.roleSupporter }),
         el('span.role-hint', { text: S.roleSupporterHint }),
