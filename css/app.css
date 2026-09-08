@@ -439,9 +439,6 @@ body.mode-none #app {
   padding-bottom: var(--space-4);
 }
 
-body.mode-none #app.is-welcome {
-  transform: translateY(-7vh);
-}
 
 .google-sign-in {
   justify-content: center;
