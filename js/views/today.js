@@ -147,6 +147,7 @@ export async function todayView({ app, isCurrent = () => true }) {
     const head = el('div.day-head', [
       el('h1.page-title', { text: S.navToday }),
       el('span.day-date', { text: formatLong(date, S.monthNames, S.weekdayNames) }),
+      medicines.length ? el('a.today-organiser-link', { href: '#/organiser', 'aria-label': S.organiserOpen }, [icon('box'), el('span', { text: S.organiserOpen })]) : null,
     ]);
 
     if (!medicines.length) {

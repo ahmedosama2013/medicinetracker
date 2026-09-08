@@ -1187,7 +1187,7 @@ input:focus, select:focus, textarea:focus {
 /* Passive. It never reorders, hides or dims anything — it only says where in
    the day you are, which is the one thing the fixed order cannot express. */
 .slot-now {
-  margin-left: auto;
+  margin: .2rem auto 0; justify-self: center; grid-column: 1 / -1;
   background: var(--attn-tint);
   color: var(--attn);
   font-size: var(--text-xs);
@@ -1197,7 +1197,7 @@ input:focus, select:focus, textarea:focus {
 }
 
 .slot-tag {
-  margin-left: auto;
+  margin: .2rem auto 0; justify-self: center; grid-column: 1 / -1;
   display: inline-flex;
   align-items: center;
   gap: var(--space-1);
@@ -2573,3 +2573,8 @@ body.mode-simple .dialog-actions { flex-direction: column-reverse; }
 .checkbox-row input { margin-top: .25rem; width: 1.15rem; height: 1.15rem; flex: 0 0 auto; }
 .checkbox-row span { display: grid; gap: .2rem; }
 .checkbox-row small { color: var(--muted); }
+.today-organiser-link { display: inline-flex; align-items: center; gap: .3rem; margin: .2rem auto 0; justify-self: center; grid-column: 1 / -1; padding: .32rem .55rem; border: 1px solid var(--line); border-radius: 999px; color: var(--primary); font-size: var(--text-xs); font-weight: 650; white-space: nowrap; }
+.day-head { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; }
+.day-head .day-date { grid-column: 1 / -1; }
+/* Keep the final card or control clear of the browser/navigation edge. */
+#app > :last-child { margin-bottom: var(--space-5); }

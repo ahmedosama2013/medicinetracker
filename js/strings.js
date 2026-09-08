@@ -31,7 +31,7 @@ export const S = {
   howRoleTitle: 'Choose how you use it',
   howRoleBody: 'Take the medicines yourself, or connect as the person who helps.',
   howSetupTitle: 'Set up the routine together',
-  howSetupBody: 'Add medicines, dosages and times with your own photos - photos and suggestions already available in the ever growing library.',
+  howSetupBody: 'Add medicines, dosages and times with pill and packet photos - photos and suggestions already available in the ever growing library.',
   howTodayTitle: 'Follow the day together',
   howTodayBody: 'See what is due, recognise each pill, mark it taken or skipped, and receive gentle reminders.',
   howBoxTitle: 'Fill the pill box with confidence',
