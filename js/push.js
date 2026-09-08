@@ -99,3 +99,19 @@ export async function unsubscribe() {
 
   await sub.unsubscribe();
 }
+
+
+/** Sends one authenticated, device-specific test push from Settings. The
+ * server rechecks that this endpoint belongs to the signed-in patient. */
+export async function testNotification() {
+  const reg = await serviceWorkerReady();
+  const sub = await reg.pushManager.getSubscription();
+  if (!sub) throw new Error('Turn reminders on before sending a test.');
+
+  const { data, error } = await supabase().functions.invoke('test-notification', {
+    body: { endpoint: sub.endpoint },
+  });
+  if (error) throw new Error(data?.error || 'The test reminder could not be sent.');
+  if (!data?.sent) throw new Error(data?.error || 'The test reminder could not be sent.');
+  return data;
+}

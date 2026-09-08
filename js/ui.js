@@ -327,11 +327,13 @@ export function alertDialog({ title, body, closeLabel = S.close }) {
 }
 
 /** A panel sliding up from the bottom. Returns { close, setContent }. */
-export function openSheet({ title, content, onClose }) {
+export function openSheet({ title, content, onClose, panelClassName = '', layerClassName = '' }) {
   const body = el('div.sheet-body');
   append(body, content);
 
-  const panel = el('div.sheet', { role: 'dialog', 'aria-modal': 'true', tabindex: '-1' }, [
+  const panel = el('div.sheet' + (panelClassName ? '.' + panelClassName : ''), {
+    role: 'dialog', 'aria-modal': 'true', tabindex: '-1',
+  }, [
     el('div.sheet-head', [
       el('h2.sheet-title', { text: title || '' }),
       el('button.sheet-close', {
@@ -342,7 +344,10 @@ export function openSheet({ title, content, onClose }) {
     body,
   ]);
 
-  const close = mountOverlay(panel, { onDismiss: onClose, className: 'sheet-layer' });
+  const close = mountOverlay(panel, {
+    onDismiss: onClose,
+    className: 'sheet-layer' + (layerClassName ? ' ' + layerClassName : ''),
+  });
   const api = {
     close: () => { close(); onClose?.(); },
     setContent: next => { clear(body); append(body, next); },

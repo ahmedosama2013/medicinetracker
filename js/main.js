@@ -176,6 +176,18 @@ async function boot() {
     return;
   }
 
+  /* The role is local convenience state, not proof of authentication. A long
+   * unused session can disappear while IndexedDB still remembers this device
+   * as a simple user; rendering that as an authenticated household exposed a
+   * stale share code and a misleading empty Today screen. Route to sign-in
+   * before the first render, but keep local data untouched: it may contain an
+   * offline outbox the same person should resume after authenticating. */
+  let needsSignIn = false;
+  if (settings.role === 'simple') {
+    const session = await authLib().then(auth => auth.getSession()).catch(() => null);
+    needsSignIn = !session;
+  }
+
   if (!settings.role) {
     // Returning from the Google OAuth redirect: no local role yet, but a
     // session may now exist. Never blocks boot on a slow/offline network --
@@ -192,7 +204,7 @@ async function boot() {
    * default and stays the default. */
   applyTheme(settings.theme);
 
-  const mode = settings.role;
+  const mode = needsSignIn ? null : settings.role;
 
   /* Started here, awaited much later (below, and in js/doses.js).
    *
@@ -215,7 +227,9 @@ async function boot() {
   if (!mode) {
     // No role yet: onboarding owns the screen and nothing else is reachable.
     drawNav(null, '');
-    if (!PREAUTH_PATHS.includes(router.currentPath())) {
+    if (needsSignIn) {
+      window.location.replace('#/signin');
+    } else if (!PREAUTH_PATHS.includes(router.currentPath())) {
       window.location.replace('#/welcome');
     }
   } else if (PREAUTH_PATHS.includes(router.currentPath())) {

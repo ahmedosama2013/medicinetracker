@@ -66,6 +66,7 @@ Medicine Tracker/
 │   └── functions/
 │       ├── send-reminders/    Edge Function: Web Push delivery, cron-triggered
 │       ├── nudge/             Edge Function: the supporter's "have you taken them?" push
+│       ├── test-notification/ Edge Function: authenticated test push to the elder's own device
 │       └── supporter-photo/   Edge Function: photo upload/delete/signed-URL for code-gated devices
 │
 ├── icons/

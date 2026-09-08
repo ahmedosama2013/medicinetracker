@@ -24,10 +24,24 @@ export const S = {
   roleSupporter: 'I help someone with their medicines',
   roleSupporterHint: 'Add medicines, photos and times. They sync automatically.',
   roleChangeLater: 'You can change this later in Settings.',
+  howItWorks: 'See how it works',
+  howTitle: 'How it works',
+  howStep: (current, total) => 'Step ' + current + ' of ' + total,
+  howRoleTitle: 'Choose how you use it',
+  howRoleBody: 'Take the medicines yourself, or connect as the person who helps.',
+  howSetupTitle: 'Set up the routine together',
+  howSetupBody: 'The helper adds medicines, real pill and packet photos, amounts and times. Everything appears on both phones.',
+  howTodayTitle: 'Follow the day together',
+  howTodayBody: 'See what is due, recognise each pill, mark it taken or skipped, and receive gentle reminders.',
+  howBoxTitle: 'Fill the pill box with confidence',
+  howBoxBody: 'The guided organiser shows you pictures what goes in every compartment and helps you check the finished tray.',
+  howBack: 'Back',
+  howNext: 'Next',
+  howDone: 'Choose your role',
 
   // ---- sign in (simple) --------------------------------------------------
   signInTitle: 'Sign in',
-  signInIntro: 'One tap, no password to remember.',
+  signInIntro: 'One tap, no password to remember. We dont store or collect any of your data.',
   signInGoogle: 'Sign in with Google',
 
   // ---- pairing (supporter) -----------------------------------------------
@@ -121,6 +135,9 @@ export const S = {
   // medicines in a slot, six copies of the same hint is noise. Only rendered
   // once there is at least one medicine -- see js/views/today.js.
   tapForPhoto: 'Tap a medicine to see its photo.',
+  tapDoseHint: 'Tap the circle to mark a dose. Tap again to change it.',
+  todayAllMarked: 'Everything for today is marked.',
+  syncPending: 'Saved on this phone. It will sync when you are back online.',
   closePhoto: 'Close',
   seePhotoFull: 'Tap the photo to see it full screen',
 
@@ -174,9 +191,10 @@ export const S = {
   fieldPhoto: 'Photo of the pill',
   fieldPacketPhoto: 'Photo of the packet',
   takePhoto: 'Add a photo',
+  photoGuidance: 'Use a close, well-lit photo of the actual pill.',
   retakePhoto: 'Change photo',
   removePhoto: 'Remove photo',
-  photoOptional: 'Optional, but it is what makes the pills easy to identify.',
+  photoOptional: 'A clear photo of the actual pill makes it much easier to identify when filling the pill box.',
   packetPhotoOptional: 'Optional. Helps whoever is filling the pill box find the right box.',
   noPacketPhoto: 'No packet photo',
   forms: {
@@ -367,8 +385,13 @@ export const S = {
   settingsDisconnectHint: 'You can reconnect any time with the code.',
   settingsDisconnectConfirm: 'This device will stop being able to update this household’s medicines until reconnected with a code.',
 
-  settingsNotifications: '🔔 Reminders',
+  settingsNotifications: 'Reminders',
   notificationsHint: 'A gentle reminder when it is time for medicines that have not been marked done.',
+  notificationsTestLabel: 'Test a reminder',
+  notificationsTestHint: 'Send a quiet test notification to this phone now.',
+  notificationsTestButton: 'Send test',
+  notificationsTesting: 'Sending',
+  notificationsTestSent: 'Test reminder sent. Check your notifications.',
   notificationsOffLabel: 'Reminders are off',
   notificationsOnLabel: 'Reminders are on',
   notificationsTurnOn: 'Turn on',
@@ -380,7 +403,7 @@ export const S = {
   notificationsUnknownHint: 'This usually means the app has not finished starting up. Turning them on again is safe.',
 
   // ---- supporter notifications -------------------------------------------
-  settingsSupporterNotifications: '🔔 Check-in alerts',
+  settingsSupporterNotifications: 'Check-in alerts',
   supporterNotificationsHint: "We'll nudge you if something's still unmarked a while after it was due.",
   supporterNotificationsOffLabel: 'Check-in alerts are off',
   supporterNotificationsOnLabel: 'Check-in alerts are on',
