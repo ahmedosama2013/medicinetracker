@@ -1,6 +1,6 @@
 {
-  "name": "MedicineTracker",
-  "short_name": "MedicineTracker",
+  "name": "CarePair",
+  "short_name": "CarePair",
   "description": "A simple medicine reminder and pill identification app.",
   "start_url": "./",
   "scope": "./",

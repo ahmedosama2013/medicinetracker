@@ -1,4 +1,4 @@
-# Medicine Tracker
+# CarePair
 
 A medicine reminder and pill identification app for elderly users. Runs in the browser, backed by Supabase (Postgres, Auth, Realtime, Storage). Only the person taking the medicines has an account — a helper never signs up at all, they just enter a code.
 

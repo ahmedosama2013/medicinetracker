@@ -10,6 +10,7 @@ import { el, clear, field, toast } from '../ui.js';
 
 export async function pairView({ app }) {
   clear(app);
+  app.classList.remove('is-welcome');
   supporter.preload();
   let code = '';
   let error = null;

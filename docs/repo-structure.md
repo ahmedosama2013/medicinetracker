@@ -3,7 +3,7 @@
 No dependencies, no build output, nothing generated except the icons — for the frontend. `supabase/` holds the backend: a Postgres migration, two Edge Functions, and the CLI setup notes.
 
 ```
-Medicine Tracker/
+CarePair/
 ├── index.html                 app shell: one <main>, an overlay host, a nav
 ├── manifest.webmanifest       PWA manifest, all paths relative
 ├── sw.js                      service worker, plus Web Push handlers

@@ -1,4 +1,4 @@
-/* Medicine Tracker — visual layer, v3.
+/* CarePair - visual layer, v3.
  *
  * Everything, two densities switched by a body class (`.mode-simple` /
  * `.mode-supporter`), per docs/repo-structure.md. See docs/v3-plan.md for why
@@ -437,6 +437,25 @@ body.mode-none #app {
   max-width: 26rem;
   padding-top: var(--space-4);
   padding-bottom: var(--space-4);
+}
+
+body.mode-none #app.is-welcome {
+  transform: translateY(-7vh);
+}
+
+.google-sign-in {
+  justify-content: center;
+}
+.google-mark {
+  flex: none;
+  font-family: Arial, sans-serif;
+  font-size: 1.35rem;
+  font-weight: 700;
+  line-height: 1;
+  background: conic-gradient(from -45deg, #4285f4 0 25%, #34a853 25% 50%, #fbbc05 50% 70%, #ea4335 70% 100%);
+  color: transparent;
+  -webkit-background-clip: text;
+  background-clip: text;
 }
 
 @media (min-width: 48rem) {
@@ -1584,11 +1603,25 @@ input:focus, select:focus, textarea:focus {
 }
 .welcome-logo .icon { width: 1.875rem; height: 1.875rem; }
 
+.welcome-brand {
+  text-align: center;
+  font-size: var(--text-2xl);
+  font-weight: 600;
+  letter-spacing: 0;
+}
 .welcome-title {
   text-align: center;
   font-size: var(--text-xl);
   font-weight: 600;
   letter-spacing: -0.02em;
+}
+.welcome-tagline {
+  max-width: 24rem;
+  text-align: center;
+  color: var(--ink-2);
+  font-size: var(--text-md);
+  line-height: 1.45;
+  margin: 0.2rem auto var(--space-2);
 }
 .welcome-intro {
   text-align: center;

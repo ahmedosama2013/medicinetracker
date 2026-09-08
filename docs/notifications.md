@@ -150,7 +150,7 @@ devices): a supporter-facing message names the elder in its title, for the
 reasons given above.
 
 Titles carry the moment (`Morning medicines`, `Before the day ends`, `Mom —
-today's medicines`) rather than the constant `Medicine Tracker`, so a lock
+today's medicines`) rather than the constant `CarePair`, so a lock
 screen reads without expanding. The app name is already in the icon and the
 notification's app attribution.
 

@@ -7,10 +7,11 @@ import { el, clear, toast } from '../ui.js';
 
 export async function signInView({ app }) {
   clear(app);
+  app.classList.remove('is-welcome');
   app.appendChild(el('div.welcome', [
     el('h1.welcome-title', { text: S.signInTitle }),
     el('p.welcome-intro', { text: S.signInIntro }),
-    el('button.role-btn', {
+    el('button.role-btn.google-sign-in', {
       type: 'button',
       onclick: async () => {
         try {
@@ -25,6 +26,7 @@ export async function signInView({ app }) {
         }
       },
     }, [
+      el('span.google-mark', { text: 'G', 'aria-hidden': 'true' }),
       el('span.role-name', { text: S.signInGoogle }),
     ]),
     el('a.welcome-foot', { href: '#/welcome', text: S.back }),

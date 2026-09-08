@@ -76,12 +76,12 @@ export const PUSH_COPY = {
    * nothing, and a single string keeps rule 4 trivially satisfied. Kept
    * plain on purpose -- an earlier draft ("someone's thinking of you") read
    * as more intimate than a household utility app should ever sound. */
-  nudgeTitle: 'Medicine Tracker',
+  nudgeTitle: 'CarePair',
   nudge: '👋 Someone is reminding you to take your medicines',
 
   // A deliberate one-off action from the elder's own Settings screen. It
   // confirms delivery without mentioning medicines on the lock screen.
-  testTitle: 'Medicine Tracker',
+  testTitle: 'CarePair',
   test: 'This is a test reminder. Check that it appeared on this phone.',
 
   /* Stage 3: a supporter's own escalation, some time after the SLOT's own

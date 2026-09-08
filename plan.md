@@ -1,4 +1,4 @@
-# Medicine Tracker UI improvement plan
+# CarePair UI improvement plan
 
 ## Purpose
 

@@ -1,4 +1,4 @@
-# Medicine Tracker: Build Plan v3
+# CarePair: Build Plan v3
 
 > **Not [v3-plan.md](v3-plan.md).** Confusing filenames: *this* is the third
 > revision of the original build spec, written before the app existed.
@@ -48,7 +48,7 @@ Everything else from v2 holds: append-only dose log, photo compression, one-form
 | Question | Decision |
 |---|---|
 | Framework | None. Plain HTML, CSS, JS. ES modules, no build step, no CDN, no `node_modules`, no `package.json` |
-| Repo / URL | Repo `Medicine Tracker` to GitHub slug `Medicine-Tracker` to `https://umerbutt.github.io/Medicine-Tracker/` |
+| Repo / URL | Repo `CarePair` to GitHub slug `Medicine-Tracker` to `https://umerbutt.github.io/Medicine-Tracker/` |
 | Base path | Relative paths everywhere (`./sw.js`, `"start_url": "./"`). Nothing to configure |
 | Routing | Hash routing (`#/today`, `#/calendar`, `#/medicines`, `#/settings`) |
 | Responsive | Mobile first, identical behaviour at every width. Desktop is the same layout in a centred max-width column |

@@ -84,10 +84,13 @@ function openHowItWorks() {
 
 export async function welcomeView({ app }) {
   clear(app);
+  app.classList.add('is-welcome');
 
   app.appendChild(el('div.welcome', [
     el('div.welcome-logo', icon('pill')),
-    el('h1.welcome-title', { text: S.welcomeTitle }),
+    el('h1.welcome-brand', { text: S.appName }),
+    el('p.welcome-tagline', { text: S.tagline }),
+    el('h2.welcome-title', { text: S.welcomeTitle }),
     el('p.welcome-intro', { text: S.welcomeIntro }),
 
     el('button.welcome-how', { type: 'button', onclick: openHowItWorks }, [

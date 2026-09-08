@@ -14,7 +14,8 @@
 export const APP_VERSION = '0.0.1';
 
 export const S = {
-  appName: 'Medicine Tracker',
+  appName: 'CarePair',
+  tagline: 'Built for the person taking the medicine, and the one making sure they do.',
 
   // ---- onboarding -------------------------------------------------------
   welcomeTitle: 'Who uses this phone?',
@@ -371,7 +372,7 @@ export const S = {
   settingsShareCodeHint: "Tap to copy, or tap the WhatsApp icon to send it to whoever's helping you.",
   codeCopied: 'Code copied',
   shareCodeWhatsapp: 'Send your code on WhatsApp',
-  shareCodeMessage: code => `Here's my Medicine Tracker code: ${code}. Enter it in the app to help me with my medicines.`,
+  shareCodeMessage: code => `Here's my CarePair code: ${code}. Enter it in the app to help me with my medicines.`,
   settingsRotateCode: 'Get a new code',
   settingsRotateCodeHint: 'Anyone using the old code loses access.',
   settingsRotateCodeConfirm: 'Anyone using your current code will no longer be able to update your medicines. Continue?',

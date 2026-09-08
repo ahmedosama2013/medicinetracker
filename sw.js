@@ -1,4 +1,4 @@
-/* Medicine Tracker service worker.
+/* CarePair service worker.
  *
  * Strategy, per spec v3 section 2.1:
  *
@@ -137,7 +137,7 @@ self.addEventListener('fetch', event => {
 });
 
 self.addEventListener('push', event => {
-  let payload = { title: 'Medicine Tracker', body: 'Time for your medicines' };
+  let payload = { title: 'CarePair', body: 'Time for your medicines' };
   try { payload = { ...payload, ...event.data.json() }; } catch { /* keep default */ }
   event.waitUntil(self.registration.showNotification(payload.title, {
     body: payload.body,
