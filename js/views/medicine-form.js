@@ -46,6 +46,7 @@ const blankSchedule = slots => ({
 
 export async function medicineFormView({ app, query, isCurrent = () => true }) {
   const id = query.get('id');
+  const groupedIds = query.get('ids')?.split(',').filter(Boolean) || (id ? [id] : []);
   const settings = await store.getSettings();
   const code = settings.supporterCode;
 
@@ -82,7 +83,7 @@ export async function medicineFormView({ app, query, isCurrent = () => true }) {
 
   const { slots } = routine;
   const existing = id ? routine.medicines.find(m => m.id === id) : null;
-  const existingSchedules = id ? routine.schedules.filter(s => s.medicineId === id) : [];
+  const existingSchedules = id ? routine.schedules.filter(s => groupedIds.includes(s.medicineId)) : [];
   let selectedReference = existing?.communityReferenceId ? {
     id: existing.communityReferenceId, name: existing.communityReferenceName || existing.name,
     strength: existing.communityReferenceStrength || existing.strength,
@@ -201,22 +202,29 @@ export async function medicineFormView({ app, query, isCurrent = () => true }) {
   function nameField() {
     const input = el('input', {
       type: 'text', id: 'f-name', value: draft.name,
-      placeholder: S.fieldNamePlaceholder, class: errors.name ? 'input-invalid' : '', disabled: !!selectedReference,
+      placeholder: S.fieldNamePlaceholder, class: errors.name ? 'input-invalid' : '', disabled: false,
       autocomplete: 'off',
       oninput: e => {
+        const searchId = ++nameField.searchId;
         draft.name = e.target.value;
+        if (selectedReference && draft.name.trim().toLowerCase() !== (selectedReference.name || '').trim().toLowerCase()) selectedReference = null;
         clear(searchNode);
         clearTimeout(nameField.timer);
-        if (draft.name.trim().length < 3 || selectedReference) return;
+        if (draft.name.trim().length < 3) return;
+        const query = draft.name;
         nameField.timer = setTimeout(async () => {
           try {
-            const result = await supporter.searchCommunityMedicines(code, draft.name);
-            if (!result.references?.length) return;
-            searchNode.appendChild(el('div.community-results', result.references.map(ref =>
+            const result = await supporter.searchCommunityMedicines(code, query);
+            if (searchId !== nameField.searchId || query !== draft.name || !result.references?.length) return;
+            clear(searchNode);
+            const references = [...new Map(result.references.map(ref => [((ref.name || '').trim().toLowerCase() + ' ' + (ref.strength || '').trim().toLowerCase()), ref])).values()];
+            searchNode.appendChild(el('div.community-results', references.map(ref =>
               el('button.btn-link.community-result', {
                 type: 'button',
                 text: ref.name + (ref.strength ? ' - ' + ref.strength : '') + ' - ' + S.communitySearchPhotos((ref.hasPillPhoto ? 1 : 0) + (ref.hasPacketPhoto ? 1 : 0)),
                 onclick: async () => {
+                  clear(searchNode);
+                  searchNode.appendChild(loadingState());
                   selectedReference = ref;
                   draft.name = ref.name;
                   draft.strength = ref.strength || draft.strength;
@@ -235,6 +243,7 @@ export async function medicineFormView({ app, query, isCurrent = () => true }) {
     return field({ id: 'f-name', label: S.fieldName, control: wrap, error: errors.name, hint: selectedReference ? S.communityUsing : null });
   }
   nameField.timer = 0;
+  nameField.searchId = 0;
 
   function textField(key, label, placeholder, { required = false, disabled = false } = {}) {
     const input = el('input', {
@@ -244,7 +253,7 @@ export async function medicineFormView({ app, query, isCurrent = () => true }) {
       placeholder: placeholder || '',
       class: errors[key] ? 'input-invalid' : '', disabled,
       autocomplete: 'off',
-      oninput: e => { draft[key] = e.target.value; },
+      oninput: e => { draft[key] = e.target.value; if (key === 'strength' && selectedReference && draft.strength.trim().toLowerCase() !== (selectedReference.strength || '').trim().toLowerCase()) selectedReference = null; },
     });
     return field({
       id: `f-${key}`, label, control: input, error: errors[key],
@@ -256,7 +265,7 @@ export async function medicineFormView({ app, query, isCurrent = () => true }) {
     const input = el('input', {
       type: 'text', id: `f-${key}`, value: draft[key],
       placeholder: placeholder || '', autocomplete: 'off',
-      oninput: e => { draft[key] = e.target.value; },
+      oninput: e => { draft[key] = e.target.value; if (key === 'strength' && selectedReference && draft.strength.trim().toLowerCase() !== (selectedReference.strength || '').trim().toLowerCase()) selectedReference = null; },
     });
     return field({ id: `f-${key}`, label, control: input, hint });
   }
@@ -323,6 +332,8 @@ export async function medicineFormView({ app, query, isCurrent = () => true }) {
             text: S.communitySuggestPhoto,
             disabled: state.suggestReplacement,
             onclick: async () => {
+                  clear(searchNode);
+                  searchNode.appendChild(loadingState());
               if (!window.confirm(S.communitySuggestConfirm)) return;
               state.suggestReplacement = true;
               redrawPhoto(kind);
@@ -333,7 +344,7 @@ export async function medicineFormView({ app, query, isCurrent = () => true }) {
             type: 'button',
             text: S.removePhoto,
             onclick: () => {
-              state.blob = null; state.url = communityUrls[kind] || null; state.source = state.url ? 'community' : null; state.dirty = true; redrawPhoto(kind);
+              state.blob = null; state.url = null; state.source = null; state.dirty = true; redrawPhoto(kind);
             },
           }) : null,
         ]),
@@ -458,7 +469,7 @@ export async function medicineFormView({ app, query, isCurrent = () => true }) {
     app.appendChild(section(null, [
       nameField(),
       el('div.field-inline', [
-        textField('strength', S.fieldStrength, S.fieldStrengthPlaceholder, { disabled: !!selectedReference }),
+        textField('strength', S.fieldStrength, S.fieldStrengthPlaceholder, { disabled: false }),
         /* A number, not free text. The organiser has to add these up across a
          * week, and "1 tablet" cannot be added to anything. The unit comes
          * from the form below, which is also what lets it be translated.
@@ -529,6 +540,8 @@ export async function medicineFormView({ app, query, isCurrent = () => true }) {
         text: S.archive,
         style: 'margin-top: 1rem; color: var(--danger); border-color: var(--danger);',
         onclick: async () => {
+                  clear(searchNode);
+                  searchNode.appendChild(loadingState());
           if (await archiveMedicine(code, existing)) go('#/medicines');
         },
       }));
@@ -539,6 +552,8 @@ export async function medicineFormView({ app, query, isCurrent = () => true }) {
         text: S.unarchive,
         style: 'margin-top: 1rem;',
         onclick: async () => {
+                  clear(searchNode);
+                  searchNode.appendChild(loadingState());
           await supporter.setArchived(code, existing.id, false);
           go('#/medicines');
         },

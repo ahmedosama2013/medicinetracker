@@ -255,7 +255,7 @@ export const S = {
   busyAddingMedicine: 'Adding the medicine',
   busySavingChanges: 'Saving the changes',
   busyUploadingPhoto: 'Uploading the photo',
-  busyRemovingPhoto: 'Removing the photo',
+  busyRemovingPhoto: 'Removing the old photo in community library',
   busyFinishing: 'Nearly done',
   busyHint: 'This can take a moment on a slow connection.',
   cancel: 'Cancel',

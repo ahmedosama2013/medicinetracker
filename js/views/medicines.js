@@ -59,7 +59,25 @@ export async function medicinesView({ app, isCurrent = () => true }) {
   const { medicines, schedules, slots } = routine;
   const active = medicines.filter(m => !m.archived);
   const archived = medicines.filter(m => m.archived);
-  const visible = showArchived ? [...active, ...archived] : active;
+  const visible = (showArchived ? [...active, ...archived] : [...active]).sort((a, b) => {
+    const nameOrder = (a.name || '').localeCompare(b.name || '', undefined, { sensitivity: 'base' });
+    return nameOrder || (a.strength || '').localeCompare(b.strength || '', undefined, { sensitivity: 'base' });
+  });
+
+  const groups = []
+  const groupByKey = new Map()
+  for (const medicine of visible) {
+
+    const key = (medicine.name || '').trim().toLowerCase() + '|' + (medicine.strength || '').trim().toLowerCase()
+    let group = groupByKey.get(key)
+    if (!group) {
+      group = { medicine, ids: [], schedules: [] }
+      groupByKey.set(key, group)
+      groups.push(group)
+    }
+    group.ids.push(medicine.id)
+    group.schedules.push(...schedules.filter(s => s.medicineId === medicine.id))
+  }
 
   /* Primary only when there is nothing to look at yet. Once the list has
    * medicines in it, the reason someone opens this screen is to check or edit
@@ -77,21 +95,22 @@ export async function medicinesView({ app, isCurrent = () => true }) {
      * time this list is opened. A medicine with no photo yet gets the dashed
      * tile, which is the point: on the supporter's own screen a missing photo
      * is a job they can do, so it should be visible rather than absent. */
-    const photoRows = await Promise.all(visible.map(m => store.getPhoto(m.id).catch(() => null)));
+    const photoRows = await Promise.all(groups.map(group => store.getPhoto(group.medicine.id).catch(() => null)));
     if (!isCurrent()) return cleanup;
     const urls = new Map();
     photoRows.forEach((row, i) => {
       if (!row?.blob) return;
       const { url, token } = photos.objectUrl(row.blob);
       tokens.push(token);
-      urls.set(visible[i].id, url);
+      urls.set(groups[i].medicine.id, url);
     });
 
     const rows = el('div.rows', { style: 'margin-top: 1rem;' });
-    for (const medicine of visible) {
-      const mine = schedules.filter(s => s.medicineId === medicine.id);
+    for (const group of groups) {
+      const medicine = group.medicine
+      const mine = group.schedules;
       rows.appendChild(el(`a.row-btn${medicine.archived ? '.row-archived' : ''}`, {
-        href: `#/medicine?id=${encodeURIComponent(medicine.id)}`,
+        href: `#/medicine?id=${encodeURIComponent(medicine.id)}&ids=${group.ids.map(encodeURIComponent).join(',')}`,
       }, [
         // Full size, not 'sm'. This is the inventory: the photo IS the row's
         // identity here, and at 34px a white tablet is unidentifiable.

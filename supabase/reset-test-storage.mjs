@@ -1,16 +1,21 @@
 // Delete test files from the two private Storage buckets.
- // Run with SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY set.
+ // Run with SUPABASE_URL and SUPABASE_SECRET_KEY set.
  // WARNING: this is destructive and cannot be undone.
 
 const base = process.env.SUPABASE_URL?.replace(/\/$/, '')
-const key = process.env.SUPABASE_SERVICE_ROLE_KEY
-if (!base || !key) throw new Error('Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY first.')
+const key = process.env.SUPABASE_SECRET_KEY
+if (!base || !key) throw new Error('Set SUPABASE_URL and SUPABASE_SECRET_KEY first.')
 
 const headers = { apikey: key, Authorization: 'Bearer ' + key, 'Content-Type': 'application/json' }
 async function api(path, options = {}) {
   const response = await fetch(base + '/storage/v1' + path, { ...options, headers: { ...headers, ...(options.headers || {}) } })
   if (!response.ok) throw new Error((options.method || 'GET') + ' ' + path + ': ' + response.status + ' ' + await response.text())
   return response.status === 204 ? null : response.json()
+}
+
+async function existingBuckets() {
+  const rows = await api('/bucket')
+  return new Set((rows || []).map(row => row.id))
 }
 
 async function filesUnder(bucket, prefix = '') {
@@ -24,7 +29,12 @@ async function filesUnder(bucket, prefix = '') {
   return files
 }
 
+const buckets = await existingBuckets()
 for (const bucket of ['med-photos', 'community-med-photos']) {
+  if (!buckets.has(bucket)) {
+    console.log(bucket + ': not found, skipped')
+    continue
+  }
   const files = await filesUnder(bucket)
   for (let i = 0; i < files.length; i += 100) {
     const batch = files.slice(i, i + 100)
