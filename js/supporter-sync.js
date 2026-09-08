@@ -94,8 +94,8 @@ async function cachePhotos(code, medicines, previous) {
   const results = await Promise.all(medicines.flatMap(medicine => {
     const was = previous.get(medicine.id);
     return [
-      cachePhoto(code, medicine.id, 'pill', medicine.photoPath, was?.photoPath),
-      cachePhoto(code, medicine.id, 'packet', medicine.packetPhotoPath, was?.packetPhotoPath),
+      cachePhoto(code, medicine.id, 'pill', medicine.photoPath, was?.photoPath, medicine.communityReferenceId),
+      cachePhoto(code, medicine.id, 'packet', medicine.packetPhotoPath, was?.packetPhotoPath, medicine.communityReferenceId),
     ];
   }));
   // Whether the cache on disk actually moved. The caller redraws only on true:
@@ -105,7 +105,7 @@ async function cachePhotos(code, medicines, previous) {
 }
 
 /** Returns true when this call changed what is stored for that photo. */
-async function cachePhoto(code, medicineId, kind, path, previousPath) {
+async function cachePhoto(code, medicineId, kind, path, previousPath, referenceId = null) {
   if (!path) {
     if (previousPath) {
       await store.deletePhoto(medicineId, kind).catch(() => {});
@@ -119,7 +119,8 @@ async function cachePhoto(code, medicineId, kind, path, previousPath) {
   if (cached && path === previousPath) return false;
 
   try {
-    const url = await supporter.getPhotoUrl(code, medicineId, kind);
+    const urls = referenceId ? await supporter.communityPhotoUrls(code, referenceId) : null;
+    const url = referenceId ? urls?.[kind] : await supporter.getPhotoUrl(code, medicineId, kind);
     if (!url) return false;
     const res = await fetch(url);
     if (!res.ok) return false;
@@ -151,7 +152,8 @@ async function pullRoutine(code) {
   const medicines = (routine.medicines || []).map(m => ({
     id: m.id, name: m.name, strength: m.strength, doseQty: m.doseQty,
     form: m.form, notes: m.notes, purpose: m.purpose, archived: m.archived,
-    photoPath: m.photoPath, packetPhotoPath: m.packetPhotoPath,
+    photoPath: m.photoPath || m.communityPillPhotoPath, packetPhotoPath: m.packetPhotoPath || m.communityPacketPhotoPath,
+    communityReferenceId: m.communityReferenceId, communityPillPhotoPath: m.communityPillPhotoPath, communityPacketPhotoPath: m.communityPacketPhotoPath,
   }));
   await store.replaceMedicinesCache(medicines);
   await store.replaceSchedulesCache((routine.schedules || []).map(s => ({

@@ -68,6 +68,32 @@ export const logDose = (code, date, slotId, medicineId, status) =>
 export const unlogSlot = (code, date, slotId) =>
   call('unlog_slot', { p_code: code, p_date: date, p_slot_id: slotId });
 
+// ---- community medicine references ---------------------------------------
+
+async function communityAction(body) {
+  const { functionsClient } = await codeClient();
+  const { data, error } = await functionsClient().invoke('community-medicine', { body });
+  if (error) {
+    const detail = await error.context?.json?.().catch(() => null);
+    throw new Error(detail?.error || error.message || 'Community medicine request failed.');
+  }
+  if (data?.error) throw new Error(data.error);
+  return data;
+}
+
+export const searchCommunityMedicines = (code, query) => communityAction({ action: 'search', code, query });
+export const communityPhotoUrls = (code, referenceId) => communityAction({ action: 'urls', code, referenceId });
+export async function publishCommunityMedicine(code, medicine, photos = {}) {
+  const { blobToDataUrl } = await import('./photos.js');
+  const body = { action: 'publish', code, name: medicine.name, strength: medicine.strength, referenceId: medicine.referenceId || null };
+  for (const kind of ['pill', 'packet']) if (photos[kind]) body[kind + 'PhotoBase64'] = (await blobToDataUrl(photos[kind])).split(',')[1];
+  return communityAction(body);
+}
+export async function suggestCommunityPhoto(code, referenceId, kind, blob) {
+  const { blobToDataUrl } = await import('./photos.js');
+  return communityAction({ action: 'suggestReplacement', code, referenceId, kind, confirmReplacement: true, photoBase64: (await blobToDataUrl(blob)).split(',')[1] });
+}
+
 // ---- push notifications (see supabase/migrations/0016_supporter_push_subscriptions.sql) ----
 
 export const subscribePush = (code, sub, escalationAfter) =>

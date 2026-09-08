@@ -22,7 +22,10 @@ function mapMedicine(row) {
     id: row.id, name: row.name, strength: row.strength, doseQty: row.dose_qty,
     form: row.form, notes: row.notes, purpose: row.purpose, archived: row.archived,
     createdAt: row.created_at,
-    photoPath: row.photo_path, packetPhotoPath: row.packet_photo_path,
+    photoPath: row.photo_path || row.community_medicine_references?.pill_photo_path, packetPhotoPath: row.packet_photo_path || row.community_medicine_references?.packet_photo_path,
+    photoBucket: row.photo_path ? 'med-photos' : (row.community_medicine_references?.pill_photo_path ? 'community-med-photos' : null),
+    packetPhotoBucket: row.packet_photo_path ? 'med-photos' : (row.community_medicine_references?.packet_photo_path ? 'community-med-photos' : null),
+    communityReferenceId: row.community_reference_id,
   };
 }
 
@@ -87,7 +90,7 @@ async function cachedRoutineSignature() {
 async function refetchRoutine(householdId) {
   const client = supabase();
   const [medsRes, schedRes, slotsRes] = await Promise.all([
-    client.from('medicines').select('*').eq('household_id', householdId),
+    client.from('medicines').select('*, community_medicine_references(name, strength, pill_photo_path, packet_photo_path)').eq('household_id', householdId),
     client.from('schedules').select('*').eq('household_id', householdId).eq('active', true),
     client.from('slots').select('*').eq('household_id', householdId).eq('archived', false),
   ]);
@@ -112,8 +115,8 @@ async function refetchRoutine(householdId) {
   await Promise.all(medicines.flatMap(medicine => {
     const was = previousPaths.get(medicine.id);
     return [
-      syncPhoto(medicine, 'pill', medicine.photoPath, was?.photoPath),
-      syncPhoto(medicine, 'packet', medicine.packetPhotoPath, was?.packetPhotoPath),
+      syncPhoto(medicine, 'pill', medicine.photoPath, was?.photoPath, medicine.photoBucket),
+      syncPhoto(medicine, 'packet', medicine.packetPhotoPath, was?.packetPhotoPath, medicine.packetPhotoBucket),
     ];
   }));
 
@@ -123,14 +126,14 @@ async function refetchRoutine(householdId) {
 /* One photo of one kind. Re-attempts even when the path looks unchanged:
  * recording it as "seen" happens whether or not the download actually
  * succeeded, so a prior failure (see cachePhoto's catch) has to retry. */
-async function syncPhoto(medicine, kind, path, previousPath) {
+async function syncPhoto(medicine, kind, path, previousPath, bucket = 'med-photos') {
   if (!path) {
     if (previousPath) await store.deletePhoto(medicine.id, kind);
     return;
   }
   const cached = await store.getPhotoBlob(medicine.id, kind);
   if (path === previousPath && cached) return;
-  await cachePhoto(medicine.id, kind, path);
+  await cachePhoto(medicine.id, kind, path, bucket);
 }
 
 /* How much history the elder's device pulls without being asked.
@@ -224,9 +227,9 @@ async function refetchHouseholdMeta(householdId) {
   return before.lockedThrough !== data.locked_through;
 }
 
-async function cachePhoto(medicineId, kind, path) {
+async function cachePhoto(medicineId, kind, path, bucket = 'med-photos') {
   try {
-    const { data, error } = await supabase().storage.from('med-photos').download(path);
+    const { data, error } = await supabase().storage.from(bucket).download(path);
     if (error || !data) return;
     await store.putPhoto(medicineId, kind, data);
   } catch {

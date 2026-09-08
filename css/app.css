@@ -2532,3 +2532,14 @@ body.mode-simple .dialog-actions { flex-direction: column-reverse; }
 }
 
 .slots-save-hint { text-align: center; margin: 0 0 var(--space-4); }
+
+
+.community-search { position: relative; }
+.community-results:empty { display: none; }
+.community-results { display: grid; gap: .35rem; margin-top: .45rem; padding: .45rem; border: 1px solid var(--line); border-radius: .75rem; background: var(--surface); }
+.community-result { display: block; width: 100%; padding: .65rem .75rem; text-align: left; border-radius: .55rem; }
+.community-result:hover, .community-result:focus-visible { background: var(--tint); }
+.checkbox-row { display: flex; gap: .7rem; align-items: flex-start; margin: .75rem 0; }
+.checkbox-row input { margin-top: .25rem; width: 1.15rem; height: 1.15rem; flex: 0 0 auto; }
+.checkbox-row span { display: grid; gap: .2rem; }
+.checkbox-row small { color: var(--muted); }
