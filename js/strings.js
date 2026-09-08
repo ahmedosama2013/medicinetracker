@@ -417,6 +417,21 @@ export const S = {
   escalationDelay2h: "2 hours after it's due",
   escalationDelay3h: "3 hours after it's due",
 
+  communityUsing: 'Using a community reference. Check it matches the packet you have.',
+  communityNoPhotos: 'No reference photos yet.',
+  communitySearchHint: 'Community references',
+  communitySearchPhotos: count => count === 2 ? '2 reference photos' : count === 1 ? '1 reference photo' : 'No reference photos',
+  communitySearchFailed: 'Community references are unavailable right now.',
+  communitySuggestPhoto: 'Suggest this as a better community photo',
+  communitySuggestConfirm: 'This photo will be reviewed. Everyone keeps seeing the current community photo unless it is approved.',
+  communitySuggestSent: 'Photo suggestion sent for review.',
+  communityAdded: 'Added to community references.',
+  communityDuplicate: 'A matching reference already exists. Choose it from the suggestions above.',
+  communityPhotosAdded: count => count === 1 ? '1 missing community photo added.' : count > 1 ? count + ' missing community photos added.' : '',
+  communityReviewNeeded: 'The existing community photo was sent for review; your photo remains private.',
+  communityShareLabel: 'Share missing photos and photo improvements with the community',
+  communityShareHint: 'Name and strength are shared with the photo. Your schedule, notes and personal details are never shared.',
+
   // ---- misc ------------------------------------------------------------
   loading: 'Loading',
   errGeneric: 'Something went wrong.',

@@ -83,6 +83,14 @@ export async function medicineFormView({ app, query, isCurrent = () => true }) {
   const { slots } = routine;
   const existing = id ? routine.medicines.find(m => m.id === id) : null;
   const existingSchedules = id ? routine.schedules.filter(s => s.medicineId === id) : [];
+  let selectedReference = existing?.communityReferenceId ? {
+    id: existing.communityReferenceId, name: existing.communityReferenceName || existing.name,
+    strength: existing.communityReferenceStrength || existing.strength,
+  } : null;
+  let communityUrls = { pill: null, packet: null };
+  if (selectedReference) {
+    communityUrls = await supporter.communityPhotoUrls(code, selectedReference.id).catch(() => communityUrls);
+  }
 
   // Working copy: nothing is written until Save.
   const draft = {
@@ -101,8 +109,8 @@ export async function medicineFormView({ app, query, isCurrent = () => true }) {
   // Fetched above, alongside the routine. `blob` is a freshly picked,
   // not-yet-saved photo; `dirty` means this kind needs a round trip on save.
   const photo = {
-    pill: { url: existing?.photoPath ? loadedUrls.pill : null, blob: null, dirty: false, node: null },
-    packet: { url: existing?.packetPhotoPath ? loadedUrls.packet : null, blob: null, dirty: false, node: null },
+    pill: { url: existing?.photoPath ? loadedUrls.pill : (communityUrls.pill || null), source: existing?.photoPath ? 'own' : (communityUrls.pill ? 'community' : null), blob: null, suggestReplacement: false, dirty: false, node: null },
+    packet: { url: existing?.packetPhotoPath ? loadedUrls.packet : (communityUrls.packet || null), source: existing?.packetPhotoPath ? 'own' : (communityUrls.packet ? 'community' : null), blob: null, suggestReplacement: false, dirty: false, node: null },
   };
 
   const schedules = existingSchedules.filter(s => s.active).map(s => ({
@@ -119,6 +127,8 @@ export async function medicineFormView({ app, query, isCurrent = () => true }) {
   if (!schedules.length) schedules.push(blankSchedule(slots));
 
   const errors = {};
+  let shareCommunity = true;
+  let searchNode = null;
 
   /* Save does up to four round trips -- the medicine, its schedules, a photo
    * through an edge function that can cold start, and a cache refresh -- and
@@ -188,13 +198,51 @@ export async function medicineFormView({ app, query, isCurrent = () => true }) {
 
   // ---- rendering ---------------------------------------------------------
 
-  function textField(key, label, placeholder, { required = false } = {}) {
+  function nameField() {
+    const input = el('input', {
+      type: 'text', id: 'f-name', value: draft.name,
+      placeholder: S.fieldNamePlaceholder, class: errors.name ? 'input-invalid' : '', disabled: !!selectedReference,
+      autocomplete: 'off',
+      oninput: e => {
+        draft.name = e.target.value;
+        clear(searchNode);
+        clearTimeout(nameField.timer);
+        if (draft.name.trim().length < 3 || selectedReference) return;
+        nameField.timer = setTimeout(async () => {
+          try {
+            const result = await supporter.searchCommunityMedicines(code, draft.name);
+            if (!result.references?.length) return;
+            searchNode.appendChild(el('div.community-results', result.references.map(ref =>
+              el('button.btn-link.community-result', {
+                type: 'button',
+                text: ref.name + (ref.strength ? ' - ' + ref.strength : '') + ' - ' + S.communitySearchPhotos((ref.hasPillPhoto ? 1 : 0) + (ref.hasPacketPhoto ? 1 : 0)),
+                onclick: async () => {
+                  selectedReference = ref;
+                  draft.name = ref.name;
+                  draft.strength = ref.strength || draft.strength;
+                  communityUrls = await supporter.communityPhotoUrls(code, ref.id).catch(() => ({ pill: null, packet: null }));
+                  for (const kind of PHOTO_KINDS) if (!photo[kind].blob && communityUrls[kind]) photo[kind].url = communityUrls[kind];
+                  draw();
+                },
+              })
+            )));
+          } catch { /* Search is optional; leave the form quiet if it fails. */ }
+        }, 280);
+      },
+    });
+    searchNode = el('div.community-results');
+    const wrap = el('div.community-search', [input, searchNode]);
+    return field({ id: 'f-name', label: S.fieldName, control: wrap, error: errors.name, hint: selectedReference ? S.communityUsing : null });
+  }
+  nameField.timer = 0;
+
+  function textField(key, label, placeholder, { required = false, disabled = false } = {}) {
     const input = el('input', {
       type: 'text',
       id: `f-${key}`,
       value: draft[key],
       placeholder: placeholder || '',
-      class: errors[key] ? 'input-invalid' : '',
+      class: errors[key] ? 'input-invalid' : '', disabled,
       autocomplete: 'off',
       oninput: e => { draft[key] = e.target.value; },
     });
@@ -248,7 +296,7 @@ export async function medicineFormView({ app, query, isCurrent = () => true }) {
         if (!file) return;
         try {
           state.blob = await photosLib.compress(file);
-          state.url = null;
+          state.url = null; state.source = 'own'; state.suggestReplacement = false;
           state.dirty = true;
           redrawPhoto(kind);
         } catch {
@@ -260,7 +308,7 @@ export async function medicineFormView({ app, query, isCurrent = () => true }) {
     const has = state.blob || state.url;
     state.node = field({
       label: kind === 'packet' ? S.fieldPacketPhoto : S.fieldPhoto,
-      hint: kind === 'packet' ? S.packetPhotoOptional : S.photoOptional,
+      hint: (state.source === 'community' ? S.communityUsing + ' ' : '') + (kind === 'packet' ? S.packetPhotoOptional : S.photoOptional),
       control: el('div.photo-picker', [
         preview,
         kind === 'pill' ? el('p.photo-guidance', { text: S.photoGuidance }) : null,
@@ -270,11 +318,22 @@ export async function medicineFormView({ app, query, isCurrent = () => true }) {
             type: 'button',
             onclick: () => input.click(),
           }, [icon('camera'), el('span', { text: has ? S.retakePhoto : S.takePhoto })]),
+          has && selectedReference && state.blob ? el('button.btn.btn-quiet', {
+            type: 'button',
+            text: S.communitySuggestPhoto,
+            disabled: state.suggestReplacement,
+            onclick: async () => {
+              if (!window.confirm(S.communitySuggestConfirm)) return;
+              state.suggestReplacement = true;
+              redrawPhoto(kind);
+              toast(S.communityReviewNeeded);
+            },
+          }) : null,
           has ? el('button.btn.btn-quiet', {
             type: 'button',
             text: S.removePhoto,
             onclick: () => {
-              state.blob = null; state.url = null; state.dirty = true; redrawPhoto(kind);
+              state.blob = null; state.url = communityUrls[kind] || null; state.source = state.url ? 'community' : null; state.dirty = true; redrawPhoto(kind);
             },
           }) : null,
         ]),
@@ -397,9 +456,9 @@ export async function medicineFormView({ app, query, isCurrent = () => true }) {
     app.appendChild(el('h1.page-title', { text: existing ? S.editMedicine : S.newMedicine }));
 
     app.appendChild(section(null, [
-      textField('name', S.fieldName, S.fieldNamePlaceholder, { required: true }),
+      nameField(),
       el('div.field-inline', [
-        textField('strength', S.fieldStrength, S.fieldStrengthPlaceholder),
+        textField('strength', S.fieldStrength, S.fieldStrengthPlaceholder, { disabled: !!selectedReference }),
         /* A number, not free text. The organiser has to add these up across a
          * week, and "1 tablet" cannot be added to anything. The unit comes
          * from the form below, which is also what lets it be translated.
@@ -442,6 +501,7 @@ export async function medicineFormView({ app, query, isCurrent = () => true }) {
           oninput: e => { draft.notes = e.target.value; },
         }),
       }),
+      el('label.checkbox-row', [el('input', { type: 'checkbox', checked: shareCommunity, onchange: e => { shareCommunity = e.target.checked; } }), el('span', [el('strong', { text: S.communityShareLabel }), el('small', { text: S.communityShareHint })])]),
       photoField('pill'),
       photoField('packet'),
     ]));
@@ -545,7 +605,7 @@ export async function medicineFormView({ app, query, isCurrent = () => true }) {
       // because that is what an <input> gives back, and upsert_medicine casts
       // to numeric -- "1" would survive that cast, but "" would not, and
       // validate() is the only thing standing between the two.
-      saved = await supporter.saveMedicine(code, { ...draft, doseQty: Number(draft.doseQty) });
+      saved = await supporter.saveMedicine(code, { ...draft, doseQty: Number(draft.doseQty), communityReferenceId: selectedReference?.id || null, referenceId: selectedReference?.id || null });
       draft.id = saved.id; // so a retry after a later failure updates this row instead of inserting a new one
       const payload = schedules.map(s => ({ ...s, frequency: normalizeFrequency(s.frequency) }));
       await supporter.replaceSchedules(code, saved.id, payload);
@@ -566,6 +626,11 @@ export async function medicineFormView({ app, query, isCurrent = () => true }) {
     for (const kind of PHOTO_KINDS) {
       const state = photo[kind];
       if (!state.dirty) continue;
+      const hadPrivatePhoto = kind === 'pill' ? Boolean(existing?.photoPath) : Boolean(existing?.packetPhotoPath);
+      if (!state.blob && !hadPrivatePhoto) {
+        state.dirty = false;
+        continue;
+      }
       busy.setMessage(state.blob ? S.busyUploadingPhoto : S.busyRemovingPhoto);
       try {
         if (state.blob) await supporter.uploadPhoto(code, saved.id, state.blob, kind);
@@ -577,6 +642,23 @@ export async function medicineFormView({ app, query, isCurrent = () => true }) {
          * the page they are about to land on. */
         photoFailed = true;
       }
+    }
+
+    if (shareCommunity) {
+      try {
+        const photos = {};
+        for (const kind of PHOTO_KINDS) if (photo[kind].blob) photos[kind] = photo[kind].blob;
+        const published = await supporter.publishCommunityMedicine(code, { name: draft.name, strength: draft.strength, referenceId: selectedReference?.id }, photos);
+        if (published.kind === 'duplicate') toast(S.communityDuplicate);
+        else if (published.added?.length) toast(S.communityPhotosAdded(published.added.length));
+        if (published.needsReview?.length) {
+          for (const kind of published.needsReview) {
+            if (photo[kind].blob) await supporter.suggestCommunityPhoto(code, published.reference.id, kind, photo[kind].blob);
+          }
+          toast(S.communityReviewNeeded);
+        }
+        if (published.kind === 'created' && !published.added?.length) toast(S.communityAdded);
+      } catch { toast(S.communitySearchFailed); }
     }
 
     /* The supporter's own Today and the photos on their medicine list read the

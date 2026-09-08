@@ -50,6 +50,7 @@ npx supabase link --project-ref YOUR-PROJECT-REF   # skip if already linked
 npx supabase db push
 npx supabase functions deploy send-reminders
 npx supabase functions deploy supporter-photo --no-verify-jwt
+npx supabase functions deploy community-medicine --no-verify-jwt
 npx supabase functions deploy nudge --no-verify-jwt
 # Must include --no-verify-jwt: this browser-called function performs its own auth after CORS preflight.
 npx supabase functions deploy test-notification --no-verify-jwt
