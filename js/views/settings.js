@@ -200,84 +200,6 @@ function escalationDelaySection(code, current) {
   ]);
 }
 
-/* Shown in both roles, because whoever is holding the tray fills it -- the
- * supporter when they visit, the elder the rest of the time. It writes through
- * a code-gated RPC either way: the elder's device has the household's share
- * code as well as a session, so one function serves both.
- *
- * The chips update optimistically and roll back on failure. A tick that waits
- * on a round trip before moving reads as a tap that did not register, which is
- * the same mistake the dose target made before Phase 2.5's S5.
- */
-function pillBoxSection(settings, code, organiser) {
-  const slots = [...(settings.slots || [])]
-    .sort((a, b) => timeToMinutes(a.time) - timeToMinutes(b.time));
-
-  const shape = el('p.setting-hint');
-  const redrawShape = () => {
-    const n = slots.filter(s => s.inBox).length;
-    shape.textContent = n ? S.pillBoxShape(n) : S.pillBoxNone;
-  };
-
-  const chips = el('div.chips', slots.map(slot => {
-    const chip = el('button.chip', {
-      type: 'button',
-      text: slot.label,
-      'aria-pressed': String(!!slot.inBox),
-      onclick: async () => {
-        const next = !slot.inBox;
-        chip.disabled = true;
-        slot.inBox = next;
-        chip.setAttribute('aria-pressed', String(next));
-        redrawShape();
-        try {
-          /* Only the elder's device has Realtime, and its own write comes
-           * straight back as an event -- which used to re-render this whole
-           * screen underneath the finger that had just moved the chip. Mark
-           * it first, so the mirror still runs and only the redraw is
-           * skipped. Imported dynamically because a supporter device must
-           * never load js/sync.js at all (see docs/repo-structure.md). */
-          if (settings.role === 'simple') {
-            const sync = await import('../sync.js');
-            sync.markRoutineWrite(slot.id);
-          }
-          await supporter.setSlotInBox(code, slot.id, next);
-          await store.saveSettings({ slots });
-        } catch {
-          slot.inBox = !next;
-          chip.setAttribute('aria-pressed', String(!next));
-          redrawShape();
-          toast(S.errGeneric);
-        }
-        chip.disabled = false;
-      },
-    });
-    return chip;
-  }));
-
-  redrawShape();
-
-  /* The way in to organiser mode. It lives here rather than on Today because
-   * filling the box is a weekly job at most, and Today's only subject is
-   * today -- a card there would be something everyone looks past every day.
-   * Under Pill box specifically, next to the setting that decides its shape. */
-  const total = organiser?.plan?.steps?.length || 0;
-  const remaining = total - (organiser?.done?.length || 0);
-  const midSitting = total > 0 && remaining > 0 && remaining < total;
-
-  return section(S.settingsPillBox, [
-    el('p.setting-hint', { text: S.pillBoxIntro, style: 'margin-bottom: 0.75rem;' }),
-    slots.length ? chips : el('p.setting-hint', { text: S.pillBoxNoSlots }),
-    slots.length ? shape : null,
-    slots.some(s => s.inBox) ? actionRow({
-      label: S.organiserOpen,
-      hint: midSitting ? S.organiserResume(remaining) : S.organiserSettingsHint,
-      buttonLabel: midSitting ? S.organiserResume(remaining) : S.organiserStart,
-      primary: true,
-      onClick: () => go('#/organiser'),
-    }) : null,
-  ]);
-}
 
 function appearanceSection(current) {
   const chips = el('div.chips', THEMES.map(t => el('button.chip', {
@@ -298,9 +220,7 @@ function appearanceSection(current) {
 }
 
 export async function settingsView({ app, isCurrent = () => true }) {
-  const [settings, organiser] = await Promise.all([
-    store.getSettings(), store.getOrganiser(),
-  ]);
+  const settings = await store.getSettings();
   if (!isCurrent()) return;
   const role = settings.role;
   const code = role === 'simple' ? settings.shareCode : settings.supporterCode;
@@ -414,10 +334,6 @@ export async function settingsView({ app, isCurrent = () => true }) {
       }),
     ]));
   }
-
-  /* Above Appearance and below each role's own sections: it is routine setup
-   * about the household, not a preference of this device. */
-  if (code) app.appendChild(pillBoxSection(settings, code, organiser));
 
   app.appendChild(appearanceSection(settings.theme));
 

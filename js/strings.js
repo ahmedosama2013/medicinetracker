@@ -316,7 +316,7 @@ export const S = {
   organiserOutByForm: 'Taken from the packet',
   organiserOutBySlot: labels => `${labels.join(' and ')} \u2014 not in the box`,
   organiserNoBoxSlots: 'No times of day go in the pill box yet.',
-  organiserNoBoxSlotsHint: 'Choose them in Settings, under Pill box.',
+  organiserNoBoxSlotsHint: 'Choose them in Settings, under Pill box for this function to work properly..',
   organiserNothing: 'Nothing goes in the box this week.',
   organiserNothingHint: 'Everything due is taken from its packet.',
   /* Said once, on the start screen. Filling a tray is not taking a medicine,

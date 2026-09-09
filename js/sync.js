@@ -18,13 +18,14 @@ import { setTimezone, todayStr, addDays } from './date.js';
  * from this list arrives from Postgres and is dropped on the doorstep, with
  * nothing anywhere to say so. See docs/phase-3-plan.md, item 23. */
 function mapMedicine(row) {
+  const reference = Array.isArray(row.community_medicine_references) ? row.community_medicine_references[0] : row.community_medicine_references;
   return {
     id: row.id, name: row.name, strength: row.strength, doseQty: row.dose_qty,
     form: row.form, notes: row.notes, purpose: row.purpose, archived: row.archived,
     createdAt: row.created_at,
-    photoPath: row.photo_path || row.community_medicine_references?.pill_photo_path, packetPhotoPath: row.packet_photo_path || row.community_medicine_references?.packet_photo_path,
-    photoBucket: row.photo_path ? 'med-photos' : (row.community_medicine_references?.pill_photo_path ? 'community-med-photos' : null),
-    packetPhotoBucket: row.packet_photo_path ? 'med-photos' : (row.community_medicine_references?.packet_photo_path ? 'community-med-photos' : null),
+    photoPath: row.photo_path || reference?.pill_photo_path, packetPhotoPath: row.packet_photo_path || reference?.packet_photo_path,
+    photoBucket: row.photo_path ? 'med-photos' : (reference?.pill_photo_path ? 'community-med-photos' : null),
+    packetPhotoBucket: row.packet_photo_path ? 'med-photos' : (reference?.packet_photo_path ? 'community-med-photos' : null),
     communityReferenceId: row.community_reference_id,
   };
 }
@@ -227,6 +228,14 @@ async function refetchHouseholdMeta(householdId) {
   return before.lockedThrough !== data.locked_through;
 }
 
+/* Reads straight out of storage, whichever bucket the photo lives in.
+ *
+ * A community photo needs no signed-URL detour here the way it does for a
+ * supporter (js/supporter-sync.js): that round trip buys a supporter the
+ * service role they have no session to get any other way. An elder is
+ * authenticated, and 0024/0025 let them read the published `references/`
+ * catalogue directly -- so this is the same one-hop download as a personal
+ * photo, and the bucket is the only thing that differs. */
 async function cachePhoto(medicineId, kind, path, bucket = 'med-photos') {
   try {
     const { data, error } = await supabase().storage.from(bucket).download(path);

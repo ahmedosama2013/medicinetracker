@@ -23,6 +23,7 @@
  */
 
 import * as store from '../store.js';
+import * as supporter from '../supporter.js';
 import * as photos from '../photos.js';
 import { planWeek } from '../organiser.js';
 import { S } from '../strings.js';
@@ -141,11 +142,20 @@ function outOfBoxStrip(outOfBox) {
   ]);
 }
 
-function startScreen({ app, session, plan, weekStart, onStart, onPick }) {
+function startScreen({ app, session, plan, weekStart, slots, code, role, onStart, onPick }) {
   const dateInput = el('input', {
     type: 'date', id: 'og-week', value: weekStart,
     onchange: e => onPick(e.target.value),
   });
+
+  const slotChoices = el('div.chips', slots.map(slot => {
+    const chip = el('button.chip', { type: 'button', text: slot.label, 'aria-pressed': String(!!slot.inBox), onclick: async () => {
+      chip.disabled = true; const next = !slot.inBox; slot.inBox = next; chip.setAttribute('aria-pressed', String(next));
+      try { if (role === 'simple') { const sync = await import('../sync.js'); sync.markRoutineWrite(slot.id); } await supporter.setSlotInBox(code, slot.id, next); await store.saveSettings({ slots }); onPick(weekStart); } catch { slot.inBox = !next; chip.setAttribute('aria-pressed', String(!next)); }
+      chip.disabled = false;
+    }}); return chip;
+  }));
+  app.appendChild(section(S.settingsPillBox, [el('p.setting-hint', { text: S.pillBoxIntro }), slotChoices]));
 
   app.appendChild(section(null, [
     el('label.og-weeklabel', { for: 'og-week', text: S.organiserWeekLabel }),
@@ -155,7 +165,6 @@ function startScreen({ app, session, plan, weekStart, onStart, onPick }) {
 
   if (!plan.boxSlots.length) {
     app.appendChild(emptyState(S.organiserNoBoxSlots, S.organiserNoBoxSlotsHint));
-    app.appendChild(el('a.btn.btn-block', { href: '#/settings', text: S.settingsPillBox }));
     append(app, outOfBoxStrip(plan.outOfBox));
     return;
   }
@@ -169,7 +178,6 @@ function startScreen({ app, session, plan, weekStart, onStart, onPick }) {
   const done = new Set(session?.done || []);
   const remaining = plan.steps.filter(s => !done.has(s.medicineId)).length;
   const resuming = session?.weekStart === weekStart && done.size > 0 && remaining > 0;
-
   app.appendChild(section(null, [
     el('p.og-count', { text: S.organiserCount(plan.steps.length) }),
     /* Said once, here, and nowhere else. Repeating it on every step would be
@@ -398,8 +406,8 @@ export async function organiserView({ app, query, isCurrent = () => true }) {
   const stepParam = Number(raw);
   const wanted = !checking && Number.isInteger(stepParam) && stepParam > 0 ? stepParam : 0;
 
-  const [settings, stored, boxSlots] = await Promise.all([
-    store.getSettings(), store.getOrganiser(), store.getBoxSlots(),
+  const [settings, stored, boxSlots, allSlots] = await Promise.all([
+    store.getSettings(), store.getOrganiser(), store.getBoxSlots(), store.getSlots(),
   ]);
   if (!isCurrent()) return cleanup;
 
@@ -496,7 +504,7 @@ export async function organiserView({ app, query, isCurrent = () => true }) {
 
   if (!step) {
     startScreen({
-      app, session, plan, weekStart,
+      app, session, plan, weekStart, slots: allSlots, code: settings.role === 'simple' ? settings.shareCode : settings.supporterCode, role: settings.role,
       onPick: async next => {
         if (!next) return;
         const [medicines, schedules, slots] = await Promise.all([

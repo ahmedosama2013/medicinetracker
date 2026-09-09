@@ -2197,6 +2197,7 @@ body.mode-simple .dialog-actions { flex-direction: column-reverse; }
 }
 
 #app.og-fit .og-photos-none {
+  height: auto; overflow: visible;
   flex: 0 1 auto;
   min-height: 0;
   margin-bottom: 0;
