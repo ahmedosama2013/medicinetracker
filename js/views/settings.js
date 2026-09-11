@@ -450,7 +450,9 @@ export async function slotsView({ app, isCurrent = () => true }) {
           }),
         ]),
         el('p.field-hint', {
-          text: used ? `${used} medicine ${used === 1 ? 'time uses' : 'times use'} this` : 'Not used by any medicine',
+          text: used
+            ? `Used by ${used} medicine ${used === 1 ? 'schedule' : 'schedules'}`
+            : 'Not used by any medicine schedules',
         }),
         slots.length > 1 ? el('button.btn-link', {
           type: 'button', text: S.removeSlot, onclick: () => removeSlot(slot),
