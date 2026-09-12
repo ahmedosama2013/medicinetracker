@@ -9,7 +9,7 @@
  * local cache) and requires connectivity -- unlike the elder's device, this
  * one is never used offline.
  */
-
+ 
 import * as store from '../store.js';
 import * as supporter from '../supporter.js';
 import * as supporterSync from '../supporter-sync.js';
@@ -19,7 +19,7 @@ import { el, clear, loadingState, field, section, toast, busyOverlay, icon } fro
 import { todayStr, formatTime } from '../date.js';
 import { go } from '../router.js';
 import { archiveMedicine } from './medicines.js';
-
+ 
 /* A medicine has two photos -- the pill and the packet -- and everything
  * about picking one is identical, so the state is keyed by kind rather than
  * duplicated. `pill` answers "which tablet is this?" on Today; `packet`
@@ -29,27 +29,27 @@ import { archiveMedicine } from './medicines.js';
  * the closure is gone; see releasePreviews below. */
 const PHOTO_KINDS = ['pill', 'packet'];
 let previewTokens = { pill: null, packet: null };
-
+ 
 function releasePreviews() {
   for (const kind of PHOTO_KINDS) {
     if (previewTokens[kind] !== null) photosLib.release(previewTokens[kind]);
     previewTokens[kind] = null;
   }
 }
-
+ 
 const blankSchedule = slots => ({
   id: null,
   slotId: slots[0]?.id || 'morning',
   time: '',
   frequency: { type: 'daily', interval: 2, daysOfWeek: [], anchorDate: todayStr() },
 });
-
+ 
 export async function medicineFormView({ app, query, isCurrent = () => true }) {
   const id = query.get('id');
   const groupedIds = query.get('ids')?.split(',').filter(Boolean) || (id ? [id] : []);
   const settings = await store.getSettings();
   const code = settings.supporterCode;
-
+ 
   /* Something on screen before the network is touched. This view costs a
    * routine fetch plus, for an existing medicine, a signed URL from an edge
    * function that can cold-start -- so tapping a row used to sit on the old
@@ -58,7 +58,7 @@ export async function medicineFormView({ app, query, isCurrent = () => true }) {
   clear(app);
   app.appendChild(el('h1.page-title', { text: id ? S.editMedicine : S.newMedicine }));
   app.appendChild(loadingState());
-
+ 
   /* In parallel, not in sequence: the photo is keyed on the id from the URL,
    * so it never needed the routine to come back first. That was one avoidable
    * round trip on the slowest screen in the app. */
@@ -80,7 +80,7 @@ export async function medicineFormView({ app, query, isCurrent = () => true }) {
     return;
   }
   if (!isCurrent()) return releasePreviews;
-
+ 
   const { slots } = routine;
   const existing = id ? routine.medicines.find(m => m.id === id) : null;
   const existingSchedules = id ? routine.schedules.filter(s => groupedIds.includes(s.medicineId)) : [];
@@ -92,7 +92,7 @@ export async function medicineFormView({ app, query, isCurrent = () => true }) {
   if (selectedReference) {
     communityUrls = await supporter.communityPhotoUrls(code, selectedReference.id).catch(() => communityUrls);
   }
-
+ 
   // Working copy: nothing is written until Save.
   const draft = {
     id: existing?.id || null,
@@ -106,14 +106,14 @@ export async function medicineFormView({ app, query, isCurrent = () => true }) {
     notes: existing?.notes || '',
     archived: existing?.archived || false,
   };
-
+ 
   // Fetched above, alongside the routine. `blob` is a freshly picked,
   // not-yet-saved photo; `dirty` means this kind needs a round trip on save.
   const photo = {
     pill: { url: existing?.photoPath ? loadedUrls.pill : (communityUrls.pill || null), source: existing?.photoPath ? 'own' : (communityUrls.pill ? 'community' : null), blob: null, suggestReplacement: false, dirty: false, node: null },
     packet: { url: existing?.packetPhotoPath ? loadedUrls.packet : (communityUrls.packet || null), source: existing?.packetPhotoPath ? 'own' : (communityUrls.packet ? 'community' : null), blob: null, suggestReplacement: false, dirty: false, node: null },
   };
-
+ 
   const schedules = existingSchedules.filter(s => s.active).map(s => ({
     id: s.id,
     slotId: s.slotId,
@@ -126,11 +126,11 @@ export async function medicineFormView({ app, query, isCurrent = () => true }) {
     },
   }));
   if (!schedules.length) schedules.push(blankSchedule(slots));
-
+ 
   const errors = {};
   let shareCommunity = true;
   let searchNode = null;
-
+ 
   /* Save does up to four round trips -- the medicine, its schedules, a photo
    * through an edge function that can cold start, and a cache refresh -- and
    * the button used to look untouched for all of them. Two taps in that window
@@ -139,7 +139,7 @@ export async function medicineFormView({ app, query, isCurrent = () => true }) {
    * remove. */
   let saving = false;
   let saveButton = null;
-
+ 
   function setSaveBusy(state) {
     saving = state;
     if (!saveButton) return;
@@ -152,7 +152,7 @@ export async function medicineFormView({ app, query, isCurrent = () => true }) {
       saveButton.textContent = S.save;
     }
   }
-
+ 
   /* ---- partial redraws ---------------------------------------------------
    *
    * draw() clears the whole form and rebuilds it, and it used to run on every
@@ -171,7 +171,7 @@ export async function medicineFormView({ app, query, isCurrent = () => true }) {
    * node, and replaceWith quietly does nothing. That exact mistake cost a day
    * in Phase 1 (see js/views/day.js's redrawSlot). */
   const cardNodes = new Map();      // schedule entry -> its live node
-
+ 
   /* Which control the person was using, read BEFORE the swap. Removing a
    * focused element resets document.activeElement to <body> immediately, so
    * asking afterwards always comes back empty -- the restore looked like it
@@ -179,26 +179,26 @@ export async function medicineFormView({ app, query, isCurrent = () => true }) {
   function focusedIdWithin(node) {
     return node?.contains(document.activeElement) ? document.activeElement.id : null;
   }
-
+ 
   function swap(previous, next) {
     if (!previous?.isConnected) { draw(); return; }
     const id = focusedIdWithin(previous);
     previous.replaceWith(next);
     if (id) next.querySelector(`#${CSS.escape(id)}`)?.focus();
   }
-
+ 
   function redrawCard(entry) {
     const previous = cardNodes.get(entry);
     swap(previous, scheduleCard(entry));
   }
-
+ 
   function redrawPhoto(kind) {
     const previous = photo[kind].node;
     swap(previous, photoField(kind));
   }
-
+ 
   // ---- rendering ---------------------------------------------------------
-
+ 
   function nameField() {
     const input = el('input', {
       type: 'text', id: 'f-name', value: draft.name,
@@ -217,7 +217,7 @@ export async function medicineFormView({ app, query, isCurrent = () => true }) {
             const result = await supporter.searchCommunityMedicines(code, query);
             if (searchId !== nameField.searchId || query !== draft.name || !result.references?.length) return;
             clear(searchNode);
-            const references = [...new Map(result.references.map(ref => [((ref.name || '').trim().toLowerCase() + ' ' + (ref.strength || '').trim().toLowerCase()), ref])).values()];
+            const references = [...new Map(result.references.map(ref => [((ref.name || '').trim().toLowerCase() + '' + (ref.strength || '').trim().toLowerCase()), ref])).values()];
             searchNode.appendChild(el('div.community-results', references.map(ref =>
               el('button.btn-link.community-result', {
                 type: 'button',
@@ -244,7 +244,7 @@ export async function medicineFormView({ app, query, isCurrent = () => true }) {
   }
   nameField.timer = 0;
   nameField.searchId = 0;
-
+ 
   function textField(key, label, placeholder, { required = false, disabled = false } = {}) {
     const input = el('input', {
       type: 'text',
@@ -260,7 +260,7 @@ export async function medicineFormView({ app, query, isCurrent = () => true }) {
       hint: required ? null : null,
     });
   }
-
+ 
   function textFieldWithHint(key, label, placeholder, hint) {
     const input = el('input', {
       type: 'text', id: `f-${key}`, value: draft[key],
@@ -269,10 +269,10 @@ export async function medicineFormView({ app, query, isCurrent = () => true }) {
     });
     return field({ id: `f-${key}`, label, control: input, hint });
   }
-
+ 
   function photoField(kind) {
     const state = photo[kind];
-
+ 
     /* Only this kind's token is released. Releasing both -- which a single
      * shared token forced -- would revoke the other picker's live preview the
      * moment either one was redrawn, and the image beside it would go blank
@@ -281,7 +281,7 @@ export async function medicineFormView({ app, query, isCurrent = () => true }) {
       photosLib.release(previewTokens[kind]);
       previewTokens[kind] = null;
     }
-
+ 
     let preview;
     if (state.blob) {
       const { url, token } = photosLib.objectUrl(state.blob);
@@ -292,7 +292,7 @@ export async function medicineFormView({ app, query, isCurrent = () => true }) {
     } else {
       preview = el('span.photo-preview', { text: kind === 'packet' ? S.noPacketPhoto : S.noPhoto });
     }
-
+ 
     // A live input element, because programmatic .click() on a detached input
     // is unreliable on iOS for camera capture.
     const input = el('input', {
@@ -313,7 +313,7 @@ export async function medicineFormView({ app, query, isCurrent = () => true }) {
         }
       },
     });
-
+ 
     const has = state.blob || state.url;
     state.node = field({
       label: kind === 'packet' ? S.fieldPacketPhoto : S.fieldPhoto,
@@ -352,19 +352,19 @@ export async function medicineFormView({ app, query, isCurrent = () => true }) {
     });
     return state.node;
   }
-
+ 
   function scheduleCard(entry) {
     const index = schedules.indexOf(entry);
     const slot = slots.find(s => s.id === entry.slotId) || slots[0];
     const freq = entry.frequency;
-
+ 
     const slotSelect = el('select', {
       id: `s-slot-${index}`,
       onchange: e => { entry.slotId = e.target.value; redrawCard(entry); },
     }, slots.map(s => el('option', {
       value: s.id, text: `${s.label} (${formatTime(s.time)})`, selected: s.id === entry.slotId,
     })));
-
+ 
     const timeInput = el('input', {
       type: 'time',
       id: `s-time-${index}`,
@@ -375,7 +375,7 @@ export async function medicineFormView({ app, query, isCurrent = () => true }) {
       // without this they only appeared after some unrelated redraw.
       onchange: () => redrawCard(entry),
     });
-
+ 
     const typeSelect = el('select', {
       id: `s-freq-${index}`,
       onchange: e => { freq.type = e.target.value; redrawCard(entry); },
@@ -384,7 +384,7 @@ export async function medicineFormView({ app, query, isCurrent = () => true }) {
       el('option', { value: 'everyNDays', text: S.freqEveryNDays, selected: freq.type === 'everyNDays' }),
       el('option', { value: 'weekly', text: S.freqWeekly, selected: freq.type === 'weekly' }),
     ]);
-
+ 
     const extras = [];
     if (freq.type === 'everyNDays') {
       extras.push(el('div.field-inline', [
@@ -429,7 +429,7 @@ export async function medicineFormView({ app, query, isCurrent = () => true }) {
         }))),
       }));
     }
-
+ 
     const node = el('div.sched', [
       el('div.sched-head', [
         el('span.sched-num', { text: `${index + 1}` }),
@@ -457,15 +457,15 @@ export async function medicineFormView({ app, query, isCurrent = () => true }) {
       field({ id: `s-freq-${index}`, label: S.scheduleFrequency, control: typeSelect }),
       ...extras,
     ]);
-
+ 
     cardNodes.set(entry, node);
     return node;
   }
-
+ 
   function draw() {
     clear(app);
     app.appendChild(el('h1.page-title', { text: existing ? S.editMedicine : S.newMedicine }));
-
+ 
     app.appendChild(section(null, [
       nameField(),
       el('div.field-inline', [
@@ -516,7 +516,7 @@ export async function medicineFormView({ app, query, isCurrent = () => true }) {
       photoField('pill'),
       photoField('packet'),
     ]));
-
+ 
     app.appendChild(section(S.schedulesHeading, [
       errors.schedules ? el('p.field-error', { text: errors.schedules }) : null,
       ...schedules.map(entry => scheduleCard(entry)),
@@ -526,14 +526,14 @@ export async function medicineFormView({ app, query, isCurrent = () => true }) {
         onclick: () => { schedules.push(blankSchedule(slots)); draw(); },
       }),
     ]));
-
+ 
     saveButton = el('button.btn.btn-primary', { type: 'button', text: S.save, onclick: save });
     app.appendChild(el('div.form-actions', [
       el('button.btn.btn-quiet', { type: 'button', text: S.cancel, onclick: () => go('#/medicines') }),
       saveButton,
     ]));
     if (saving) setSaveBusy(true);
-
+ 
     if (existing && !existing.archived) {
       app.appendChild(el('button.btn.btn-quiet.btn-block', {
         type: 'button',
@@ -560,9 +560,9 @@ export async function medicineFormView({ app, query, isCurrent = () => true }) {
       }));
     }
   }
-
+ 
   // ---- saving ------------------------------------------------------------
-
+ 
   // The DB's freq_shape constraint requires the columns not used by a given
   // frequency type to be null, and replace_schedules() keys its daysOfWeek
   // handling off the JSON key's presence (not its value) -- but the form
@@ -578,14 +578,23 @@ export async function medicineFormView({ app, query, isCurrent = () => true }) {
     }
     return { type: 'daily' };
   }
-
+ 
   function validate() {
     for (const key of Object.keys(errors)) delete errors[key];
     if (!draft.name.trim()) errors.name = S.errNameRequired;
     const qty = Number(draft.doseQty);
-    if (!Number.isFinite(qty) || qty <= 0 || qty > 99) errors.doseQty = S.errDosageRequired;
+    /* The <input> already declares step="0.25" (quarter-tablet increments --
+     * scored tablets are halved and quartered), but Save is wired to a
+     * custom onclick rather than a native form submit, so the browser's own
+     * step constraint is never actually consulted -- a typed "0.3" sailed
+     * straight through to save. Checked here instead. The comparison is
+     * rounded rather than exact: qty*4 is exact for a value that really did
+     * come from 0.25 steps (0.25, 0.5, 0.75, 1 ... all exact in a double),
+     * but not every string this field can hold got there that way. */
+    const isQuarterStep = Number.isFinite(qty) && Math.abs(qty * 4 - Math.round(qty * 4)) < 1e-9;
+    if (!isQuarterStep || qty <= 0 || qty > 99) errors.doseQty = S.errDosageRequired;
     if (!schedules.length) errors.schedules = S.errNoSchedule;
-
+ 
     schedules.forEach((entry, index) => {
       if (entry.frequency.type === 'everyNDays' && !entry.frequency.anchorDate) {
         errors[`anchor-${index}`] = S.errAnchorRequired;
@@ -596,7 +605,7 @@ export async function medicineFormView({ app, query, isCurrent = () => true }) {
     });
     return !Object.keys(errors).length;
   }
-
+ 
   async function save() {
     if (saving) return;
     if (!validate()) {
@@ -604,7 +613,7 @@ export async function medicineFormView({ app, query, isCurrent = () => true }) {
       app.querySelector('.input-invalid, .field-error')?.scrollIntoView({ block: 'center' });
       return;
     }
-
+ 
     // The medicine record and its schedule are the core save. If either of
     // these throws, nothing usable was written, so the person stays on the
     // form and sees the generic error -- there is nothing to navigate to yet.
@@ -613,7 +622,7 @@ export async function medicineFormView({ app, query, isCurrent = () => true }) {
      * entirely, and it left every field editable while their values were
      * already on their way to the server. */
     const busy = busyOverlay(existing ? S.busySavingChanges : S.busyAddingMedicine);
-
+ 
     let saved;
     try {
       // doseQty leaves the form as a number. The draft holds it as a string
@@ -630,7 +639,7 @@ export async function medicineFormView({ app, query, isCurrent = () => true }) {
       toast(S.errGeneric);
       return;
     }
-
+ 
     // From here on the medicine IS saved. A photo failure at this point used
     // to be caught by the same catch block above and reported as "something
     // went wrong" -- which was true of the photo, not of the save, and left
@@ -658,7 +667,7 @@ export async function medicineFormView({ app, query, isCurrent = () => true }) {
         photoFailed = true;
       }
     }
-
+ 
     if (shareCommunity) {
       try {
         const photos = {};
@@ -675,7 +684,7 @@ export async function medicineFormView({ app, query, isCurrent = () => true }) {
         if (published.kind === 'created' && !published.added?.length) toast(S.communityAdded);
       } catch { toast(S.communitySearchFailed); }
     }
-
+ 
     /* The supporter's own Today and the photos on their medicine list read the
      * local cache, not the live routine -- so without this a medicine they had
      * just added was missing from their own Today, and its freshly uploaded
@@ -684,14 +693,14 @@ export async function medicineFormView({ app, query, isCurrent = () => true }) {
      * showing that it is working. */
     busy.setMessage(S.busyFinishing);
     await supporterSync.refresh(code).catch(() => {});
-
+ 
     busy.close();
     releasePreviews();
     setSaveBusy(false);
     toast(photoFailed ? S.savedMedicineNoPhoto : S.savedMedicine);
     go('#/medicines');
   }
-
+ 
   draw();
   return () => releasePreviews();
 }
