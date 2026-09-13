@@ -11,7 +11,7 @@
  */
 
 import { S } from '../strings.js';
-import { el, mount, screen, progressBar, organizerChoice } from '../ui.js';
+import { el, mount, screen, progressBar, organizerChoice, googleMark } from '../ui.js';
 import * as store from '../store.js';
 
 export async function signInView({ app }) {
@@ -73,7 +73,7 @@ export async function signInView({ app }) {
 
     return el('div', { style: 'display: flex; flex-direction: column; gap: 14px' }, [
       el('button.google-btn', { type: 'button', onclick: signIn }, [
-        el('span.google-mark', { 'aria-hidden': 'true', text: 'G' }),
+        googleMark(),
         el('span', { text: S.signInGoogle }),
       ]),
       el('p.welcome-foot', { text: S.signInNote }),

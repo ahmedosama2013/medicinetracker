@@ -104,6 +104,9 @@ export const S = {
   pairIntro: 'Ask them to open Settings on their phone and read you the six-character code. No account needed for you.',
   pairCodeLabel: 'Household code',
   pairCodePlaceholder: '– – – – – –',
+  pairPasteButton: 'Paste code',
+  pairPasteFormatError: 'That doesn’t look like a 6-character code.',
+  pairPasteReadError: 'Could not read the clipboard.',
   pairInvalidTitle: 'That code was not found',
   pairInvalidBody: 'Codes are six characters, letters and numbers. Check it with them and try again — or ask them to make a new code in Settings.',
   pairFailedTitle: 'Could not connect',
@@ -465,6 +468,7 @@ export const S = {
 
   busyAddingMedicine: 'Adding the medicine',
   busySavingChanges: 'Saving the changes',
+  busyLoadingMedicine: 'Getting the medicine details',
   busyUploadingPhoto: 'Uploading the photo',
   busyRemovingPhoto: 'Removing the old photo',
   busyFinishing: 'Nearly done',

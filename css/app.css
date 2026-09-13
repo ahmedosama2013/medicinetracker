@@ -885,15 +885,11 @@ body.mode-supporter .navlink[aria-current="page"] {
   width: 26px;
   height: 26px;
   flex: none;
-  border-radius: var(--r-pill);
-  background: var(--green);
-  color: var(--on-green);
-  font-size: 15px;
-  font-weight: 800;
   display: flex;
   align-items: center;
   justify-content: center;
 }
+.google-mark svg { width: 100%; height: 100%; display: block; }
 
 .back-btn {
   align-self: flex-start;
@@ -1005,6 +1001,17 @@ input.pair-code-input {
 }
 input.pair-code-input::placeholder { color: var(--s-placeholder); letter-spacing: 0.18em; }
 input.pair-code-input.is-invalid { border-color: var(--red-line); }
+
+.pair-code-row { display: flex; gap: 10px; align-items: stretch; }
+.pair-code-row input.pair-code-input { flex: 1; min-width: 0; }
+.pair-paste-btn {
+  flex: none;
+  min-height: 68px;
+  padding: 8px 16px;
+  border-radius: var(--r-btn);
+  font-size: 14px;
+  white-space: nowrap;
+}
 
 .notice {
   display: flex;

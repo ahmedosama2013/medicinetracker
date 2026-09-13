@@ -219,8 +219,18 @@ export async function medicineFormView({ app, query, isCurrent = () => true }) {
     draft.name = ref.name;
     draft.strength = ref.strength || draft.strength;
     searchResults = [];
-    communityUrls = await supporter.communityPhotoUrls(code, ref.id)
-      .catch(() => ({ pill: null, packet: null }));
+
+    // The same blocking panel the submit button uses: fetching the shared
+    // photos is a network round trip, and the button otherwise just sits
+    // there with no sign a tap landed.
+    const busy = busyOverlay(S.busyLoadingMedicine);
+    try {
+      communityUrls = await supporter.communityPhotoUrls(code, ref.id)
+        .catch(() => ({ pill: null, packet: null }));
+    } finally {
+      busy.close();
+    }
+
     for (const kind of PHOTO_KINDS) {
       if (!photo[kind].blob && communityUrls[kind]) {
         photo[kind].url = communityUrls[kind];

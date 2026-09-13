@@ -17,9 +17,10 @@ import * as store from '../store.js';
 import * as supporter from '../supporter.js';
 import * as router from '../router.js';
 import { S } from '../strings.js';
-import { el, mount, screen, field, progressBar } from '../ui.js';
+import { el, mount, screen, field, progressBar, toast } from '../ui.js';
 
 const CODE_LENGTH = 6;
+const CODE_FORMAT = /^[A-Z0-9]{6}$/;
 
 export async function pairView({ app }) {
   supporter.preload();
@@ -27,6 +28,29 @@ export async function pairView({ app }) {
   let code = '';
   let state = 'idle';                 // 'idle' | 'loading' | 'invalid' | 'failed' | 'done'
   let householdName = '';
+
+  /* Fills the field, never submits it. The code the clipboard holds is
+   * whatever the elder read out or the household sent, and a mistyped digit
+   * copied along with it is exactly the kind of thing a person wants one more
+   * look at before connecting -- so this is a shortcut past typing, not past
+   * reviewing. */
+  async function pasteCode() {
+    let text;
+    try {
+      text = await navigator.clipboard.readText();
+    } catch {
+      toast(S.pairPasteReadError);
+      return;
+    }
+    const value = (text || '').trim().toUpperCase();
+    if (!CODE_FORMAT.test(value)) {
+      toast(S.pairPasteFormatError);
+      return;
+    }
+    code = value;
+    draw();
+    document.getElementById('pair-code')?.focus();
+  }
 
   async function connect() {
     const value = code.trim().toUpperCase();
@@ -136,7 +160,16 @@ export async function pairView({ app }) {
           el('h1.pair-title', { text: S.pairTitle }),
           el('p.pair-intro', { text: S.pairIntro }),
         ]),
-        field({ id: 'pair-code', label: S.pairCodeLabel, control: input }),
+        field({
+          id: 'pair-code',
+          label: S.pairCodeLabel,
+          control: el('div.pair-code-row', [
+            input,
+            el('button.btn-s.btn-nav-outline.pair-paste-btn', {
+              type: 'button', text: S.pairPasteButton, onclick: pasteCode,
+            }),
+          ]),
+        }),
         statePanel(),
       ]),
       foot: el('div.pair-foot', [
