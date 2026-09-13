@@ -1,17 +1,23 @@
 # UI
 
 What each screen looks like and the rules behind it. For what the two people
-actually *do*, step by step, see [flow.md](flow.md). For why the v3 work was
-sequenced the way it was, and what is still to come, see
-[v3-plan.md](v3-plan.md).
+actually *do*, step by step, see [flow.md](flow.md). For how the two devices
+work underneath, see [architecture.md](architecture.md).
 
-> **v3.** This replaces the v2 description entirely. v2 was tidy but generic:
-> flat cards on the cold grey every framework ships with, one corner radius,
-> `font-weight: 800` in thirteen places, and a 42px photo hidden behind a tap
-> on the one screen where identifying a pill is the whole job. v3 makes the
-> photo the unit of the interface, gives skipping a dose somewhere to live,
-> adds dark mode, and gives the supporter the same screens as the person they
-> are helping.
+> **v4 — the elder-first redesign.** This replaces the v3 description
+> entirely, and the source is `design_handoff_carepair_elder_ui/`: a handoff
+> README plus a navigable HTML prototype. v3 was a *visual* overhaul that left
+> the interaction model alone, and the model was the problem — marking a dose
+> meant opening a slot, then finding a 30px circle, then tapping it the right
+> number of times. v4 rebuilds the elder side around the fact that the user is
+> elderly: **marking a dose is one tap from Today**, the type floor doubles,
+> every state is a solid colour band readable across a room, and the cycling
+> circle is gone. The supporter side keeps its shape and gets a contrast pass
+> and an honesty pass.
+>
+> The prototype is a reference, not code. Nothing was ported from it — it uses
+> a bespoke runtime — but its colours, type sizes, spacing, radii and copy are
+> final and are reproduced exactly.
 
 ## The rules that must not be broken
 
@@ -20,449 +26,566 @@ likely to break without noticing.
 
 **No aggregate adherence, anywhere.** No percentages, no streaks, no scores, no
 "78% this month". This is a memory aid and it must never read as judgement of
-an elderly person's behaviour. The one progress indicator in the app is the
-rail on Today, and it is bounded to today on purpose: it resets at midnight, is
-never stored, and has no historical counterpart. Knowing "two of four done"
-while standing in your kitchen is orientation. A monthly figure is a report
-card. **This applies to the supporter's screens too** — they see the same rings
-the elder sees, and nothing that sums them up.
+an elderly person's behaviour. The only counts in the product are quantities of
+pills and "2 of 4 in the box". A day reads "All taken" or "2 of 3 dealt with",
+never a figure that spans days. **This applies to the supporter's screens too**
+— the calendar legend says "No scores, no streaks — just what happened" out
+loud, because that is a promise and not a caption.
 
-**Skipped is a recorded outcome, not a failure.** Amber, never red. The word is
-"Skipped", never "Missed". A slot containing a skipped medicine says "All
-marked", not "All taken", and takes a neutral tint rather than an alarmed one —
-one skipped medicine out of six is not a problem with the slot.
+**Not taking something is a recorded outcome, not a failure.** Neutral grey
+(`#3F4048`), never red. Red is reserved for *overdue* and *destructive*, and
+those only. The word is "Not taking today", and the action that gets you there
+is "Leave this one out today" — never "Skip", never "Missed". It is always
+reversible with "Put it back on the list", in the same place.
 
-**Organiser mode must never write to the dose log.** Filling a tray is not
-taking a medicine, and conflating them would quietly falsify the calendar. Its
-start screen says so out loud, once — someone who believed otherwise would stop
-marking their doses.
+**Undo is never behind a confirm dialog.** Every mark is instant, raises a toast
+carrying Undo, *and* leaves the same undo in the place the mark was made — a
+slow reader will miss the toast, and the handoff's usability check flags that
+explicitly. Confirmation dialogs are spent only where a tap has consequences
+outside the phone: rotating the code, signing out, disconnecting, archiving,
+removing a time of day, sharing a photo with strangers.
 
-**A step counter is not an adherence number.** "3 of 9 medicines" is
-orientation inside a task with an end, like the progress rail on Today: it
-resets, it is never stored, and there is no historical counterpart. What must
-never appear is anything summing across sittings.
+**One primary action per card.** "See the pills" is an underlined text link
+beneath the button, not a second button. Two equal-weight buttons per card made
+the screen read as busy, which on this screen means "which one do I press?".
+
+**The type and touch floors.** Nothing in the elder view below 15px; nothing
+the person must read in order to act below 17px. Slot names 26px, screen titles
+25–27px. Every target at least 44px; primary actions 54–64px. Where a floor and
+a tidy single line conflict — the date at 320px, the offline banner on a narrow
+phone — **the floor wins and the text takes a second line.**
+
+**Filling the pill box must never write to the dose log.** Filling a tray is not
+taking a medicine, and conflating them would quietly falsify the calendar. That
+flow has its own vocabulary ("It is in the box", never "taken"), its own
+progress bar explicitly labelled as job progress, a blue information band that
+says so on entry, and no "taken" affordance anywhere in it.
 
 **The whole day is always shown.** Nothing is hidden because its time has
 passed. Hiding a passed slot turns a late dose into an unrecoverable state.
 
 **Nothing *moves* because of the clock.** Morning stays at the top all day and
-night stays at the bottom. Nothing reorders, dims, or promotes itself at its
-own hour. The `Now` label is the single exception and it only labels — this
-rule used to read "nothing reacts to the clock" and was relaxed deliberately,
-because a fixed order cannot say where in the day you are.
+bedtime stays at the bottom. Nothing reorders, dims or promotes itself at its
+own hour. The late tone is the single exception and it only *recolours*: a slot
+whose time has passed with something unmarked turns red in place. It never
+jumps the queue.
 
-## Two densities, one stylesheet
+**Nothing may say it worked when it did not.** A state that could not be read is
+reported as unknown, not as its safe default. A nudge that reached nobody is
+not a send. An in-place update that finds its node gone re-renders from the
+store rather than silently doing nothing.
 
-A class on `<body>` switches the type and target scale through custom
-properties, not a duplicated stylesheet.
+## Two dialects, one stylesheet
 
-| | `.mode-simple` | `.mode-supporter` |
+A class on `<body>` switches the palette, type scale and density through custom
+properties. There is one stylesheet and no duplicated rules.
+
+| | `.mode-simple` — taking medicines | `.mode-supporter` — helping |
 |---|---|---|
-| Body text | 16px | 15px |
-| Tap targets | 46px minimum | 40px minimum |
-| Row height | 58px | 48px |
-| Content width | 28rem | 42rem |
-| Navigation | bottom bar, 3 tabs, 72px | bottom bar, 4 tabs, 64px |
+| Canvas | `#D9D1BF` — deliberately dark | `#E5E9F0` |
+| Primary | green `#1F5340` | navy `#2A3B5E` |
+| Body text | 17–21px | 13–16px |
+| Titles | 25–27px | 22–23px |
+| Tap targets | 44px floor, 54–64px primary | 40–44px |
+| Card borders | 2–3px, in the state colour | 1px, neutral |
+| Shadow | one hard `0 4px 0` | none |
+| Navigation | 3 pills, 64px, 17px/800 | 5 pills, 52px, 13px/700 |
+| Scrolling | Settings only, by design | everywhere |
 
-The two now differ mainly on **touch, not text**. Once a photo carries the
-recognition, 20px body copy stops earning its space — but a 46px target still
-does, and it stays (the accessibility floor is 44px). Simple mode has come down
-from 20px/56px at launch, through 18px/52px and 16px/46px, to type that is
-close to the supporter's with the target untouched.
+The canvas is the load-bearing decision on the elder side. v3 used a warm
+near-white and white cards merged into it; `#D9D1BF` is dark enough that a
+white card is unmistakably an object sitting on a surface. Everything else —
+the hard shadow with no blur, the 2px borders, the solid header bands — exists
+to keep that separation at arm's length and in poor light.
 
-The row got *taller* (58px, from 46px) to fit a 44px photo tile. The day still
-fits on one screen because a completed slot collapses to a strip of photos.
+The supporter's canvas moved the other way for the same reason: v3's `#F7F8FA`
+was so close to white that their cards had no edge. `#E5E9F0` is a real step
+down, so a white card separates without needing a heavier border.
 
-Font sizes are all `rem`/`em`, so the phone's own text-size setting works.
-**Still no webfont**: an offline app cannot wait on a CDN. Personality comes
-from restraint instead — weight capped at 600, `-0.015em` tracking on headings,
-and `tabular-nums` on every number a person reads aloud or counts against a
-physical object (times, doses, the share code, calendar days).
+### The layout shell
 
-Responsive by being one column that grows. `#app` has a per-mode `max-width`
-and centres itself; 375px, 768px and 1280px are the same layout with different
-side margins, never a different arrangement.
+Every view renders exactly **one `.screen`** into `#app`, and the shell is a
+fixed viewport column:
+
+```
+body (100dvh, overflow hidden)
+ └── #app
+      └── .screen
+           ├── .screen-head    fixed — the date, a title, a form bar
+           ├── .screen-scroll  the ONE scrolling region
+           └── .screen-foot    fixed — "Start filling the box", "all of Morning"
+ └── #bottomnav                always visible in the elder view
+```
+
+This is what makes 320px and 430px the same layout rather than two. A taller
+phone gives the scroll region more room and therefore shows more slot cards
+before it scrolls; nothing reflows, nothing rearranges. **There is never a
+second column** — above ~600px the single column caps at 34rem and centres,
+which is the desktop story too.
+
+What gives way on a narrow phone is horizontal padding and gaps, never type.
+Nav labels wrap to a second line rather than shrink, because the 17px floor
+outranks a tidy single line.
+
+`100dvh` with a `100vh` fallback, and `env(safe-area-inset-bottom)` on the nav
+and every bottom sheet.
 
 ### The bottom bar
 
-One bar, both roles, tab sets differing by role.
+Three text pills for the elder, five for the supporter. **No icons**: a glyph
+beside a 17px label costs vertical room inside a 64px target and says nothing
+the word does not. The current tab is a filled `#211F1B` lozenge with knocked-
+out text — a shape that is either present or absent, which survives greyscale,
+a glance and arm's length. Colour rides on top as reinforcement, never as the
+message.
 
-**Which tab you are on must be readable without seeing colour.** The bar used
-to say it three ways that all reduced to one — the label turned blue, the icon
-turned blue, and a pale blue tint appeared behind the icon. For someone who
-cannot easily separate blue from grey, which is most of the reason an elder
-taps the wrong tab, that is no signal at all; and a 13px label with a 13px
-glyph gave them nothing else to go on.
+The elder's bar is **Today · Fill the box · Settings** and is always visible:
+an elder should never be somewhere they cannot leave in one tap.
 
-So the current tab differs in **shape** first: a filled lozenge appears behind
-its icon, solid rather than tinted, with the glyph knocked out of it. A shape
-that is either present or absent survives greyscale, a glance, and arm's
-length. Colour and a heavier label ride on top as reinforcement, not as the
-message. The same rule as everywhere else in the app — a state is never
-carried by hue alone.
+**Calendar is deliberately not one of the elder's tabs.** Their day is Today; a
+month grid of their own adherence is the report card this app does not issue.
+The route stays registered so an old bookmark still resolves, but it is not a
+place to go looking. The supporter keeps it — reading the record is a large
+part of why they open the app.
 
-The bar is 64px tall (72px in simple mode) with 14px labels (16px in simple
-mode). It is the one piece of furniture on every screen, so it can afford the
-height. Icons stay: text alone makes four equal-width words that are read
-rather than recognised, and the glyph is what makes a tab findable by shape
-before it is findable by word.
+A tab stays current across the screens it owns: the medicine *form* belongs to
+Medicines, the day detail belongs to Calendar, the slot detail belongs to
+Today. That is a `match` list in `js/main.js`, not a `startsWith` — `#/medicine`
+does not start with `#/medicines`.
 
-## Visual language
+## Type
 
-> **The mistake worth not repeating.** The first v3 build looked far greyer
-> than its mockups, and the reason was not the palette. The mockups used
-> *tinted fallback tiles* for every medicine, so the screen was full of colour.
-> Real photos replace those tiles — and real photos of white tablets are grey
-> and brown. **The app got less colourful the moment real data arrived.**
->
-> So colour has to live in the chrome, not the content. That is what the
-> time-of-day bands below are for: they are the only colour on Today that does
-> not depend on something having been photographed or marked.
+**Public Sans** for everything, **IBM Plex Mono** for the household code and the
+small mono counters only. Both from Google Fonts with `display=swap`, behind a
+`preconnect` to both Google origins.
 
-- **A warm canvas.** `#ebe6da` paper rather than the cold `#f6f7fb` of v2, so a
-  white card reads as a card. The first attempt used `#f3f1ea`, about 4% off
-  white, which on a real phone was not a difference at all — cards merged into
-  the page instead of sitting on it.
-- **Paper grain.** A very faint `feTurbulence` noise, fixed behind everything,
-  as a data URI: no request, no asset, works offline. A perfectly even fill has
-  no surface. Kept below the threshold where it reads as texture — if you can
-  point at it, it is too strong.
-- **Light from above.** A soft radial wash at the top of the canvas. Page
-  headings are plain text on the background, so without it the top third of
-  every screen was its emptiest part.
-- **Shadows are warm and doubled.** A tight contact shadow plus a wide soft one.
-  A single 6%-opacity blur — what v3 first shipped — is invisible, and a
-  neutral grey shadow on a warm canvas reads as dirt rather than depth.
-- **Time of day is the slot's identity.** Morning amber, midday blue, evening
-  coral, night indigo: a tinted header band and a sun/sunset/moon glyph.
-  Derived from the slot's **time**, never its label, because labels are
-  editable and will be translated. Informational, not decorative — and it means
-  a day with nothing marked yet still has colour and structure.
-- **Brand blue is unchanged** (`#1a56a0`). It is baked into
-  `icons/make-icons.py` and `theme-color`, so changing it would mean
-  regenerating home-screen icons already installed on real phones.
-- **Semantic colour has one job each.** Teal for taken, amber for skipped, red
-  for destructive, coral for the passive `Now` marker and non-blocking notices.
-  Violet stays decorative only — today's calendar ring, the supporter role chip
-  — so it can never be mistaken for a status.
-- **`tint` versus `wash`.** Two tokens per semantic colour. `tint` is for small
-  fills (a badge, a 44px tile); `wash` is for whole surfaces. They are
-  identical in light mode and diverge sharply in dark, because a value that
-  reads as a whisper behind an 18px badge reads as a shout as an entire card.
-- **Shape varies by role.** Buttons and chips are fully round; cards, sheets and
-  inputs use three smaller radius steps. Round means "tappable action".
-- **Icons are masked inline SVG**, defined once as custom properties. No icon
-  font, no image requests, no build step.
+This **reverses v3's "no webfont" rule**, and the trade-off is worth stating
+plainly rather than discovering later: offline, or before the font arrives, the
+app renders in the system stack in `--font`. That is a visual downgrade, not a
+functional one — nothing is invisible and nothing moves much, because the
+fallback's metrics are close enough that the swap does not reflow the slot
+cards. The redesign leans hard on weight (800) at large sizes for its
+personality, and the system stack cannot carry that at 26px; the handoff
+specifies Public Sans for exactly this reason.
+
+| Role | Size | Weight | Notes |
+|---|---|---|---|
+| Screen title (elder) | 25–27px | 800 | `-0.02em` |
+| Slot name | 26px | 800 | white on the state band, `nowrap` |
+| Slot time | 20px | 700 | `tabular-nums`, `nowrap` |
+| Medicine list on Today | 21px | 600 | one line, ellipsis |
+| Slot status | 18px | 700 | in the state colour |
+| Primary button | 18px | 800 | |
+| Text link | 17px | 700 | underlined, 46px tall |
+| Body copy | 17–19px | 400–700 | `line-height: 1.45` |
+| Section label | 15px | 800 | `0.08em`, uppercase, `#7C766A` |
+| Household code | 34–38px | 500 | IBM Plex Mono, `0.14em` |
+
+`tabular-nums` on every number a person reads aloud or counts against a physical
+object: times, doses, the share code, calendar days, the pill-box grid.
+
+## Colour and state
+
+**Colour + shape + word, never colour alone.** Every state carries a tone, a
+typographic glyph and a word. The glyphs are text characters (`✓ ○ ! — · ▣`)
+rather than icons, so they scale with the phone's own text-size setting.
+
+Four tones drive everything on a day screen. A node gets `--state-fg` and
+`--state-bg` set on it and every child reads them, so one assignment paints the
+border, the header band, the ringed glyph and the status text together.
+
+| State | When | Colour | Glyph | Reads |
+|---|---|---|---|---|
+| Waiting | nothing marked, not past due | `#55514A` charcoal | `○` | "Still to come" |
+| Late | nothing marked, past due | `#8E2F1E` red | `!` | "Not taken yet" |
+| Partial | some marked | charcoal, or red if past due | `○` | "2 of 3 dealt with" |
+| Done | everything dealt with | `#1F5340` green | `✓` | "All taken" / "All dealt with · 1 not taken" |
+
+"Done" is the broader claim and "All taken" the narrower one. A slot with
+something left out today has been *handled*, so it takes the green tone — but
+it says "All dealt with · 1 not taken", because saying "All taken" there would
+be a lie.
+
+Lateness applies **only to today**. A slot on a past calendar day is not late,
+it is history, and painting last Tuesday red would be scoring the person.
+
+Semantic colour has one job each: green means "done or go", amber `#7A5410`
+means "needs attention, no blame" (offline, rotating the code, a partially
+marked past day), red `#8E2F1E` means overdue or destructive and nothing else,
+and neutral grey means "not taking this today".
 
 ### Dark mode
 
-Selectable in Settings — system, light, or dark — and applied before the first
-render so an explicit dark choice never flashes light. Three states rather than
-a switch, because "match my phone" is the default and has to stay expressible.
+Selectable in Settings — Match system, Light, Dark — and applied before the
+first render so an explicit dark choice never flashes light. Three states
+rather than a switch, because "match my phone" is the default and has to stay
+expressible. Low-vision users often need the dark option, which is why it
+survived the review that asked whether to drop it.
 
-Two things it forced, both worth keeping in mind when adding a component:
+Every semantic name is redefined, never derived. Two consequences worth knowing
+before adding a component:
 
-- **Shadows carry no information on a dark canvas.** Elevation there comes from
-  the surface ladder (`#171613` → `#201f1b` → `#2a2823`) plus hairlines, so
-  anything that relies on a shadow to separate itself needs a border as well.
-- **Positive states must stay saturated, not dimmed.** The naive inverse of a
-  pale green is a grey-green that reads as "disabled". A completed slot in dark
-  mode is a deep teal wash with light teal text.
+- **Fills lighten and the text on them darkens.** A `#1F5340` button on a
+  near-black canvas is a dark shape on a dark ground, which reads as disabled.
+  `--on-state`, `--on-green`, `--on-navy` and `--on-red` all flip with the
+  theme, so a solid state band keeps its contrast in both.
+- **Shadows carry no information on a dark canvas.** The hard `0 4px 0` becomes
+  a black one and does very little; separation there comes from the surface
+  ladder plus the 2px borders, which the elder cards have anyway.
 
 ### Motion
 
-Purposeful. Every animation answers something the person did or something that
-just became true. A slot completing transitions its whole card; buttons and
-rows scale down slightly on press; dialogs, sheets and the photo viewer fade
-and rise together so every overlay feels the same; the welcome icon has one
-pop-in, the only page-load animation in the app. `prefers-reduced-motion`
-collapses all of it — including the loading spinner, which switches to a static
-dot rather than becoming an invisible ring.
+**There is effectively none, and that is the design.** The handoff is explicit:
+motion was kept out of the elder view deliberately. What remains is default
+press feedback (a 1px translate) and the indeterminate progress bars on sign-in
+and pairing. No card transitions, no slide-in sheets, no page-load animation.
+`prefers-reduced-motion` collapses even the progress bars and slows the spinner
+rather than making it an invisible ring.
 
 ## The pill identity
 
-The component the redesign is built around. A medicine has exactly one visual
-identity and it appears at every size, on every screen, in both roles: 44px on
-Today, 34px in the collapsed strip and the Medicines list, 56px in the detail
-sheet, overlapped in a stack when a slot is complete.
+A medicine has exactly one visual identity — its photo — and it appears at
+every size, on every screen, in both roles: 78px in the elder's slot detail,
+96px in the sheet, 52px in a pill-box compartment, 44px on the supporter's
+lists, 36px on their day rows.
 
 A **rounded square, not a circle** — supporters photograph oblong tablets and
 blister strips, and a circular mask eats the ends of both.
 
-The image inside is `object-fit: contain`, not `cover`, for the same reason
-found the hard way against real data: people crop tightly around the pill, so
-real photos are often 2:1 wide. A square `cover` crop keeps the middle 50% and
-discards both ends, which turns a perfectly good photo of a capsule into a
-featureless smear at 44px. `contain` costs a square photo nothing — it still
-fills the tile — and keeps a wide one whole, letterboxed against the tile's own
-tone so it reads as intentional.
+With no photo the tile is a **hatch placeholder labelled "pill photo"**, and
+that is a change from v3's tinted fallback tile. A tinted tile with a glyph
+looked like a design decision; the hatch looks like what it is — a missing
+photograph, and on the supporter's screens a job they can do. The supporter's
+medicine list says so in words as well ("No photos yet", "Pill photo only").
 
-With no photo it falls back to a tinted tile with a glyph, toned by a hash of
-the medicine id. That is **not an attempt to guess the pill's real colour**: it
-cannot be known from a name, and a wall of near-identical beige is what
-extracting it from the photo would actually produce. It is a stable,
-distinguishable marker, which is all a fallback can honestly be. Anywhere the
-real identity would matter — checking a filled organiser — the UI counts
-instead of colouring.
+The prototype ships no real imagery. **Two placeholders still need real
+assets**: the pill photos, and the four how-it-works illustrations. The
+illustrations are currently line drawings carried over from v3 at the specified
+190px — decorative only, with every step's meaning in its title and body — so
+the panel never reads as a broken image.
 
-Only two glyphs exist so far, a pill and a droplet. The droplet earns its place
-because liquids and drops are the things that must *not* go in a weekly
-organiser, so the distinction becomes load-bearing in Phase 3.
+## Elder screens
 
-A missing photo shows a **dashed** tile rather than nothing. On the supporter's
-screens that gap is a job they can do, so it should be visible.
+### E1 — Today
 
-## The dose target
+The screen most of this redesign is. Column, top to bottom:
 
-A 30px circle per medicine that cycles **unmarked → taken → skipped →
-unmarked**. One tap covers the common case; the rest are deliberate.
+1. **Date header** — the date at 25px/800, "TODAY" at 15px/800 tracked and
+   uppercase on the right.
+2. **Offline banner**, conditional — one amber line, never a paragraph: "No
+   internet — your taps are saved here." Shown when the browser is offline *or*
+   the outbox has queued taps. **Nothing on the screen is disabled by it.**
+3. **The slot list** — the one scrolling region, 22px between cards, 20px
+   inside, margin above the first.
+4. **The bottom nav**, always visible.
 
-Because two taps land on "skipped" and that is reachable by accident, skipped
-is loud — amber fill, struck-through name, the photo desaturated — and raises a
-toast offering the way back. Undo from there returns to *taken*, not to
-unmarked: one tap too many is what got you there.
+**The slot card is the component.** A white card, radius 22, `2px solid` in the
+state colour, one hard `0 4px 0` shadow, and:
 
-The accessible label says what the **next** tap does, since the control cycles
-and a screen reader cannot see where it currently sits.
+- A **solid header band** in the state colour with white text: slot name 26px
+  on the left, time 20px tabular on the right, both `nowrap`. The band is what
+  makes the state legible across a room, and it is why the border matches it.
+- The **medicine names on one line**, 21px/600, collapsed to fit (below).
+- A **24px ringed glyph** plus the status text, both in the state colour.
+- **One button, full width, 54px**: "I have taken these" — or "I have taken it"
+  when the slot holds one medicine. When everything in the slot is already
+  marked it becomes **"Undo this"**, a `#F1EDE3` outline in the same place.
+- Beneath it, **"See the pills"** as a 46px underlined link.
 
-**The target moves on the tap, not on the round trip.** It used to read its
-state from a map that was only updated once the write came back, so a second
-tap arriving first read the old state, computed the same "next", and was
-silently swallowed — and on the supporter's side, where the write goes straight
-out with no outbox behind it, the circle could sit unresponsive for a visible
-second with nothing to say it was busy. The state is applied optimistically and
-rolled back if the write fails. Writes for one dose are chained, so the last
-tap is the last write.
+**Cards are natural height and do not stretch to fill.** Stretching them made
+the day read as blocks rather than as things to do. Two slots fit a phone
+comfortably with margin above the first; a third scrolls, and that is fine.
 
-Read-only days (the supporter's Today before they confirm, and the elder's
-frozen past days) show the same shape without the affordance: a dashed outline
-for unmarked, so "you cannot change this here" is visible before anyone tries.
+**Marking is one tap.** The button marks every *unmarked* medicine in the slot
+as taken and flips the card in place to the done state, plus a toast with Undo.
+Something deliberately left out today survives it — the person said something
+about that medicine and this button must not overrule it. "Undo this" clears
+the whole slot, left-outs included: it means "put this back to untouched", and
+leaving one behind would make the button's effect depend on invisible history.
 
-## Simple mode
+**Medicine names never wrap and never clip mid-word.** One name is itself; two
+join with "and"; three or more become "{first} and N more". A third rule is not
+optional: two names can be long on their own — "Atorvastatin and Latanoprost
+drops" is 33 characters — so past a 30-character budget a pair also takes the
+"and 1 more" form. That is the handoff's own worked example. The CSS ellipsis
+behind this is the second line of defence, not the mechanism.
 
-### Today
+**Other states.** *Loading*: "Getting today ready…" and three 128px skeletons in
+descending tints. *No medicines yet*: a white explainer card plus the green
+code card, the code at 38px mono with 58px Copy / Send it — because until a
+helper enters it there is nothing else to show, and its only job is to be read
+aloud down a phone line. *Nothing due*: a 56px green check circle, "Nothing to
+take today", and when the next one is.
 
-Centred heading, the date, then a progress rail, then the day.
+There is no progress rail and no "Now" label. Both were v3; the state bands say
+more, louder, in the place the person is already looking.
 
-Slots are cards in fixed chronological order. Each has a name, its time, and —
-on the slot whose time has most recently passed — a passive `Now` label.
+### E2 — One time of day ("See the pills")
 
-**A completed slot collapses** to a strip of overlapping photos, a count, and a
-chevron. This is what buys the space for a whole day on one screen. It is
-driven by state, never by the clock, and the strip is a button: the photos must
-not become unreachable just because the slot was marked done.
+Reached only from a Today card, never from the nav. Today already marks the
+whole slot in one tap; this screen exists for the other question — *is this the
+right tablet?* — so the photo comes first and every medicine gets its own
+button.
 
-Collapsing happens on the **transition** into resolved — so marking every
-medicine one at a time ends up exactly where tapping Done does. Editing inside
-a slot the person deliberately expanded keeps it open, because collapsing what
-someone just chose to open is the jarring case.
+A 56px "‹ Today" button on the left; the slot name at 28px and its time
+right-aligned. Then one card per medicine: radius 20, `2px solid` in that
+**dose's** state, the same hard shadow. Each card is a tappable row — a 78px
+pill photo beside the name and strength at 23px/800, "dose · purpose" at 19px,
+the state line at 18px/800, and an underlined "Bigger picture and notes" link —
+then a 60px primary "I have taken this" (or a 60px outline "Undo — not taken"),
+then a 46px text action: "Leave this one out today", or "Put it back on the
+list" once it has been.
 
-**Done marks only what is unmarked.** A deliberate skip survives it: the person
-said something about that medicine and the slot button must not overrule it.
-**Undo clears the whole slot**, skips included — it means "put this back to
-untouched", and leaving amber behind would make the button's effect depend on
-invisible history.
+Above the nav, a full-width 62px outline button: "{take label} — all of
+{slot}", or "Undo all of {slot}".
 
-A dose the supporter marked shows "Marked by your helper", so a mark the person
-did not make is never a surprise.
+A dose the supporter marked reads "✓ Taken · Marked by your helper", so a tick
+the person did not make is never a surprise. Only on their own screen: on the
+helper's it would be telling them what they already know.
 
-### A medicine at its own time
+> **A deliberate departure from the prototype.** Its medicine cards are
+> `flex: 1 1 0`, dividing the screen between however many there are. That is
+> lovely with two and clips with five, and clipping a dose is not a trade this
+> screen gets to make. The cards are natural height in the scrolling region
+> instead — identical for the two- and three-medicine cases that cover almost
+> every household, and it simply scrolls beyond that.
 
-A schedule may override its slot's time for one medicine. Marking is keyed on
-`(date, slot, medicine)` with no time in it, so an overridden medicine is still
-**marked together with the rest of its slot** — two groups sharing a slot
-cannot be completed independently, and splitting them would make one Done tap
-appear to complete both.
+### E3 — Fill the box
 
-What the override changes is when it is *due*, and that has to stay visible.
-The slot header shows the **slot's own** time; a medicine with an override
-shows its time on its own row. Both `mergeBySlot` and `app.compute_day`
-previously took the earliest time across the slot, so overriding one medicine
-to 6am relabelled the whole Morning card "6:00 am" for everything in it —
-nothing was written to the slot, but it read exactly as though the override had
-moved it.
+Reached from the elder's **Fill the box** tab and the supporter's **Box** tab.
+Both roles have it: whoever is holding the tray fills it. (In v3 it lived under
+Settings → Pill box; it is a tab now because the nav had room once Calendar
+left the elder's bar, and a weekly job is easier to find than to remember.)
 
-For a genuinely different hour, the answer is **a new time of day**, not an
-override. The medicine form links to it once an override is set, because that
-is where someone discovers they wanted one.
+**Start** — a navy information band that says filling the box does not mean
+anything has been taken; two rows for the week and which compartments the box
+has, each opening a sheet; then how many medicines go in, a resume panel if a
+sitting was interrupted, and an outline button listing what stays *out* of the
+box with its reason. Two reasons, two sentences: a syrup cannot go in a
+compartment at all, whereas a tablet at an unticked time of day is out because
+of how this household's box is shaped — and only the second is something the
+person can change.
 
-### Cold start
+**A step per medicine** — the mono "Medicine 1 of 4", a progress bar, and a line
+that says what it is progress *through* ("0 of 4 put in the box — this is how
+far through the job you are, nothing else"). Then the name at 30px, both photos
+side by side at 130px, and the quantity card.
 
-Setup ends at sign-in, and nothing can appear until a supporter enters the
-code. That used to be "No medicines yet" and a dead end, at the exact moment
-someone is most likely to think the app is broken. It is now the share code,
-the largest thing on the screen, because its only job is to be read aloud down
-a phone line. (The code's character set already excludes `0`, `O`, `1`, `I` and
-`L` for the same reason.)
+**Quantities are chips, not a table.** One chip per weekday with the number in
+it, `#E7F1EA`/`#1F5340` where there is a dose and grey `–` where there is not.
+A table of ticks is unreadable at arm's length on a kitchen table; seven chips
+are countable at a glance. Above them the week's total as the largest thing in
+the card, because everything else there is reference and that is an instruction.
 
-### Medicine detail sheet
-
-Tapping a medicine opens a sheet: the pill photo, what it is for, strength, how
-much to take, notes, the packet photo if there is one, and every time of day it
-is due. The full-screen viewer is still there one tap deeper —
-matching a tablet against a blister strip needs the photo as large as the
-screen allows, and that is the whole reason the photos exist.
-
-With no photo the block is a plain div, not a button. A control that opens a
-full-screen view of nothing is a dead end, and a square of empty space pushes
-the actual information below the fold.
-
-### Organiser mode
-
-Reached from **Settings → Pill box**, not from a tab and not from Today.
-Filling the box is a weekly job at most, and a tab asks everyone to look past
-it every day. Both roles have it: whoever is holding the tray fills it.
-
-Three screens.
-
-**Start** — which week, how many medicines go in the box, and a strip of
-everything that does *not*, each with its reason. Two reasons, two sentences: a
-syrup cannot go in a compartment at all, whereas a tablet in an unticked time
-of day is out because of how this household's box is shaped — and only the
-second is something the person can change.
-
-**A step per medicine** — both photos side by side when both exist (the pill
-answers "is this the right tablet?", the packet answers "which box do I reach
-for?"), the purpose line, the week's total to take out as the largest thing on
-the screen, and a day × time-of-day grid. Each photo opens the full-screen
-viewer. A grid cell is **three** states, not two: a dot carrying the amount, or
-a dash for not due. Rendering both as empty makes a twice-weekly medicine's
-five blank days read as work outstanding.
-
-**Check** — the same grid with compartment totals instead of per-medicine
-amounts, because counting is how a filled tray is actually verified and pill
+**Check** — a 7-day × compartment grid of totals with thick borders and large
+numerals, because counting is how a filled tray is actually verified and pill
 colour is unknowable from a photo. Tapping a compartment lists what belongs in
-it with the real pill photos, since "the count is wrong" is only useful if you
-can find out which one is missing.
+it with real photos, since "the count is wrong" is only useful if you can find
+out which one is missing.
 
-**Both screens fit one screen, on every phone.** They are a fixed-height
-column, not a document that happens to fit — someone is holding a tray with
-both hands, and scrolling to reach the grid or the Next button is the friction
-this screen exists to remove.
+**There is no verdict.** No tick, no "looks right". The app cannot see the tray,
+and one that claimed the tray was correct would be claiming something it has no
+way to know. The intro says so.
 
-The photos are shown **at their own aspect ratio**, in a transparent frame,
-with a drop-shadow that follows the photo's edges rather than a border around a
-box. Real photos here
-run from 1.4:1 to nearly 4:1 — people crop tightly around a pill or shoot a
-whole strip — and fitting those into a fixed box left large slabs of tile
-background that read as part of the picture. The 44px `pillTile` keeps its
-letterbox on purpose: a grid of tiles needs uniform squares, and there the tone
-is a deliberate backdrop rather than an accident of the photo's shape.
-
-The photos are also **capped, not stretched**. Letting them absorb every spare pixel
-made a big phone look more crowded than a small one: the picture swelled and
-everything else stayed jammed against it. Capped at roughly 15vh, the leftover
-height becomes space *between* the blocks instead, so the screen gets calmer as
-the phone gets taller. The photo is a thumbnail that identifies; it is one tap
-from filling the screen, and that is where a tablet is actually compared
-against a strip.
-
-As height runs out the chrome goes before the content: the week range first
-(the grid's own column headings carry the dates), then the page title, then the
-photo shrinks below its cap. The grid, the total and the buttons never shrink —
-they are the things being acted on.
-
-**There is no verdict.** No tick, no "looks right". The app cannot see the
-tray, and one that claimed the tray was correct would be claiming something it
-has no way to know.
-
-Which times of day go in the box is a per-slot setting rather than a
+Which times of day go in the box is a per-slot tick list rather than a
 compartment count. A count has a hole in it: with a 7×2 tray and four times of
 day, the afternoon and evening medicines have nowhere to go, and merging two
 times into one compartment puts the afternoon dose where it gets taken at
 breakfast. That is the one place this app could actively mislead someone.
 
-### Calendar
+### E4 — Settings
 
-The month sits on a card, like everything else. Before that it was 42 rings on
-bare canvas, which is most of a screen with nothing on it. The "nothing marked"
-ring is deliberately the quietest mark on the grid — it is the default state of
-most of a month, so it must not be the loudest thing there.
+**The only elder screen that scrolls by design.** Four sections at 22px apart,
+each a 15px/800 uppercase label over a radius-18 card with a 2px hairline
+border:
 
-One ring per day. Arc **length** is taken plus skipped over expected; arc
-**colour** is teal, or amber once anything that day was skipped. A skipped dose
-fills the arc exactly as a taken one does — deciding not to take something is
-engaging with the day, and a shorter arc would read as a mark against the
-person. Today is outlined in the decorative violet. Days with nothing due have
-no ring at all.
+- **Your account** — name and email, then the green code card: the code at 34px
+  mono, 56px Copy / Send it, and a 52px dashed-amber "Make a new code…".
+- **Reminders** — a tinted status pill with a ringed glyph, a plain-language
+  note, a 58px toggle and a 52px "Send me a test reminder". Three states, not
+  two: on, off, and *not available* when the phone has blocked notifications —
+  a switch that cannot be wrong is worse than one that admits it does not know.
+- **How it looks** — three 60px rows, the selected one filled and ticked.
+- **About** — version, a plain-language disclaimer that the app gives no
+  medical advice, and a link to How it works.
 
-## Supporter mode
+Then a 62px red-outline "Sign out…" and, below it, a 48px underlined "Change
+role (back to the start)". **A role switcher is a trap** for the person taking
+the medicines — one wrong tap and they are in an admin app — so it is an escape
+hatch at the very bottom, not a settings row.
 
-Same four screens the elder has, plus Medicines. They open on Today, because
-"did they take it?" is why they open the app — not on a configuration list.
+## Supporter screens
+
+Same information architecture, deliberately denser, and tightened for trust.
+They open on Today, because "did they take it?" is why they open the app.
 
 ### Today
 
-The same day renderer. Two things are different:
+A collapsible slot list: a row per time of day with a state ring, "Morning ·
+8:00 am", the status and the count, and an Open/Hide affordance. Expanding
+shows a photo, name and state per medicine with **Mark taken** / **Clear**, and
+a footer action **Mark the whole slot**.
 
-**A freshness line.** Their copy is polled, not live — Realtime respects RLS
-and a supporter has no session, so no events can reach them. The screen says
-when it last reached the server. This is not decoration: polled data presenting
-itself as live is a lie the person only discovers when it matters, and "they
-haven't marked anything" is precisely the wrong thing to be wrong about.
+Marking the whole slot is real and reversible but it is **never the primary
+action** — making it primary invites marking everything at 8am before anything
+has been swallowed. It is an outline button at the bottom of an opened row.
 
-**Mark on behalf.** Supporters fill the organiser and sit with the person while
-they take a dose, so one who cannot mark anything ends up telling the elder to
-go and tap their own phone. It is allowed, confirmed once per session, and
-attributed. Once per session rather than per tap: a supporter marks several in
-a row, and a dialog on each is how you train someone to dismiss dialogs unread.
+Three things above the list exist because the helper is always looking at a
+copy of someone else's day:
 
-A supporter write needs connectivity and says so when it fails, rather than
-appearing to succeed — marking a dose for someone else is not something to
-silently defer.
+- **A live sync line** — a dot, "Updated 2 minutes ago", and **Check now**. The
+  dot turns amber past fifteen minutes. Their copy is polled, not live:
+  Realtime respects RLS and a supporter has no session, so no event can reach
+  them. Polled data presenting itself as live is a lie the person only
+  discovers when it matters, and "they haven't marked anything" is precisely
+  the wrong thing to be wrong about.
+- **A date warning** when their phone's date differs from the household's: "You
+  are looking at their day." Shown only when the two actually differ.
+- **A failure panel** when a refresh fails, stating how stale the data is *and*
+  that marks made now are saved and sent when the connection returns.
 
-**Nudge.** One button in place of the phone call a supporter actually makes.
-Rate limited on the server, because a worried relative tapping four times must
-not produce four buzzes on an elderly person's phone. It never names a
-medicine, reads "A quick check on your medicines" rather than "you forgot"
-(the supporter cannot see whether a dose was taken and simply not marked), and
-reports "they have not turned reminders on" differently from "sent", because
-silence would otherwise read as being ignored.
+**Acting on someone else's behalf is always labelled.** The first mark of a
+session asks — naming the person, and naming how many medicines when it is a
+whole slot — and then never asks again, replaced by a persistent dashed pill:
+"Marking on Margaret's behalf this session". Once per session rather than per
+tap: a helper marks several in a row, and a dialog on each is how you train
+someone to dismiss dialogs unread.
+
+**Nudge their phone** sits in the header. Rate limited on the server, because a
+worried relative tapping four times must not produce four buzzes on an elderly
+person's phone. It never names a medicine, and it reports "they have not turned
+reminders on" differently from "sent", because silence would otherwise read as
+being ignored.
+
+The header date is abbreviated — "Sun 13 Sep" — because the full form and the
+Nudge button do not fit one 375px row at 23px. It is the only abbreviated date
+in the app, and the helper's dialect is the denser one.
+
+### Calendar
+
+A month grid of tinted day tiles, replacing v3's conic-gradient rings. **Six
+states, each visually *and* textually distinct**, because no mark here may be
+carried by colour alone:
+
+| | Means | Tone |
+|---|---|---|
+| `✓` | every medicine dealt with | green |
+| `○` | something still unmarked | amber |
+| `—` | something not taken | neutral grey |
+| `·` | nothing was due | paper |
+| *(blank)* | a future day, not markable | white, cool border |
+| `▣` before the mark | a read-only record, past the freeze line | — |
+
+Today carries a 3px navy border. The legend spells all of it out in words and
+ends with "No scores, no streaks — just what happened."
+
+### One day
+
+A **screen** now, not a sheet over the grid. A day opened from the calendar is
+somewhere you stay for a while — reading what happened, opening a medicine,
+correcting a mark — and a sheet made all three feel like a peek.
+
+It states which of three framings applies before showing anything: *editable*
+("You can still correct this day"), *locked* (kept as a record, past the freeze
+line — said in words rather than shown as dead buttons), or *future* (you can
+see what is planned, nothing can be marked). Then a card per slot with a tinted
+head and a row per medicine, each with **Change** when the day is editable —
+which opens the same medicine sheet with the same words on the same buttons.
+There is no second vocabulary for fixing yesterday.
 
 ### Medicines
 
-A visual inventory rather than a text list: the tile at 34px, from the local
-cache rather than a signed URL per row. A medicine with no photo shows the
-dashed tile.
+A visual inventory: the tile, the name and strength, the schedule summary, and
+the photo state in words. **Archive** on each row names its consequence — it
+leaves Today and the pill box, the past record stays, it can be restored — and
+names both actions, "Archive" / "Keep it". Archived medicines are behind a
+"Show archived (N)" link, dashed, with **Restore**.
+
+### Medicine form
+
+Three sections in the order someone holding a packet works through them: **what
+it is**, **photos**, **when they take it**. The medicine and its times are
+deliberately not two screens — a medicine that exists but is scheduled nowhere
+appears on no screen and the helper has no way to notice, so there is no save
+without at least one time.
+
+Choices that are a small closed set — the form, how often — are **chips rather
+than dropdowns**. A chip shows every option at once, which is what makes
+"Liquid" discoverable as the thing that keeps a medicine out of the pill box.
+
+Validation says how many things need fixing and lists them in one line at the
+top, so the person knows the size of the job before scrolling to find them.
+
+### Times of day
+
+The words the person taking the medicines reads on their Today screen, and the
+compartments of the physical pill box. **Removing one names how many medicine
+schedules use it** — "3 medicine schedules use Morning. They will need a new
+time of day before they appear on Today again." — with "Remove Morning" /
+"Keep it". At least one must remain.
 
 ### Settings
 
-Both roles: **Appearance** and **About**. Elder adds **Account** (email, share
-code, rotate, sign out) and **Reminders**. Supporter adds **Connection** and
-**Times of day** — the latter its own section rather than buried under
-Connection, because changing what "Morning" means is routine setup and
-disconnecting the device is not.
+Connection, the helper's own alerts (with "How long to wait first" as four
+chips — the delay is framed as alerting *them*, never as a warning aimed at the
+person taking medicines, who never sees it), Times of day, Appearance, About.
+
+## Shared entry
+
+**Welcome** — a 52px logo tile, the name at 34px, a one-line description, then
+two 76px stacked buttons and nothing competing with them: "I take the
+medicines" filled green, "I help someone with their medicines" outlined. Below,
+a 60px "How it works" text button and a 15px note that the choice is
+changeable.
+
+**How it works** — a four-panel carousel at `#/how`. A route rather than a
+sheet: it creates no data, so it is safe to open from anywhere, and being a
+route means the phone's own Back button leaves it. Both Settings screens link
+to it with a `from` parameter, so Close returns where it was opened from.
+
+**Sign in** — one 72px "Continue with Google", plus loading and error states.
+The error copy follows the rule every error in the app follows: say what
+happened, say that nothing was lost, say what to do next.
+
+**Pair** — the helper's code entry, painted in *their* palette before a role
+exists, so they land in their own product from the first tap. A 68px mono input
+with a 2px navy border, upper-cased in place because the code is printed upper
+case on the other phone. Four states, each a tinted panel with a glyph, a
+heading and an explanation: invalid code, connection failed, connecting,
+connected. The two failures are deliberately different — a wrong code is the
+helper's to fix by asking; a dropped connection is not their fault and must not
+be reported as if it were.
 
 ## Interaction primitives
 
-All in [js/ui.js](../js/ui.js):
+All in [js/ui.js](../js/ui.js). The pattern rule: **full screens for places you
+live in, bottom sheets for things you look at, centre dialogs only for
+consequences.**
 
-- **Dialog** — a question with two buttons. In simple mode they stack with the
-  confirming action on top, so a big thumb cannot land on the wrong one.
-- **Sheet** — the calendar day and the medicine detail. Sheets stack; **Escape
-  closes only the topmost**. Every layer registers its own listener, so without
-  that guard one press would dismiss the whole stack and drop the person out of
-  the day they were looking at.
-- **Toast** — a brief confirmation, optionally with one action (used by the
-  skipped state). Never for errors that need a decision; those are a dialog.
-- **Photo viewer** — full screen, black, tap anywhere to dismiss.
-- **Loading state** — a spinner and a live region. Supporter screens go through
-  code-gated RPCs and, for photos, an edge function that can cold-start, so
-  "tapped, nothing happened" is a real second or more.
-- **Busy buttons** — anything that starts a round trip disables itself and
-  shows a spinner in place of its label. This is not only politeness: two taps
-  on Save used to create two medicines with the same name.
+- **Dialog** — centred, and the two buttons **stack**. The confirm button
+  *names the action* ("Remove Morning", "Sign out", "Yes, mark on their
+  behalf") and the cancel button names the alternative ("Keep it", "Stay signed
+  in", "Not now"). Never "OK / Cancel", and never side by side — a named action
+  is long, and truncating it is exactly what a confirm dialog must not do. The
+  destructive confirm is filled red; the safe one is filled green.
+- **Sheet** — rises from the bottom, radius 26 (22 for the supporter), with an
+  optional fixed foot below the scrolling body so a medicine sheet's take/undo
+  buttons are reachable without scrolling past the notes. Sheets stack and
+  **Escape closes only the topmost**.
+- **Toast** — confirms every state change in plain past tense, and carries Undo
+  for anything reversible. The only transient UI in the app.
+- **Photo viewer** — full screen on `#14120F`, with a labelled bar and a 52px
+  Close. The reason the app exists, so it gets the whole screen.
 - **Busy overlay** — for something slow enough that a disabled button is not
-  enough of an answer. Dims the screen, blocks input, and names the step it is
-  on. Not dismissible, because there is nothing to decide.
-
-  Saving a medicine is the only user of it so far, and it earns it: the
-  medicine, its schedule, a photo upload and a cache refresh, one after the
-  other. A busy Save button can be scrolled off a long form entirely, and it
-  left every other field editable while their values were already on their way
-  to the server. The step is named rather than shown as a bare spinner because
-  the photo is usually the long part, and a screen that has said nothing for
-  six seconds looks stuck rather than busy.
+  enough of an answer. Names the step it is on. Saving a medicine is its only
+  user and it earns it: the medicine, its schedule, a photo upload and a cache
+  refresh, one after the other.
+- **Overlays are dismissed on navigation.** An open sheet used to survive the
+  screen underneath it changing, leaving a Close button that returned to a card
+  no longer there. The router closes them on a genuine navigation — keyed on
+  the **full hash**, query included, so `refresh()` (Realtime, the poll, the
+  midnight check) does not close a sheet someone is reading, while
+  `?step=check` → `?step=1` does.
 
 Every overlay traps **Tab** as well as Escape, moves focus inside on open, and
 returns focus to whatever opened it on close. `aria-modal` tells a screen reader
@@ -470,32 +593,23 @@ the page behind is inert and does nothing whatever about the tab order, so
 without the trap focus walked straight out into the screen behind — which for a
 keyboard or switch user is the difference between a modal and a decoration.
 
-### Nothing may say it worked when it did not
+## Colour tokens
 
-The recurring failure in this app has not been crashes, it has been success
-messages. A nudge that reached nobody said "Reminder sent". Reminders reported
-themselves as off when the check had failed. A supporter's dose wrote correctly
-and the screen showed nothing.
+Light values. Every one is redefined for dark, never derived.
+Full set in [css/app.css](../css/app.css) sections 1–3.
 
-So: a state that could not be read is reported as **unknown**, not as its
-"safe" default; a send that reached nobody is not a send; and an in-place
-update that finds its node gone re-renders from the store rather than silently
-doing nothing.
-
-## Colour and contrast
-
-| Token | Light | Used for |
+| Token | Value | Used for |
 |---|---|---|
-| `--ink` / `--ink-2` / `--ink-3` | `#22211e` / `#57554e` / `#8a877d` | body, secondary, tertiary text |
-| `--canvas` / `--surface` | `#f3f1ea` / `#ffffff` | page, cards |
-| `--primary` | `#1a56a0` | actions, links, current tab, brand |
-| `--taken` | `#0f6e56` | taken doses, calendar rings |
-| `--skip` | `#ba7517` | skipped doses |
-| `--attn` | `#993c1d` | the `Now` marker, non-blocking notices |
-| `--danger` | `#a32d2d` | archive, remove, destructive confirmations |
-| `--accent` | `#534ab7` | decorative only — today's ring, the role chip |
+| `--ink` / `--ink-2` / `--ink-3` | `#1C1A17` / `#45423C` / `#55514A` | body, secondary, tertiary text |
+| `--muted` / `--faint` | `#7C766A` / `#9A958A` | labels and captions / disabled |
+| `--frame` | `#211F1B` | hard borders, the active nav pill |
+| `--e-canvas` / `--e-card` | `#D9D1BF` / `#FFFFFF` | elder page / cards |
+| `--s-canvas` / `--s-card` | `#E5E9F0` / `#FFFFFF` | supporter page / cards |
+| `--green` / `--green-tint` / `--green-line` | `#1F5340` / `#E7F1EA` / `#9CC0AC` | primary, done |
+| `--navy` | `#2A3B5E` | supporter primary |
+| `--red` / `--red-tint` | `#8E2F1E` / `#FBEAE5` | overdue and destructive **only** |
+| `--amber` / `--amber-ink` / `--amber-tint` | `#A6741C` / `#7A5410` / `#FFF4E0` | needs attention, no blame |
+| `--neutral` / `--neutral-tint` | `#3F4048` / `#ECEBEE` | "not taking today" — never red |
+| `--lift` | `0 4px 0 rgba(28,26,23,0.18)` | the one shadow in the app |
 
-Every one is defined twice, once per mode, never derived. Body text stays at or
-above 7:1 on the canvas in simple mode; secondary text stays above 4.5:1
-wherever it is not purely decorative. No grey-on-grey, no thin weights, no
-icon-only controls without a label.
+No grey-on-grey, no thin weights, and no icon-only control without a label.

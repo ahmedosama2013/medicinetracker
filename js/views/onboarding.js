@@ -1,14 +1,21 @@
-/* First run: which of the two people is holding this phone.
+/* First run: which of the two people is holding this phone — and the
+ * read-only "How it works" carousel, reachable from here and from both
+ * Settings screens.
  *
- * Asked as a plain question with two plain answers. The roles are never named
- * on screen - "elder" reads badly to the person being called it - and the
- * choice is reversible from Settings, so nobody is trapped by a wrong tap.
+ * The role question is asked as a plain question with two plain answers, and
+ * nothing else on the screen competes with them. The roles are never named on
+ * screen ("elder" reads badly to the person being called it) and the choice is
+ * reversible from Settings, so nobody is trapped by a wrong tap.
  */
 
 import { S } from '../strings.js';
-import { el, clear, icon, openSheet } from '../ui.js';
+import { el, mount, screen } from '../ui.js';
+import { go } from '../router.js';
 
-/* Compact explanatory diagrams, each showing one part of the shared flow. */
+/* The 190px illustration slot, one per carousel step. Line drawings rather
+ * than the prototype's hatch placeholder: the panel is a third of the screen
+ * and a hatch there reads as a broken image, not as a pending asset. They are
+ * decorative — every step's meaning is carried by its title and body. */
 const HOW_ART = {
   role: '<svg viewBox="0 0 320 176" aria-hidden="true"><path class="how-line" d="M160 64v22M160 86C160 108 91 96 91 126M160 86c0 22 69 10 69 40"/><g class="how-node how-node-main"><circle cx="160" cy="43" r="31"/><path d="m146 31 28 28M139 38l14-14a10 10 0 0 1 14 0l17 17a10 10 0 0 1 0 14l-14 14a10 10 0 0 1-14 0l-17-17a10 10 0 0 1 0-14Z"/></g><g class="how-node how-node-blue"><circle cx="91" cy="137" r="29"/><path d="m77 137 9 9 19-20"/></g><g class="how-node how-node-teal"><circle cx="229" cy="137" r="29"/><circle cx="220" cy="137" r="10"/><circle cx="238" cy="137" r="10"/></g></svg>',
   setup: '<svg viewBox="0 0 320 176" aria-hidden="true"><g class="how-photo"><rect x="28" y="31" width="106" height="106" rx="24"/><path d="m65 78 34 34M55 88l18-18a12 12 0 0 1 17 0l18 18a12 12 0 0 1 0 17l-18 18a12 12 0 0 1-17 0l-18-18a12 12 0 0 1 0-17Z"/><circle cx="116" cy="49" r="13"/><path d="m110 49 4 4 8-9"/></g><path class="how-arrow" d="M150 84h34m-10-10 10 10-10 10"/><g class="how-schedule"><circle cx="235" cy="84" r="48"/><circle cx="235" cy="84" r="22"/><path d="M235 69v16l11 8"/><path class="how-ray" d="M235 21v8M235 139v8M172 84h8M290 84h8"/></g></svg>',
@@ -16,107 +23,77 @@ const HOW_ART = {
   box: '<svg viewBox="0 0 320 176" aria-hidden="true"><g class="how-packet"><rect x="18" y="48" width="55" height="78" rx="9"/><path d="M18 68h55M30 86h30M30 98h21"/><path d="m35 111 20-20"/></g><path class="how-arrow" d="M86 87h31m-10-10 10 10-10 10"/><g class="how-tray"><rect x="129" y="25" width="166" height="126" rx="20"/><path d="M153 49h50v34h-50zM203 49h50v34h-50zM253 49h18v34h-18zM153 83h50v44h-50zM203 83h50v44h-50zM253 83h18v44h-18z"/><circle cx="178" cy="66" r="8"/><path d="m221 58 14 14M216 63l6-6a5 5 0 0 1 7 0l7 7a5 5 0 0 1 0 7l-6 6a5 5 0 0 1-7 0l-7-7a5 5 0 0 1 0-7Z"/><circle cx="178" cy="105" r="8"/><circle cx="228" cy="105" r="8"/></g><g class="how-check"><circle cx="279" cy="32" r="18"/><path d="m270 32 6 6 12-14"/></g></svg>',
 };
 
-function howArtwork(name) {
-  return el('div.how-art.how-art-' + name, {
-    html: HOW_ART[name], 'aria-hidden': 'true',
-  });
+// ---- Welcome --------------------------------------------------------------
+
+export async function welcomeView({ app }) {
+  mount(app, screen({
+    body: el('div.welcome', [
+      el('div.welcome-head', [
+        el('span.welcome-mark', { 'aria-hidden': 'true', text: 'C' }),
+        el('h1.welcome-brand', { text: S.appName }),
+        el('p.welcome-tagline', { text: S.tagline }),
+      ]),
+
+      /* Two 76px stacked buttons and nothing competing with them. The filled
+       * one is the person taking the medicines: it is the app's centre of
+       * gravity, and it is also the only role that creates an account. */
+      el('div.welcome-actions', [
+        el('a.role-btn', { href: '#/signin', text: S.roleSimple }),
+        el('a.role-btn.role-btn-outline', { href: '#/pair', text: S.roleSupporter }),
+        el('a.welcome-how', { href: '#/how', text: S.howItWorks }),
+      ]),
+
+      el('p.welcome-foot', { text: S.roleChangeLater }),
+    ]),
+  }));
 }
 
-function openHowItWorks() {
-  const steps = [
-    { art: 'role', title: S.howRoleTitle, body: S.howRoleBody },
-    { art: 'setup', title: S.howSetupTitle, body: S.howSetupBody },
-    { art: 'today', title: S.howTodayTitle, body: S.howTodayBody },
-    { art: 'box', title: S.howBoxTitle, body: S.howBoxBody },
-  ];
-  let current = 0;
-  const stage = el('div.how-stage');
-  const nav = el('div.how-nav');
-  const content = el('div.how-flow', [stage, nav]);
-  const sheet = openSheet({
-    title: S.howTitle,
-    content,
-    panelClassName: 'how-sheet',
-    layerClassName: 'how-sheet-layer',
-  });
+// ---- How it works ---------------------------------------------------------
+
+/* A route rather than a sheet. It creates no data, so it is safe to open from
+ * anywhere -- Welcome, the elder's Settings, the helper's Settings -- and
+ * being a route means the phone's own Back button leaves it, which is one less
+ * thing to learn. */
+export async function howItWorksView({ app, query }) {
+  const pages = S.howPages;
+  const asked = Number(query?.get('step'));
+  let index = Number.isInteger(asked) && asked >= 0 && asked < pages.length ? asked : 0;
+
+  /* Where Back and Close go when the carousel is done with. Passed in by
+   * whoever opened it, because "Close" from the elder's Settings must not
+   * dump them on the role picker. */
+  const exit = query?.get('from') || '#/welcome';
 
   function draw() {
-    const step = steps[current];
-    clear(stage);
-    stage.appendChild(el('div.how-slide', [
-      el('p.how-kicker', { text: S.howStep(current + 1, steps.length) }),
-      howArtwork(step.art),
-      el('h3.how-step-title', { text: step.title }),
-      el('p.how-step-body', { text: step.body }),
-    ]));
+    const page = pages[index];
+    const first = index === 0;
+    const last = index === pages.length - 1;
 
-    clear(nav);
-    const dots = el('div.how-dots', { role: 'group', 'aria-label': S.howTitle },
-      steps.map((item, index) => el(
-        'button.how-dot' + (index === current ? '.is-current' : ''),
-        {
+    mount(app, screen({
+      head: el('div.how-bar', [
+        el('a.back-btn', { href: exit, text: S.howClose }),
+        el('span.how-count', { text: S.howCount(index + 1, pages.length) }),
+      ]),
+      body: el('div.how-body', [
+        el('div.how-art', { html: HOW_ART[page.art] || '', 'aria-hidden': 'true' }),
+        el('h1.how-title', { text: page.title }),
+        el('p.how-text', { text: page.body }),
+        el('p.how-note', { text: S.howNote }),
+      ]),
+      foot: el('div.how-nav', [
+        el('button.btn.btn-outline.how-back', {
           type: 'button',
-          'aria-label': S.howStep(index + 1, steps.length),
-          'aria-current': index === current ? 'step' : null,
-          onclick: () => { current = index; draw(); },
-        },
-      )));
-    const actions = el('div.how-actions', [
-      current > 0 ? el('button.btn.btn-quiet', {
-        type: 'button', text: S.howBack,
-        onclick: () => { current -= 1; draw(); },
-      }) : el('span'),
-      el('button.btn.btn-primary', {
-        type: 'button',
-        text: current === steps.length - 1 ? S.howDone : S.howNext,
-        onclick: () => {
-          if (current === steps.length - 1) sheet.close();
-          else { current += 1; draw(); }
-        },
-      }),
-    ]);
-    nav.appendChild(dots);
-    nav.appendChild(actions);
+          text: first ? S.howClose : S.howBack,
+          onclick: () => { if (first) go(exit); else { index -= 1; draw(); } },
+        }),
+        el('button.btn.btn-primary.how-next', {
+          type: 'button',
+          text: last ? S.howDone : S.howNext,
+          onclick: () => { if (last) go(exit); else { index += 1; draw(); } },
+        }),
+      ]),
+    }));
   }
 
   draw();
-}
-
-export async function welcomeView({ app }) {
-  clear(app);
-  app.classList.add('is-welcome');
-
-  app.appendChild(el('div.welcome', [
-    el('div.welcome-logo', icon('pill')),
-    el('h1.welcome-brand', { text: S.appName }),
-    el('p.welcome-tagline', { text: S.tagline }),
-    el('h2.welcome-title', { text: S.welcomeTitle }),
-    el('p.welcome-intro', { text: S.welcomeIntro }),
-
-    el('button.welcome-how', { type: 'button', onclick: openHowItWorks }, [
-      el('span.welcome-how-mark', icon('pill')),
-      el('span', { text: S.howItWorks }),
-      el('span.welcome-how-arrow', { 'aria-hidden': 'true', text: '›' }),
-    ]),
-
-    el('a.role-btn', { href: '#/signin' }, [
-      el('span.role-icon', icon('today')),
-      el('span.role-text', [
-        el('span.role-name', { text: S.roleSimple }),
-        el('span.role-hint', { text: S.roleSimpleHint }),
-      ]),
-      el('span.role-chevron', { 'aria-hidden': 'true', text: '›' }),
-    ]),
-
-    el('a.role-btn', { href: '#/pair' }, [
-      el('span.role-icon.role-icon-supporter', icon('people')),
-      el('span.role-text', [
-        el('span.role-name', { text: S.roleSupporter }),
-        el('span.role-hint', { text: S.roleSupporterHint }),
-      ]),
-      el('span.role-chevron', { 'aria-hidden': 'true', text: '›' }),
-    ]),
-
-    el('p.welcome-foot', { text: S.roleChangeLater }),
-  ]));
 }

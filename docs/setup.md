@@ -383,18 +383,19 @@ the subscription is cryptographically bound to the key it was created with.
 - [ ] Sign in with Google works and creates exactly one household per account.
 - [ ] A wrong or expired code shows a plain error on the pairing screen, not a crash.
 - [ ] A medicine added by the supporter reaches the elder's Today screen live.
-- [ ] Marking a dose Done/Undo works with the browser's network set to offline, and syncs once back online (devtools > Network > Offline, tap Done, go back online, check the `dose_log` table).
+- [ ] Marking a time of day works with the browser's network set to offline, and syncs once back online (devtools > Network > Offline, tap **I have taken these**, go back online, check the `dose_log` table). While offline, Today shows the amber "your taps are saved here" line and nothing on the screen is disabled.
 - [ ] Reminders arrive for a due-and-unlogged slot (test by adding a schedule due a few minutes from now, or by manually calling `select * from app.claim_due_notifications();` in the SQL editor to confirm it finds the right rows).
 - [ ] A second reminder arrives ~1 hour after the **slot's own time** if it is still unlogged, and stops entirely once the slot is marked — test by lowering that household's `followup_after` (`update public.households set followup_after = '2 minutes' where id = '...'`) rather than waiting an hour.
 - [ ] A follow-up that would land at or after `nightly_summary_time` is suppressed — set a slot to 23:00 and confirm `claim_due_notifications()` never returns stage 2 for it.
 - [ ] Enabling reminders *after* a slot's time still produces the follow-up: no stage 1, stage 2 an hour after the slot. This is the case `0014` exists for.
 - [ ] `select * from app.claim_daily_summary();` returns a row for a household with anything unmarked when its local time is within 20 minutes of `nightly_summary_time`, and nothing once everything is marked — temporarily set `nightly_summary_time` to a couple of minutes from now to test.
-- [ ] Rotating the share code (Settings, elder) invalidates the old code immediately.
+- [ ] Rotating the share code (elder Settings → **Make a new code…**) invalidates the old code immediately.
 - [ ] A direct query against `medicines`/`schedules`/`slots` using only the anon key (no session, no code) returns nothing — confirms the code-gated function surface is the only way in.
-- [ ] A supporter device shows the patient's Today with their marks on it, and the "Updated ..." line under the date changes as it polls.
-- [ ] The supporter's **Send a reminder** button buzzes the patient's phone, and pressing it again straight away says "Already sent" rather than buzzing twice.
-- [ ] A medicine marked from the supporter's phone shows "Marked by your helper" on the patient's.
-- [ ] Cycling a dose target twice records `status = 'skipped'` in `dose_log`, and tapping **Done** for that slot afterwards leaves the skip alone.
+- [ ] A supporter device shows the patient's Today with their marks on it, and the "Updated ..." line under the date changes as it polls. **Check now** forces one.
+- [ ] The supporter's first mark of a session asks "Mark this for …?" and names the person; after confirming, the dashed "Marking on … behalf this session" pill appears and the question does not come back.
+- [ ] The supporter's **Nudge their phone** button buzzes the patient's phone, and pressing it again straight away says "Already sent" rather than buzzing twice.
+- [ ] A medicine marked from the supporter's phone shows "Marked by your helper" on the patient's — on **See the pills**, not on Today.
+- [ ] **Leave this one out today** (elder, See the pills) records `status = 'skipped'` in `dose_log`, and tapping **I have taken these** for that time of day afterwards leaves it alone.
 - [ ] `select * from public.claim_due_notifications();` runs from the SQL editor — if it errors with "function does not exist", `0009` has not been applied and the reminder cron cannot work.
 - [ ] A direct call to `public.claim_due_notifications()` with **only the anon key** is refused. It returns push endpoints and their encryption keys, and must be `service_role` only.
 
@@ -413,6 +414,6 @@ the subscription is cryptographically bound to the key it was created with.
 | Reminders show "on" but nothing sends                    | A subscription created before the current VAPID key. Toggle reminders off and on. If it now shows "off", the server row was never written — the toggle reflects the server, not the browser                                    |
 | A new Edge Function query returns nothing, with no error | `service_role` needs an explicit table grant; `0001` granted only `anon`/`authenticated`. See `0002` and `0008`. Always check `error`, never just `data`                                                                        |
 | A Supabase project stops responding after being idle     | Free-tier projects pause after 7 days with zero activity — open the dashboard to un-pause it. The reminder cron running every 5 minutes should prevent this in practice; worth confirming rather than assuming                |
-| "That code is not valid" for a code you're sure is right | The code may have been rotated since it was shared, or was mistyped — codes exclude `0`, `O`, `1`, `I`, `L` on purpose to avoid exactly this confusion                                                                        |
+| "That code was not found" for a code you're sure is right | The code may have been rotated since it was shared, or was mistyped — codes exclude `0`, `O`, `1`, `I`, `L` on purpose to avoid exactly this confusion. A *"Could not connect"* panel instead means the code is fine and the network is not |
 
 

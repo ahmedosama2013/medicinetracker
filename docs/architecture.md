@@ -18,6 +18,8 @@ index.html
           ├── js/store.js ──────── the only module that touches the local IndexedDB cache
           │      └── js/db.js ─── IndexedDB promise wrapper
           ├── js/schedule.js ──── what is due on a date (also ported into Postgres, `app.compute_day`/`app.is_due`)
+          ├── js/day-model.js ─── one day described once: tone, status, name summary
+          ├── js/marking.js ───── the write side: optimistic, queued, labelled, undoable
           ├── js/organiser.js ─── pure: what goes in each pill-box compartment for a week
           └── js/views/* ──────── one module per screen
 ```
@@ -30,7 +32,7 @@ The **supporter device**: also has a local cache now, filled by `js/supporter-sy
 
 Until v3 a supporter had no screen that rendered a day, so every screen could
 round-trip on load and hold nothing. Giving them Today and Calendar changed
-that: those screens are `js/schedule.js` + `js/views/day.js`, which read from
+that: those screens are `js/schedule.js` + `js/day-model.js`, which read from
 `js/store.js`. The alternative was parameterising every read path by role,
 which is far more code and gives two ways for one screen to be wrong.
 
@@ -71,20 +73,38 @@ disappeared on reload because a reload runs exactly one render.
 
 `js/router.js` numbers each render and hands the view an `isCurrent()`
 predicate. **A view must check it after every await, before touching the DOM.**
-That is the contract; a new view that skips it reintroduces the bug. Where it
-was cheap, views also build detached and clear only once they hold everything,
-which removes the window rather than only guarding it.
+That is the contract; a new view that skips it reintroduces the bug. Since v4
+every view also renders exactly one `screen()` and mounts it in a single
+mutation, which removes the window rather than only guarding it.
 
 The router also catches a throwing view. Before, a rejection went nowhere and
 the person sat on the previous screen with no explanation.
 
+**Overlays belong to the screen that opened them.** A sheet or dialog lives in
+`#overlay`, outside `#app`, so a re-render underneath leaves it standing — and
+a medicine sheet that survived the navigation beneath it had a Close button
+returning to a card that no longer existed. The router now calls
+`ui.closeOverlays()` on a genuine navigation, keyed on the **full hash rather
+than the path**: `refresh()` re-renders the same hash and must not dismiss a
+sheet someone is reading (Realtime, the helper's poll and the midnight check
+all call it), while `#/organiser?step=check` → `#/organiser` and
+`#/slot?id=morning` → `#/slot?id=evening` are real navigations that differ only
+in their query.
+
 ### What may re-render, and when
 
 The rule underneath all of this: **a screen that has already updated itself
-must not be redrawn for the change it just made.** `js/views/day.js` swaps one
-slot node on a dose change specifically to avoid re-reading the database,
+must not be redrawn for the change it just made.** The elder's Today swaps one
+slot card on a dose change specifically to avoid re-reading the database,
 reloading every photo and jumping the scroll position — and two separate
 mechanisms used to undo that on every tap.
+
+The smaller screens (the elder's slot detail, the helper's Today and day
+detail, the medicine form) rebuild themselves wholesale instead, which is
+cheap there — the photos are already resolved into a closure and nothing goes
+back to the database — but it still throws away the scroll position, so those
+call `mount(app, node, { keepScroll: true })`. It is opt-in because a genuine
+navigation must *not* keep it.
 
 - **Realtime echoes.** Postgres broadcasts to every subscriber including the
   writer, so a Done tap on a five-medicine slot came back as five events and
@@ -271,8 +291,8 @@ Two rules that both exist because the same tap arrived twice:
   without awaiting it, so a burst of taps used to start a burst of flushes,
   each holding a different snapshot of the queue and racing to the network.
   Whichever landed last won, which is not necessarily the one the person tapped
-  last. Writes for a single dose are also chained in `js/views/day.js`, so the
-  last tap is the last write.
+  last. Writes for a single dose are also chained, in `js/marking.js`'s
+  `queueWrite`, so the last tap is the last write.
 - **A button that starts a round trip disables itself.** Medicine-form Save did
   not, and two taps meant two medicines with the same name — `draft.id` was
   still null on the second pass.

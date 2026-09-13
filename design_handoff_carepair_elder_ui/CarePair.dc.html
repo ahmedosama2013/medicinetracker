@@ -1,0 +1,1999 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  body { margin: 0; background: #E4DFD4; font-family: "Public Sans", system-ui, sans-serif; color: #1C1A17; }
+  a { color: #1F5340; } a:hover { color: #14362a; }
+  button { font: inherit; }
+  * { box-sizing: border-box; }
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.18); border-radius: 4px; }
+</style>
+</helmet>
+
+<div style="padding: 40px 40px 64px; display: flex; flex-direction: column; gap: 28px">
+
+  <div style="display: flex; flex-direction: column; gap: 8px; max-width: 78ch">
+    <span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; color: #7C766A">CarePair · mobile product design · navigable mock</span>
+    <h1 style="margin: 0; font-size: 38px; font-weight: 800; letter-spacing: -0.02em">Two apps, one household</h1>
+    <p style="margin: 0; font-size: 17px; line-height: 1.5; color: #55514A; text-wrap: pretty">The person taking the medicines gets one calm question a day: <em>what do I take now?</em> The helper gets everything else. Tap through the phone below — every screen, sheet, dialog, empty, loading and error state is live.</p>
+  </div>
+
+  <div style="display: flex; gap: 36px; flex-wrap: wrap; align-items: flex-start">
+
+    <div style="display: flex; flex-direction: column; gap: 14px; width: 390px; flex: none">
+      <div style="position: relative; width: 390px; height: 844px; background: #D9D1BF; border: 9px solid #211F1B; border-radius: 48px; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 6px 14px rgba(60,50,30,0.12), 0 30px 60px rgba(60,50,30,0.25)">
+        <div style="flex: none; height: 44px; display: flex; align-items: center; justify-content: space-between; padding: 0 24px; font-size: 14px; font-weight: 700; color: #55514A; font-variant-numeric: tabular-nums">
+          <span>{{ clock }}</span>
+          <span style="display: flex; gap: 6px; align-items: center"><span style="width: 18px; height: 9px; border: 1.5px solid #55514A; border-radius: 2px; display: inline-block"></span></span>
+        </div>
+
+        <sc-if value="{{ isWelcome }}" hint-placeholder-val="{{ true }}">
+          <div style="flex: 1; min-height: 0; display: flex; flex-direction: column; justify-content: center; gap: 28px; padding: 24px 24px 34px">
+            <div style="display: flex; flex-direction: column; gap: 10px">
+              <span style="width: 52px; height: 52px; border-radius: 16px; background: #1F5340; display: flex; align-items: center; justify-content: center; color: #FBF9F5; font-size: 24px; font-weight: 800">C</span>
+              <h2 style="margin: 8px 0 0; font-size: 34px; font-weight: 800; letter-spacing: -0.02em; line-height: 1.1">CarePair</h2>
+              <p style="margin: 0; font-size: 20px; line-height: 1.4; color: #55514A">Medicines, kept simple — for the person taking them and the person helping.</p>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 14px">
+              <button type="button" onClick="{{ nav.signin }}" style="min-height: 76px; padding: 14px 22px; border: none; border-radius: 18px; background: #1F5340; color: #FBF9F5; font-size: 22px; font-weight: 700; text-align: left; cursor: pointer" style-hover="background: #17412f">I take the medicines</button>
+              <button type="button" onClick="{{ nav.pair }}" style="min-height: 76px; padding: 14px 22px; border: 2px solid #211F1B; border-radius: 18px; background: #FBF9F5; color: #1C1A17; font-size: 22px; font-weight: 700; text-align: left; cursor: pointer" style-hover="background: #F2EEE6">I help someone with their medicines</button>
+              <button type="button" onClick="{{ nav.how }}" style="min-height: 60px; padding: 12px 22px; border: none; border-radius: 18px; background: transparent; color: #1F5340; font-size: 19px; font-weight: 700; text-decoration: underline; text-align: left; cursor: pointer">How it works</button>
+            </div>
+            <p style="margin: 0; font-size: 15px; color: #7C766A; line-height: 1.45">You can change this later in Settings.</p>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ isHow }}">
+          <div style="flex: 1; min-height: 0; display: flex; flex-direction: column">
+            <div style="flex: none; display: flex; align-items: center; gap: 12px; padding: 6px 18px 14px">
+              <button type="button" onClick="{{ nav.welcome }}" style="min-height: 44px; padding: 8px 14px; border: none; background: none; color: #1F5340; font-size: 17px; font-weight: 700; cursor: pointer">Close</button>
+              <span style="margin-left: auto; font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: #7C766A">{{ howCount }}</span>
+            </div>
+            <div style="flex: 1; min-height: 0; overflow: hidden; padding: 8px 24px 24px; display: flex; flex-direction: column; gap: 18px">
+              <div style="flex: none; height: 190px; border-radius: 18px; border: 1px solid #DDD7CB; background: repeating-linear-gradient(45deg, #F2EEE6 0 8px, #E8E3D8 8px 16px); display: flex; align-items: center; justify-content: center; font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #7C766A; text-align: center; padding: 12px">{{ howArt }}</div>
+              <h2 style="margin: 0; font-size: 28px; font-weight: 800; letter-spacing: -0.015em; line-height: 1.15">{{ howTitle }}</h2>
+              <p style="margin: 0; font-size: 19px; line-height: 1.45; color: #45423C">{{ howBody }}</p>
+              <p style="margin: 0; font-size: 15px; line-height: 1.45; color: #7C766A">Reading this changes nothing in the app. No medicines are added.</p>
+            </div>
+            <div style="flex: none; display: flex; gap: 12px; padding: 12px 20px 22px; border-top: 1px solid #E4DFD4">
+              <button type="button" onClick="{{ nav.howBack }}" style="min-height: 60px; flex: 1; border: 2px solid #211F1B; border-radius: 16px; background: #FBF9F5; font-size: 18px; font-weight: 700; cursor: pointer">{{ howBackLabel }}</button>
+              <button type="button" onClick="{{ nav.howNext }}" style="min-height: 60px; flex: 2; border: none; border-radius: 16px; background: #1F5340; color: #FBF9F5; font-size: 18px; font-weight: 700; cursor: pointer">{{ howNextLabel }}</button>
+            </div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ isSignin }}">
+          <div style="flex: 1; min-height: 0; display: flex; flex-direction: column; justify-content: center; gap: 26px; padding: 24px 24px 34px">
+            <button type="button" onClick="{{ nav.welcome }}" style="position: absolute; top: 52px; left: 14px; min-height: 44px; padding: 8px 14px; border: none; background: none; color: #1F5340; font-size: 17px; font-weight: 700; cursor: pointer">Back</button>
+            <div style="display: flex; flex-direction: column; gap: 10px">
+              <h2 style="margin: 0; font-size: 30px; font-weight: 800; letter-spacing: -0.02em; line-height: 1.15">Sign in so your helper can reach you</h2>
+              <p style="margin: 0; font-size: 19px; line-height: 1.45; color: #55514A">One sign-in keeps your medicine list safe and lets your helper add medicines from their own phone.</p>
+            </div>
+            <sc-if value="{{ signinIdle }}">
+              <div style="display: flex; flex-direction: column; gap: 14px">
+                <button type="button" onClick="{{ nav.doSignin }}" style="min-height: 72px; border: 2px solid #211F1B; border-radius: 18px; background: #FFFFFF; font-size: 20px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 12px"><span style="width: 26px; height: 26px; border-radius: 999px; background: #1F5340; color: #fff; font-size: 15px; font-weight: 800; display: flex; align-items: center; justify-content: center">G</span>Continue with Google</button>
+                <p style="margin: 0; font-size: 15px; color: #7C766A; line-height: 1.45">No new password to remember.</p>
+              </div>
+            </sc-if>
+            <sc-if value="{{ signinLoading }}">
+              <div style="display: flex; flex-direction: column; gap: 12px; padding: 22px; border-radius: 18px; background: #F2EEE6; border: 1px solid #DDD7CB">
+                <span style="font-size: 20px; font-weight: 700">Signing you in…</span>
+                <span style="height: 8px; border-radius: 999px; background: #DDD7CB; overflow: hidden; display: block"><span style="display: block; width: 60%; height: 100%; background: #1F5340"></span></span>
+                <span style="font-size: 16px; color: #55514A">Setting up your household and your sharing code.</span>
+              </div>
+            </sc-if>
+            <sc-if value="{{ signinError }}">
+              <div style="display: flex; flex-direction: column; gap: 14px; padding: 20px; border-radius: 18px; background: #FBEAE5; border: 2px solid #8E2F1E">
+                <span style="font-size: 20px; font-weight: 800; color: #7A2716">Sign-in did not finish</span>
+                <span style="font-size: 17px; line-height: 1.4; color: #45423C">The connection dropped. Nothing was changed. You can try again.</span>
+                <button type="button" onClick="{{ nav.doSignin }}" style="min-height: 60px; border: none; border-radius: 16px; background: #1F5340; color: #FBF9F5; font-size: 18px; font-weight: 700; cursor: pointer">Try again</button>
+              </div>
+            </sc-if>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ isPair }}">
+          <div style="flex: 1; min-height: 0; display: flex; flex-direction: column; background: #E5E9F0">
+            <div style="flex: none; display: flex; align-items: center; padding: 6px 14px 10px">
+              <button type="button" onClick="{{ nav.welcome }}" style="min-height: 44px; padding: 8px 12px; border: none; background: none; color: #2A3B5E; font-size: 16px; font-weight: 700; cursor: pointer">Back</button>
+            </div>
+            <div style="flex: 1; min-height: 0; overflow-y: auto; padding: 8px 22px 24px; display: flex; flex-direction: column; gap: 20px">
+              <div style="display: flex; flex-direction: column; gap: 8px">
+                <span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; color: #6B7280">Helper setup</span>
+                <h2 style="margin: 0; font-size: 27px; font-weight: 800; letter-spacing: -0.015em; line-height: 1.2">Enter the code from their phone</h2>
+                <p style="margin: 0; font-size: 16px; line-height: 1.5; color: #4B5563">Ask them to open Settings on their phone and read you the six-character code. No account needed for you.</p>
+              </div>
+              <div style="display: flex; flex-direction: column; gap: 10px">
+                <label for="code" style="font-size: 14px; font-weight: 700; color: #374151">Household code</label>
+                <div id="code" style="min-height: 68px; border-radius: 14px; border: 2px solid #2A3B5E; background: #FFFFFF; display: flex; align-items: center; padding: 0 18px; font-family: 'IBM Plex Mono', monospace; font-size: 30px; font-weight: 500; letter-spacing: 0.22em; color: #111827">{{ pairCode }}</div>
+                <div style="display: flex; gap: 8px; flex-wrap: wrap">
+                  <button type="button" onClick="{{ nav.typeGood }}" style="min-height: 40px; padding: 6px 12px; border: 1px solid #C7CCD6; border-radius: 999px; background: #fff; font-size: 13px; font-weight: 600; cursor: pointer">type a valid code</button>
+                  <button type="button" onClick="{{ nav.typeBad }}" style="min-height: 40px; padding: 6px 12px; border: 1px solid #C7CCD6; border-radius: 999px; background: #fff; font-size: 13px; font-weight: 600; cursor: pointer">type a wrong code</button>
+                </div>
+              </div>
+              <sc-if value="{{ pairInvalid }}">
+                <div style="display: flex; gap: 12px; padding: 16px; border-radius: 14px; background: #FDECE8; border: 1px solid #B14A34">
+                  <span style="font-size: 18px; font-weight: 800; color: #8E2F1E">✕</span>
+                  <span style="display: flex; flex-direction: column; gap: 4px"><span style="font-size: 16px; font-weight: 700; color: #8E2F1E">That code was not found</span><span style="font-size: 15px; line-height: 1.45; color: #45423C">Codes are six characters, letters and numbers. Check it with them and try again — or ask them to make a new code in Settings.</span></span>
+                </div>
+              </sc-if>
+              <sc-if value="{{ pairFailed }}">
+                <div style="display: flex; gap: 12px; padding: 16px; border-radius: 14px; background: #FFF4E0; border: 1px solid #A6741C">
+                  <span style="font-size: 18px; font-weight: 800; color: #7A5410">!</span>
+                  <span style="display: flex; flex-direction: column; gap: 8px"><span style="font-size: 16px; font-weight: 700; color: #7A5410">Could not connect</span><span style="font-size: 15px; line-height: 1.45; color: #45423C">The code looks right but we could not reach the household. Check your internet and retry.</span><button type="button" onClick="{{ nav.doPair }}" style="min-height: 44px; padding: 8px 16px; border: none; border-radius: 10px; background: #2A3B5E; color: #fff; font-size: 15px; font-weight: 700; cursor: pointer; align-self: flex-start">Retry</button></span>
+                </div>
+              </sc-if>
+              <sc-if value="{{ pairLoading }}">
+                <div style="display: flex; flex-direction: column; gap: 10px; padding: 16px; border-radius: 14px; background: #EEF1F6; border: 1px solid #C7CCD6">
+                  <span style="font-size: 16px; font-weight: 700">Connecting…</span>
+                  <span style="height: 6px; border-radius: 999px; background: #D8DCE4; overflow: hidden; display: block"><span style="display: block; width: 45%; height: 100%; background: #2A3B5E"></span></span>
+                </div>
+              </sc-if>
+              <sc-if value="{{ pairDone }}">
+                <div style="display: flex; flex-direction: column; gap: 12px; padding: 18px; border-radius: 14px; background: #E7F1EA; border: 1px solid #1F5340">
+                  <span style="font-size: 17px; font-weight: 800; color: #1F5340">✓ Connected to Margaret's household</span>
+                  <span style="font-size: 15px; line-height: 1.45; color: #45423C">You can now add medicines, set times, and follow the day. Marking a dose will always say you are doing it on her behalf.</span>
+                </div>
+              </sc-if>
+            </div>
+            <div style="flex: none; padding: 12px 20px 22px; border-top: 1px solid #E1E4EA; background: #fff; display: flex; gap: 10px">
+              <sc-if value="{{ pairDone }}">
+                <button type="button" onClick="{{ nav.sToday }}" style="flex: 1; min-height: 58px; border: none; border-radius: 14px; background: #2A3B5E; color: #fff; font-size: 17px; font-weight: 700; cursor: pointer">Go to Today</button>
+              </sc-if>
+              <sc-if value="{{ pairNotDone }}">
+                <button type="button" onClick="{{ nav.doPair }}" style="flex: 1; min-height: 58px; border: none; border-radius: 14px; background: #2A3B5E; color: #fff; font-size: 17px; font-weight: 700; cursor: pointer">Connect</button>
+              </sc-if>
+            </div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ isEToday }}">
+          <div style="flex: 1; min-height: 0; display: flex; flex-direction: column">
+            <div style="flex: none; padding: 10px 22px 12px; display: flex; align-items: baseline; gap: 10px">
+              <span style="font-size: 25px; font-weight: 800; letter-spacing: -0.02em">{{ dateLabel }}</span>
+              <span style="margin-left: auto; font-size: 15px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: #7C766A">Today</span>
+            </div>
+            <sc-if value="{{ eOffline }}">
+              <div style="flex: none; margin: 0 14px 10px; padding: 10px 14px; border-radius: 12px; background: #FFF4E0; border: 2px solid #A6741C; display: flex; gap: 10px; align-items: center">
+                <span style="font-size: 18px; font-weight: 800; color: #7A5410">!</span>
+                <span style="font-size: 17px; font-weight: 700; line-height: 1.25; color: #45423C">No internet — your taps are saved here.</span>
+              </div>
+            </sc-if>
+            <sc-if value="{{ eLoading }}">
+              <div style="flex: 1; display: flex; flex-direction: column; gap: 16px; padding: 4px 16px 16px">
+                <span style="font-size: 18px; color: #7C766A; padding: 0 4px">Getting today ready…</span>
+                <span style="height: 128px; border-radius: 20px; background: #F2EEE6; border: 1px solid #E4DFD4; display: block"></span>
+                <span style="height: 128px; border-radius: 20px; background: #F4F1EA; border: 1px solid #E4DFD4; display: block"></span>
+                <span style="height: 128px; border-radius: 20px; background: #F7F5EF; border: 1px solid #E4DFD4; display: block"></span>
+              </div>
+            </sc-if>
+            <sc-if value="{{ eEmpty }}">
+              <div style="flex: 1; min-height: 0; overflow: hidden; padding: 4px 16px 20px; display: flex; flex-direction: column; gap: 16px">
+                <div style="padding: 22px; border-radius: 20px; background: #FFFFFF; border: 2px solid #DDD7CB; display: flex; flex-direction: column; gap: 12px">
+                  <span style="font-size: 24px; font-weight: 800; line-height: 1.2">No medicines here yet</span>
+                  <span style="font-size: 18px; line-height: 1.45; color: #45423C">Your helper adds your medicines from their own phone. Give them the code below and they can start.</span>
+                </div>
+                <div style="padding: 22px; border-radius: 20px; background: #E7F1EA; border: 2px solid #1F5340; display: flex; flex-direction: column; gap: 14px">
+                  <span style="font-size: 16px; font-weight: 700; color: #1F5340">Your code</span>
+                  <span style="font-family: 'IBM Plex Mono', monospace; font-size: 38px; font-weight: 500; letter-spacing: 0.14em; color: #14362a">{{ code }}</span>
+                  <div style="display: flex; gap: 10px">
+                    <button type="button" onClick="{{ onCopyCode }}" style="flex: 1; min-height: 58px; border: 2px solid #1F5340; border-radius: 14px; background: #FFFFFF; font-size: 17px; font-weight: 700; cursor: pointer">Copy</button>
+                    <button type="button" onClick="{{ onShare }}" style="flex: 1; min-height: 58px; border: none; border-radius: 14px; background: #1F5340; color: #FBF9F5; font-size: 17px; font-weight: 700; cursor: pointer">Send it</button>
+                  </div>
+                </div>
+              </div>
+            </sc-if>
+            <sc-if value="{{ eNoneDue }}">
+              <div style="flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 14px; padding: 24px">
+                <span style="width: 56px; height: 56px; border-radius: 999px; background: #E7F1EA; border: 2px solid #1F5340; display: flex; align-items: center; justify-content: center; font-size: 26px; font-weight: 800; color: #1F5340">✓</span>
+                <span style="font-size: 26px; font-weight: 800; line-height: 1.2">Nothing to take today</span>
+                <span style="font-size: 19px; line-height: 1.45; color: #45423C">There are no medicines set for today. Your next one is tomorrow morning.</span>
+              </div>
+            </sc-if>
+            <sc-if value="{{ eNormal }}">
+              <div style="flex: 1; min-height: 0; overflow-y: auto; padding: 8px 18px 22px; display: flex; flex-direction: column; gap: 22px">
+                <sc-for list="{{ eSlots }}" as="s" hint-placeholder-count="2">
+                  <div style="flex: none; border-radius: 22px; background: #FFFFFF; border: 2px solid {{ s.fg }}; box-shadow: 0 4px 0 rgba(28,26,23,0.18); display: flex; flex-direction: column; overflow: hidden">
+                    <div style="flex: none; display: flex; align-items: center; gap: 12px; padding: 11px 20px; background: {{ s.fg }}">
+                      <span style="font-size: 26px; font-weight: 800; letter-spacing: -0.02em; color: #FFFFFF; white-space: nowrap">{{ s.name }}</span>
+                      <span style="margin-left: auto; font-size: 20px; font-weight: 700; color: #FFFFFF; font-variant-numeric: tabular-nums; white-space: nowrap">{{ s.t }}</span>
+                    </div>
+                    <div style="flex: none; padding: 16px 20px 6px; display: flex; flex-direction: column; gap: 10px">
+                      <span style="font-size: 21px; font-weight: 600; line-height: 1.3; color: #1C1A17; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{ s.medNames }}</span>
+                      <span style="display: flex; align-items: center; gap: 9px">
+                        <span style="width: 24px; height: 24px; flex: none; border-radius: 999px; border: 2px solid {{ s.fg }}; color: {{ s.fg }}; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800">{{ s.glyph }}</span>
+                        <span style="font-size: 18px; font-weight: 700; color: {{ s.fg }}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{ s.statusText }}</span>
+                      </span>
+                    </div>
+                    <div style="flex: none; display: flex; flex-direction: column; gap: 2px; padding: 10px 16px 8px">
+                      <sc-if value="{{ s.notAllDone }}">
+                        <button type="button" onClick="{{ s.onMarkAll }}" style="min-height: 54px; border: none; border-radius: 14px; background: #1F5340; color: #FFFFFF; font-size: 18px; font-weight: 800; cursor: pointer">{{ s.takeLabel }}</button>
+                      </sc-if>
+                      <sc-if value="{{ s.allDone }}">
+                        <button type="button" onClick="{{ s.onUndoAll }}" style="min-height: 54px; border: 2px solid #7C766A; border-radius: 14px; background: #F1EDE3; font-size: 18px; font-weight: 800; color: #45423C; cursor: pointer">Undo this</button>
+                      </sc-if>
+                      <button type="button" onClick="{{ s.onOpenPage }}" style="min-height: 46px; border: none; background: none; color: #1F5340; font-size: 17px; font-weight: 700; text-decoration: underline; cursor: pointer">See the pills</button>
+                    </div>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-if>
+            <div style="flex: none; display: flex; gap: 8px; padding: 10px 14px 18px; border-top: 2px solid #211F1B; background: #FFFFFF">
+              <sc-for list="{{ eNav }}" as="n" hint-placeholder-count="3">
+                <button type="button" onClick="{{ n.onPick }}" style="flex: 1; min-height: 64px; border: none; border-radius: 16px; font-size: 17px; font-weight: 800; cursor: pointer; background: {{ n.bg }}; color: {{ n.fg }}">{{ n.label }}</button>
+              </sc-for>
+            </div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ isESlot }}">
+          <div style="flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden">
+            <div style="flex: none; display: flex; align-items: center; gap: 10px; padding: 0 14px 10px">
+              <button type="button" onClick="{{ nav.eToday }}" style="min-height: 56px; padding: 8px 16px; border: 3px solid #211F1B; border-radius: 14px; background: #FFFFFF; font-size: 19px; font-weight: 800; cursor: pointer">‹ Today</button>
+              <span style="margin-left: auto; display: flex; flex-direction: column; align-items: flex-end">
+                <span style="font-size: 28px; font-weight: 800; letter-spacing: -0.02em">{{ pageName }}</span>
+                <span style="font-size: 20px; font-weight: 700; color: #45423C">{{ pageTime }}</span>
+              </span>
+            </div>
+            <div style="flex: 1; min-height: 0; overflow: hidden; padding: 0 14px 12px; display: flex; flex-direction: column; gap: 10px">
+              <sc-for list="{{ pageMeds }}" as="m" hint-placeholder-count="2">
+                <div style="flex: 1 1 0; min-height: 0; overflow: hidden; border-radius: 20px; background: #FFFFFF; border: 2px solid {{ m.chipFg }}; box-shadow: 0 3px 0 rgba(28,26,23,0.14); display: flex; flex-direction: column; padding: 14px; gap: 11px">
+                  <button type="button" onClick="{{ m.onOpen }}" style="flex: 1; min-height: 0; display: flex; align-items: center; gap: 14px; border: none; background: none; padding: 0; cursor: pointer; text-align: left">
+                    <span style="width: 78px; height: 78px; flex: none; border-radius: 14px; border: 2px solid #C5BEAE; background: repeating-linear-gradient(45deg, #F2EEE6 0 6px, #E8E3D8 6px 12px); display: flex; align-items: center; justify-content: center; font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: #7C766A; text-align: center">pill<br>photo</span>
+                    <span style="display: flex; flex-direction: column; gap: 3px; min-width: 0">
+                      <span style="font-size: 23px; font-weight: 800; letter-spacing: -0.01em; line-height: 1.15">{{ m.name }} {{ m.strength }}</span>
+                      <span style="font-size: 19px; color: #45423C">{{ m.dose }} · {{ m.purpose }}</span>
+                      <span style="font-size: 18px; font-weight: 800; color: {{ m.chipFg }}">{{ m.glyph }} {{ m.statusLabel }}</span>
+                      <span style="font-size: 17px; font-weight: 700; color: #1F5340; text-decoration: underline">Bigger picture and notes</span>
+                    </span>
+                  </button>
+                  <sc-if value="{{ m.notTaken }}">
+                    <button type="button" onClick="{{ m.onTake }}" style="flex: none; min-height: 60px; border: none; border-radius: 14px; background: #1F5340; color: #FBF9F5; font-size: 20px; font-weight: 800; cursor: pointer">I have taken this</button>
+                  </sc-if>
+                  <sc-if value="{{ m.taken }}">
+                    <button type="button" onClick="{{ m.onClear }}" style="flex: none; min-height: 60px; border: 3px solid #7C766A; border-radius: 14px; background: #FFFFFF; font-size: 19px; font-weight: 800; color: #45423C; cursor: pointer">Undo — not taken</button>
+                  </sc-if>
+                  <sc-if value="{{ m.unmarked }}">
+                    <button type="button" onClick="{{ m.onSkip }}" style="flex: none; min-height: 46px; border: none; background: none; color: #45423C; font-size: 17px; font-weight: 700; text-decoration: underline; cursor: pointer">Leave this one out today</button>
+                  </sc-if>
+                  <sc-if value="{{ m.skipped }}">
+                    <button type="button" onClick="{{ m.onClear }}" style="flex: none; min-height: 46px; border: none; background: none; color: #45423C; font-size: 17px; font-weight: 700; text-decoration: underline; cursor: pointer">Put it back on the list</button>
+                  </sc-if>
+                </div>
+              </sc-for>
+            </div>
+            <div style="flex: none; padding: 0 14px 10px">
+              <sc-if value="{{ pageNotAllDone }}">
+                <button type="button" onClick="{{ onPageMarkAll }}" style="width: 100%; min-height: 62px; border: 3px solid #1F5340; border-radius: 16px; background: #FFFFFF; color: #1F5340; font-size: 19px; font-weight: 800; cursor: pointer">{{ pageTakeLabel }} — all of {{ pageName }}</button>
+              </sc-if>
+              <sc-if value="{{ pageAllDone }}">
+                <button type="button" onClick="{{ onPageUndoAll }}" style="width: 100%; min-height: 62px; border: 3px solid #7C766A; border-radius: 16px; background: #FFFFFF; color: #45423C; font-size: 19px; font-weight: 800; cursor: pointer">Undo all of {{ pageName }}</button>
+              </sc-if>
+            </div>
+            <div style="flex: none; display: flex; gap: 8px; padding: 10px 14px 18px; border-top: 2px solid #211F1B; background: #FFFFFF">
+              <sc-for list="{{ eNav }}" as="n" hint-placeholder-count="3">
+                <button type="button" onClick="{{ n.onPick }}" style="flex: 1; min-height: 64px; border: none; border-radius: 16px; font-size: 17px; font-weight: 800; cursor: pointer; background: {{ n.bg }}; color: {{ n.fg }}">{{ n.label }}</button>
+              </sc-for>
+            </div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ isESettings }}">
+          <div style="flex: 1; min-height: 0; display: flex; flex-direction: column">
+            <div style="flex: none; padding: 4px 20px 14px">
+              <span style="font-size: 27px; font-weight: 800; letter-spacing: -0.02em">Settings</span>
+            </div>
+            <div style="flex: 1; min-height: 0; overflow-y: auto; padding: 0 16px 20px; display: flex; flex-direction: column; gap: 22px">
+              <div style="display: flex; flex-direction: column; gap: 10px">
+                <span style="font-size: 15px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: #7C766A">Your account</span>
+                <div style="border-radius: 18px; background: #FFFFFF; border: 2px solid #DDD7CB; padding: 18px; display: flex; flex-direction: column; gap: 6px">
+                  <span style="font-size: 20px; font-weight: 700">Margaret Ellis</span>
+                  <span style="font-size: 17px; color: #55514A">margaret.ellis@gmail.com</span>
+                </div>
+                <div style="border-radius: 18px; background: #E7F1EA; border: 2px solid #1F5340; padding: 18px; display: flex; flex-direction: column; gap: 12px">
+                  <span style="font-size: 17px; font-weight: 700; color: #1F5340">Code for your helper</span>
+                  <span style="font-family: 'IBM Plex Mono', monospace; font-size: 34px; font-weight: 500; letter-spacing: 0.14em; color: #14362a">{{ code }}</span>
+                  <div style="display: flex; gap: 10px">
+                    <button type="button" onClick="{{ onCopyCode }}" style="flex: 1; min-height: 56px; border: 2px solid #1F5340; border-radius: 14px; background: #FFFFFF; font-size: 17px; font-weight: 700; cursor: pointer">Copy</button>
+                    <button type="button" onClick="{{ onShare }}" style="flex: 1; min-height: 56px; border: none; border-radius: 14px; background: #1F5340; color: #FBF9F5; font-size: 17px; font-weight: 700; cursor: pointer">Send it</button>
+                  </div>
+                  <button type="button" onClick="{{ onRotate }}" style="min-height: 52px; border: 2px dashed #A6741C; border-radius: 14px; background: #FFFFFF; color: #7A5410; font-size: 16px; font-weight: 700; cursor: pointer">Make a new code…</button>
+                </div>
+              </div>
+              <div style="display: flex; flex-direction: column; gap: 10px">
+                <span style="font-size: 15px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: #7C766A">Reminders</span>
+                <div style="border-radius: 18px; background: #FFFFFF; border: 2px solid #DDD7CB; padding: 18px; display: flex; flex-direction: column; gap: 14px">
+                  <div style="display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-radius: 12px; background: {{ remBg }}">
+                    <span style="width: 28px; height: 28px; border-radius: 999px; border: 2px solid {{ remFg }}; color: {{ remFg }}; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 800">{{ remGlyph }}</span>
+                    <span style="font-size: 19px; font-weight: 700; color: {{ remFg }}">{{ remStatus }}</span>
+                  </div>
+                  <span style="font-size: 17px; line-height: 1.45; color: #45423C">{{ remNote }}</span>
+                  <sc-if value="{{ remOn }}">
+                    <button type="button" onClick="{{ onRemToggle }}" style="min-height: 58px; border: 2px solid #B9B2A3; border-radius: 14px; background: #FBF9F5; font-size: 18px; font-weight: 700; cursor: pointer">Turn reminders off</button>
+                  </sc-if>
+                  <sc-if value="{{ remOff }}">
+                    <button type="button" onClick="{{ onRemToggle }}" style="min-height: 58px; border: none; border-radius: 14px; background: #1F5340; color: #FBF9F5; font-size: 18px; font-weight: 700; cursor: pointer">Turn reminders on</button>
+                  </sc-if>
+                  <button type="button" onClick="{{ onTestReminder }}" style="min-height: 52px; border: 2px solid #1F5340; border-radius: 14px; background: #FFFFFF; color: #1F5340; font-size: 17px; font-weight: 700; cursor: pointer">Send me a test reminder</button>
+                  <button type="button" onClick="{{ onTestFail }}" style="min-height: 40px; border: none; background: none; color: #7C766A; font-size: 13px; text-decoration: underline; cursor: pointer">demo: show a failed reminder</button>
+                </div>
+              </div>
+              <div style="display: flex; flex-direction: column; gap: 10px">
+                <span style="font-size: 15px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: #7C766A">How it looks</span>
+                <div style="border-radius: 18px; background: #FFFFFF; border: 2px solid #DDD7CB; overflow: hidden; display: flex; flex-direction: column">
+                  <sc-for list="{{ themes }}" as="t" hint-placeholder-count="3">
+                    <button type="button" onClick="{{ t.onPick }}" style="min-height: 60px; display: flex; align-items: center; gap: 12px; padding: 14px 18px; border: none; border-bottom: 1px solid #E4DFD4; cursor: pointer; text-align: left; font-size: 19px; font-weight: 700; background: {{ t.bg }}; color: {{ t.fg }}"><span style="width: 22px; font-weight: 800">{{ t.glyph }}</span>{{ t.label }}</button>
+                  </sc-for>
+                </div>
+              </div>
+              <div style="display: flex; flex-direction: column; gap: 10px">
+                <span style="font-size: 15px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: #7C766A">About</span>
+                <div style="border-radius: 18px; background: #FFFFFF; border: 2px solid #DDD7CB; padding: 18px; display: flex; flex-direction: column; gap: 8px">
+                  <span style="font-size: 17px; color: #45423C">CarePair 2.0 (build 214)</span>
+                  <span style="font-size: 16px; line-height: 1.45; color: #55514A">CarePair helps you remember and recognise your medicines. It does not give medical advice. Ask your doctor or pharmacist about your medicines.</span>
+                  <button type="button" onClick="{{ nav.how }}" style="min-height: 48px; align-self: flex-start; border: none; background: none; padding: 0; color: #1F5340; font-size: 17px; font-weight: 700; text-decoration: underline; cursor: pointer">How it works</button>
+                </div>
+              </div>
+              <button type="button" onClick="{{ onSignOut }}" style="min-height: 62px; border: 2px solid #8E2F1E; border-radius: 16px; background: #FBF9F5; color: #8E2F1E; font-size: 18px; font-weight: 800; cursor: pointer">Sign out…</button>
+              <button type="button" onClick="{{ nav.welcome }}" style="min-height: 48px; border: none; background: none; color: #7C766A; font-size: 15px; text-decoration: underline; cursor: pointer">Change role (back to the start)</button>
+            </div>
+            <div style="flex: none; display: flex; gap: 8px; padding: 10px 14px 18px; border-top: 2px solid #211F1B; background: #FFFFFF">
+              <sc-for list="{{ eNav }}" as="n" hint-placeholder-count="3">
+                <button type="button" onClick="{{ n.onPick }}" style="flex: 1; min-height: 64px; border: none; border-radius: 16px; font-size: 17px; font-weight: 800; cursor: pointer; background: {{ n.bg }}; color: {{ n.fg }}">{{ n.label }}</button>
+              </sc-for>
+            </div>
+          </div>
+        </sc-if>
+        <sc-if value="{{ isFillStart }}">
+          <div style="flex: 1; min-height: 0; display: flex; flex-direction: column">
+            <div style="flex: none; padding: 4px 20px 12px; display: flex; flex-direction: column; gap: 4px">
+              <span style="font-size: 27px; font-weight: 800; letter-spacing: -0.02em">Fill the box</span>
+              <span style="font-size: 17px; color: #55514A">Putting next week's pills into the plastic box.</span>
+            </div>
+            <div style="flex: 1; min-height: 0; overflow: hidden; padding: 0 16px 16px; display: flex; flex-direction: column; gap: 12px">
+              <div style="padding: 14px 16px; border-radius: 14px; background: #EEF1F6; border: 3px solid #2A3B5E; display: flex; gap: 10px; align-items: flex-start">
+                <span style="font-size: 19px; font-weight: 800; color: #2A3B5E">i</span>
+                <span style="font-size: 18px; line-height: 1.35; font-weight: 600; color: #1F2937">This only fills the plastic box. It does not mean you have taken anything.</span>
+              </div>
+              <div style="border-radius: 18px; background: #FFFFFF; border: 2px solid #DDD7CB; overflow: hidden">
+                <button type="button" onClick="{{ onPickWeek }}" style="width: 100%; min-height: 72px; display: flex; align-items: center; gap: 12px; padding: 14px 18px; border: none; border-bottom: 1px solid #E4DFD4; background: none; cursor: pointer; text-align: left">
+                  <span style="display: flex; flex-direction: column; gap: 2px"><span style="font-size: 15px; font-weight: 700; color: #7C766A">Week</span><span style="font-size: 20px; font-weight: 700">{{ weekLabel }}</span></span>
+                  <span style="margin-left: auto; font-size: 16px; font-weight: 700; color: #1F5340; text-decoration: underline">Change</span>
+                </button>
+                <button type="button" onClick="{{ onEditBoxTimes }}" style="width: 100%; min-height: 72px; display: flex; align-items: center; gap: 12px; padding: 14px 18px; border: none; background: none; cursor: pointer; text-align: left">
+                  <span style="display: flex; flex-direction: column; gap: 2px"><span style="font-size: 15px; font-weight: 700; color: #7C766A">Compartments in the box</span><span style="font-size: 20px; font-weight: 700">{{ boxTimesLabel }}</span></span>
+                  <span style="margin-left: auto; font-size: 16px; font-weight: 700; color: #1F5340; text-decoration: underline">Change</span>
+                </button>
+              </div>
+              <sc-if value="{{ fillNoSlots }}">
+                <div style="padding: 18px; border-radius: 16px; background: #FFF4E0; border: 2px solid #A6741C; display: flex; flex-direction: column; gap: 10px">
+                  <span style="font-size: 19px; font-weight: 800; color: #7A5410">No compartments chosen yet</span>
+                  <span style="font-size: 16px; line-height: 1.45; color: #45423C">Choose at least one time of day that lives in the physical box — usually morning and bedtime.</span>
+                  <button type="button" onClick="{{ onEditBoxTimes }}" style="min-height: 52px; border: none; border-radius: 12px; background: #7A5410; color: #fff; font-size: 16px; font-weight: 700; cursor: pointer; align-self: flex-start; padding: 0 18px">Choose compartments</button>
+                </div>
+              </sc-if>
+              <sc-if value="{{ fillNothing }}">
+                <div style="padding: 18px; border-radius: 16px; background: #F2EEE6; border: 2px solid #DDD7CB; display: flex; flex-direction: column; gap: 8px">
+                  <span style="font-size: 19px; font-weight: 800">Nothing to put in the box this week</span>
+                  <span style="font-size: 16px; line-height: 1.45; color: #45423C">No medicine in the list falls on these days. Try another week, or ask the helper to check the medicine list.</span>
+                </div>
+              </sc-if>
+              <sc-if value="{{ fillHasWork }}">
+                <div style="padding: 18px; border-radius: 18px; background: #E7F1EA; border: 2px solid #1F5340; display: flex; flex-direction: column; gap: 6px">
+                  <span style="font-size: 22px; font-weight: 800; color: #14362a">{{ boxCountLabel }}</span>
+                  <span style="font-size: 16px; color: #1F5340">We will show them one at a time, with the pill photo.</span>
+                </div>
+              </sc-if>
+              <sc-if value="{{ fillResume }}">
+                <div style="padding: 16px; border-radius: 16px; background: #FFFFFF; border: 2px dashed #A6741C; display: flex; flex-direction: column; gap: 10px">
+                  <span style="font-size: 18px; font-weight: 800; color: #7A5410">You stopped part way on Friday</span>
+                  <span style="font-size: 16px; color: #45423C">2 of 4 medicines were already put in the box.</span>
+                  <div style="display: flex; gap: 10px; flex-wrap: wrap">
+                    <button type="button" onClick="{{ nav.fillStep }}" style="min-height: 52px; padding: 0 18px; border: none; border-radius: 12px; background: #1F5340; color: #fff; font-size: 16px; font-weight: 700; cursor: pointer">Carry on</button>
+                    <button type="button" onClick="{{ nav.fillStep }}" style="min-height: 52px; padding: 0 18px; border: 2px solid #B9B2A3; border-radius: 12px; background: #FBF9F5; font-size: 16px; font-weight: 700; cursor: pointer">Start again</button>
+                  </div>
+                </div>
+              </sc-if>
+              <button type="button" onClick="{{ onOutside }}" style="min-height: 62px; border: 3px solid #211F1B; border-radius: 14px; background: #FFFFFF; font-size: 18px; font-weight: 800; cursor: pointer; text-align: left; padding: 10px 16px">2 medicines stay outside the box — see them</button>
+            </div>
+            <sc-if value="{{ fillHasWork }}">
+              <div style="flex: none; padding: 12px 16px; border-top: 1px solid #E4DFD4; background: #FBF9F5">
+                <button type="button" onClick="{{ nav.fillStep }}" style="width: 100%; min-height: 64px; border: none; border-radius: 16px; background: #1F5340; color: #FBF9F5; font-size: 20px; font-weight: 800; cursor: pointer">Start filling the box</button>
+              </div>
+            </sc-if>
+            <sc-if value="{{ roleTaker }}">
+              <div style="flex: none; display: flex; gap: 8px; padding: 10px 14px 18px; border-top: 2px solid #211F1B; background: #FFFFFF">
+                <sc-for list="{{ eNav }}" as="n" hint-placeholder-count="3">
+                  <button type="button" onClick="{{ n.onPick }}" style="flex: 1; min-height: 64px; border: none; border-radius: 16px; font-size: 17px; font-weight: 800; cursor: pointer; background: {{ n.bg }}; color: {{ n.fg }}">{{ n.label }}</button>
+                </sc-for>
+              </div>
+            </sc-if>
+            <sc-if value="{{ roleSupporter }}">
+              <div style="flex: none; display: flex; gap: 4px; padding: 8px 8px 16px; border-top: 1px solid #E1E4EA; background: #E5E9F0">
+                <sc-for list="{{ sNav }}" as="n" hint-placeholder-count="5">
+                  <button type="button" onClick="{{ n.onPick }}" style="flex: 1; min-height: 52px; border: none; border-radius: 12px; font-size: 13px; font-weight: 700; cursor: pointer; background: {{ n.bg }}; color: {{ n.fg }}">{{ n.label }}</button>
+                </sc-for>
+              </div>
+            </sc-if>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ isFillStep }}">
+          <div style="flex: 1; min-height: 0; display: flex; flex-direction: column">
+            <div style="flex: none; padding: 2px 16px 10px; display: flex; flex-direction: column; gap: 8px">
+              <div style="display: flex; align-items: center; gap: 10px">
+                <button type="button" onClick="{{ nav.fill }}" style="min-height: 44px; padding: 6px 10px; border: none; background: none; color: #1F5340; font-size: 16px; font-weight: 700; cursor: pointer">Close</button>
+                <span style="margin-left: auto; font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: #7C766A">{{ fillProgress }}</span>
+              </div>
+              <span style="height: 8px; border-radius: 999px; background: #E4DFD4; display: block; overflow: hidden"><span style="display: block; height: 100%; background: #1F5340; width: {{ fillBarWidth }}"></span></span>
+              <span style="font-size: 14px; color: #7C766A">{{ fillDoneCount }} — this is how far through the job you are, nothing else.</span>
+            </div>
+            <div style="flex: 1; min-height: 0; overflow: hidden; padding: 4px 16px 12px; display: flex; flex-direction: column; gap: 14px">
+              <div style="display: flex; flex-direction: column; gap: 2px">
+                <span style="font-size: 30px; font-weight: 800; letter-spacing: -0.02em; line-height: 1.1">{{ curName }} {{ curStrength }}</span>
+                <span style="font-size: 19px; font-weight: 600; color: #45423C">{{ curPurpose }}</span>
+              </div>
+              <div style="display: flex; gap: 10px">
+                <button type="button" onClick="{{ onCurPill }}" style="flex: 1; height: 130px; border-radius: 16px; border: 1px solid #DDD7CB; background: repeating-linear-gradient(45deg, #F2EEE6 0 8px, #E8E3D8 8px 16px); cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #55514A">pill photo<span style="font-family: 'Public Sans', sans-serif; font-size: 14px; font-weight: 700; color: #1F5340; text-decoration: underline">Tap to enlarge</span></button>
+                <button type="button" onClick="{{ onCurPacket }}" style="flex: 1; height: 130px; border-radius: 16px; border: 1px solid #DDD7CB; background: repeating-linear-gradient(45deg, #EFEAE1 0 8px, #E5E0D4 8px 16px); cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #55514A">packet photo<span style="font-family: 'Public Sans', sans-serif; font-size: 14px; font-weight: 700; color: #1F5340; text-decoration: underline">Tap to enlarge</span></button>
+              </div>
+              <div style="flex: 1; min-height: 0; overflow: hidden; padding: 16px; border-radius: 18px; background: #FFFFFF; border: 3px solid #DDD7CB; display: flex; flex-direction: column; gap: 12px">
+                <span style="font-size: 24px; font-weight: 800; line-height: 1.2">{{ curWeekQty }}</span>
+                <span style="font-size: 17px; font-weight: 600; color: #55514A">How many go in each day</span>
+                <div style="display: flex; gap: 5px">
+                  <sc-for list="{{ curChips }}" as="c" hint-placeholder-count="7">
+                    <span style="flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 8px 2px; border-radius: 10px; background: {{ c.bg }}; border: 2px solid {{ c.line }}">
+                      <span style="font-size: 13px; font-weight: 800; color: #45423C">{{ c.day }}</span>
+                      <span style="font-size: 22px; font-weight: 800; color: {{ c.fg }}">{{ c.qty }}</span>
+                    </span>
+                  </sc-for>
+                </div>
+                <span style="font-size: 16px; line-height: 1.35; color: #55514A">{{ curDays }}</span>
+              </div>
+            </div>
+            <div style="flex: none; padding: 10px 16px 18px; border-top: 1px solid #E4DFD4; background: #FBF9F5; display: flex; flex-direction: column; gap: 10px">
+              <sc-if value="{{ curNotFilled }}">
+                <button type="button" onClick="{{ onFill }}" style="min-height: 64px; border: none; border-radius: 16px; background: #1F5340; color: #FBF9F5; font-size: 20px; font-weight: 800; cursor: pointer">It is in the box</button>
+              </sc-if>
+              <sc-if value="{{ curFilled }}">
+                <div style="display: flex; align-items: center; gap: 10px; padding: 14px 16px; border-radius: 14px; background: #E7F1EA; border: 2px solid #1F5340"><span style="font-size: 18px; font-weight: 800; color: #1F5340">✓</span><span style="font-size: 18px; font-weight: 700; color: #1F5340">In the box</span><button type="button" onClick="{{ onUndoFill }}" style="margin-left: auto; min-height: 44px; padding: 0 14px; border: 2px solid #1F5340; border-radius: 10px; background: #fff; color: #1F5340; font-size: 15px; font-weight: 700; cursor: pointer">Undo</button></div>
+              </sc-if>
+              <div style="display: flex; gap: 10px">
+                <button type="button" onClick="{{ onFillBack }}" style="flex: 1; min-height: 56px; border: 2px solid #B9B2A3; border-radius: 14px; background: #FFFFFF; font-size: 17px; font-weight: 700; cursor: pointer">Back</button>
+                <sc-if value="{{ fillNotLast }}">
+                  <button type="button" onClick="{{ onFillNext }}" style="flex: 1; min-height: 56px; border: 2px solid #211F1B; border-radius: 14px; background: #FFFFFF; font-size: 17px; font-weight: 700; cursor: pointer">Next medicine</button>
+                </sc-if>
+                <sc-if value="{{ fillIsLast }}">
+                  <button type="button" onClick="{{ nav.fillCheck }}" style="flex: 1; min-height: 56px; border: 2px solid #211F1B; border-radius: 14px; background: #FFFFFF; font-size: 17px; font-weight: 700; cursor: pointer">Check the box</button>
+                </sc-if>
+              </div>
+            </div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ isFillCheck }}">
+          <div style="flex: 1; min-height: 0; display: flex; flex-direction: column">
+            <div style="flex: none; padding: 2px 16px 10px; display: flex; flex-direction: column; gap: 4px">
+              <button type="button" onClick="{{ nav.fillStep }}" style="align-self: flex-start; min-height: 44px; padding: 6px 10px; border: none; background: none; color: #1F5340; font-size: 16px; font-weight: 700; cursor: pointer">Back to the medicines</button>
+              <span style="font-size: 25px; font-weight: 800; letter-spacing: -0.02em; padding: 0 4px">Check the box</span>
+              <span style="font-size: 16px; line-height: 1.4; color: #55514A; padding: 0 4px">Compare each compartment with the tray in front of you. We cannot see the tray, so the last word is yours.</span>
+            </div>
+            <div style="flex: 1; min-height: 0; overflow: hidden; padding: 8px 16px 12px; display: flex; flex-direction: column; gap: 6px">
+              <div style="display: flex; gap: 6px; padding-left: 62px">
+                <sc-for list="{{ checkSlotHeads }}" as="h" hint-placeholder-count="3">
+                  <span style="flex: 1; font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; color: #7C766A; text-align: center">{{ h.name }}</span>
+                </sc-for>
+              </div>
+              <sc-for list="{{ checkRows }}" as="r" hint-placeholder-count="7">
+                <div style="flex: 1 1 0; min-height: 0; display: flex; align-items: stretch; gap: 6px">
+                  <span style="width: 56px; flex: none; display: flex; align-items: center; font-size: 16px; font-weight: 800; font-variant-numeric: tabular-nums">{{ r.day }}</span>
+                  <sc-for list="{{ r.cells }}" as="c" hint-placeholder-count="3">
+                    <button type="button" onClick="{{ c.onOpen }}" style="flex: 1; min-height: 44px; border: 2px solid #C5BEAE; border-radius: 12px; cursor: pointer; font-size: 22px; font-weight: 800; color: #1C1A17; background: {{ c.bg }}">{{ c.qty }}</button>
+                  </sc-for>
+                </div>
+              </sc-for>
+              <p style="margin: 4px 4px 0; font-size: 16px; line-height: 1.35; color: #55514A">Tap a box to see which pills go in it. “–” means leave it empty.</p>
+            </div>
+            <div style="flex: none; padding: 10px 16px 18px; border-top: 1px solid #E4DFD4; background: #FBF9F5">
+              <button type="button" onClick="{{ onFinishFill }}" style="width: 100%; min-height: 64px; border: none; border-radius: 16px; background: #1F5340; color: #FBF9F5; font-size: 19px; font-weight: 800; cursor: pointer">I have finished filling the box</button>
+            </div>
+          </div>
+        </sc-if>
+        <sc-if value="{{ isSToday }}">
+          <div style="flex: 1; min-height: 0; display: flex; flex-direction: column; background: #E5E9F0">
+            <div style="flex: none; padding: 2px 18px 10px; display: flex; align-items: flex-end; gap: 10px">
+              <span style="display: flex; flex-direction: column">
+                <span style="font-size: 12px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: #6B7280">Helping Margaret</span>
+                <span style="font-size: 23px; font-weight: 800; letter-spacing: -0.02em">Sunday 13 Sept</span>
+              </span>
+              <button type="button" onClick="{{ onSendReminder }}" style="margin-left: auto; min-height: 44px; padding: 8px 14px; border: 1px solid #2A3B5E; border-radius: 10px; background: #FFFFFF; color: #2A3B5E; font-size: 14px; font-weight: 700; cursor: pointer">Nudge her phone</button>
+            </div>
+            <div style="flex: none; margin: 0 14px 10px; padding: 10px 14px; border-radius: 10px; background: #FFFFFF; border: 1px solid #E1E4EA; display: flex; align-items: center; gap: 10px">
+              <span style="width: 8px; height: 8px; border-radius: 999px; background: #1F5340; flex: none"></span>
+              <span style="font-size: 14px; color: #374151">{{ syncLabel }}</span>
+              <button type="button" onClick="{{ onRefresh }}" style="margin-left: auto; min-height: 40px; padding: 6px 12px; border: none; background: none; color: #2A3B5E; font-size: 14px; font-weight: 700; text-decoration: underline; cursor: pointer">Check now</button>
+            </div>
+            <sc-if value="{{ sDateDiff }}">
+              <div style="flex: none; margin: 0 14px 10px; padding: 12px 14px; border-radius: 10px; background: #FFF4E0; border: 1px solid #A6741C; display: flex; gap: 10px">
+                <span style="font-size: 15px; font-weight: 800; color: #7A5410">!</span>
+                <span style="font-size: 14px; line-height: 1.45; color: #45423C">Your phone says Monday 14 September, but Margaret's day is still Sunday 13 September. You are looking at her day.</span>
+              </div>
+            </sc-if>
+            <sc-if value="{{ sSyncFail }}">
+              <div style="flex: none; margin: 0 14px 10px; padding: 12px 14px; border-radius: 10px; background: #FDECE8; border: 1px solid #B14A34; display: flex; flex-direction: column; gap: 8px">
+                <span style="font-size: 14px; font-weight: 700; color: #8E2F1E">Could not get the latest</span>
+                <span style="font-size: 14px; line-height: 1.45; color: #45423C">You are seeing what was saved 3 hours ago. Marks you make now are saved and sent when the connection is back.</span>
+                <button type="button" onClick="{{ onRefresh }}" style="align-self: flex-start; min-height: 40px; padding: 6px 14px; border: none; border-radius: 8px; background: #8E2F1E; color: #fff; font-size: 14px; font-weight: 700; cursor: pointer">Try again</button>
+              </div>
+            </sc-if>
+            <sc-if value="{{ onBehalfActive }}">
+              <div style="flex: none; margin: 0 14px 10px; padding: 8px 12px; border-radius: 999px; background: #EEF1F6; border: 1px dashed #2A3B5E; align-self: flex-start">
+                <span style="font-size: 13px; font-weight: 700; color: #2A3B5E">Marking on Margaret's behalf this session</span>
+              </div>
+            </sc-if>
+            <sc-if value="{{ sLoading }}">
+              <div style="flex: 1; padding: 4px 14px; display: flex; flex-direction: column; gap: 10px">
+                <span style="height: 74px; border-radius: 12px; background: #EEF0F4; display: block"></span>
+                <span style="height: 74px; border-radius: 12px; background: #F1F3F6; display: block"></span>
+                <span style="height: 74px; border-radius: 12px; background: #F4F5F8; display: block"></span>
+              </div>
+            </sc-if>
+            <sc-if value="{{ sNormal }}">
+              <div style="flex: 1; min-height: 0; overflow-y: auto; padding: 0 14px 14px; display: flex; flex-direction: column; gap: 10px">
+                <sc-for list="{{ sSlots }}" as="s" hint-placeholder-count="3">
+                  <div style="border-radius: 12px; background: #FFFFFF; border: 1px solid #E1E4EA; overflow: hidden">
+                    <button type="button" onClick="{{ s.onToggle }}" style="width: 100%; display: flex; align-items: center; gap: 10px; padding: 14px; border: none; background: none; cursor: pointer; text-align: left">
+                      <span style="width: 26px; height: 26px; flex: none; border-radius: 999px; border: 2px solid {{ s.fg }}; color: {{ s.fg }}; background: {{ s.bg }}; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 800">{{ s.glyph }}</span>
+                      <span style="display: flex; flex-direction: column; gap: 1px; min-width: 0">
+                        <span style="font-size: 17px; font-weight: 700">{{ s.name }} · {{ s.t }}</span>
+                        <span style="font-size: 14px; color: {{ s.fg }}; font-weight: 600">{{ s.statusText }} · {{ s.count }}</span>
+                      </span>
+                      <span style="margin-left: auto; font-size: 13px; font-weight: 700; color: #2A3B5E; text-decoration: underline">{{ s.chevron }}</span>
+                    </button>
+                    <sc-if value="{{ s.open }}">
+                      <div style="display: flex; flex-direction: column">
+                        <sc-for list="{{ s.meds }}" as="m" hint-placeholder-count="2">
+                          <div style="border-top: 1px solid #EEF0F4; padding: 12px 14px; display: flex; align-items: center; gap: 10px">
+                            <button type="button" onClick="{{ m.onOpen }}" style="display: flex; align-items: center; gap: 10px; border: none; background: none; padding: 0; cursor: pointer; text-align: left; flex: 1; min-width: 0">
+                              <span style="width: 40px; height: 40px; flex: none; border-radius: 8px; border: 1px solid #DDE1E8; background: repeating-linear-gradient(45deg, #F3F4F7 0 5px, #E9EBF0 5px 10px)"></span>
+                              <span style="display: flex; flex-direction: column; min-width: 0">
+                                <span style="font-size: 15px; font-weight: 700">{{ m.name }} {{ m.strength }}</span>
+                                <span style="font-size: 13px; color: {{ m.chipFg }}; font-weight: 600">{{ m.glyph }} {{ m.statusLabel }} · {{ m.dose }}</span>
+                              </span>
+                            </button>
+                            <sc-if value="{{ m.notTaken }}">
+                              <button type="button" onClick="{{ m.onTake }}" style="flex: none; min-height: 40px; padding: 6px 12px; border: none; border-radius: 8px; background: #2A3B5E; color: #fff; font-size: 13px; font-weight: 700; cursor: pointer">Mark taken</button>
+                            </sc-if>
+                            <sc-if value="{{ m.taken }}">
+                              <button type="button" onClick="{{ m.onClear }}" style="flex: none; min-height: 40px; padding: 6px 12px; border: 1px solid #C7CCD6; border-radius: 8px; background: #fff; font-size: 13px; font-weight: 700; cursor: pointer">Clear</button>
+                            </sc-if>
+                          </div>
+                        </sc-for>
+                        <div style="border-top: 1px solid #EEF0F4; padding: 12px 14px; display: flex; gap: 8px; background: #FAFBFC">
+                          <sc-if value="{{ s.notAllDone }}">
+                            <button type="button" onClick="{{ s.onMarkAll }}" style="flex: 1; min-height: 44px; border: 1px solid #2A3B5E; border-radius: 8px; background: #fff; color: #2A3B5E; font-size: 14px; font-weight: 700; cursor: pointer">Mark the whole slot</button>
+                          </sc-if>
+                          <sc-if value="{{ s.allDone }}">
+                            <button type="button" onClick="{{ s.onUndoAll }}" style="flex: 1; min-height: 44px; border: 1px solid #C7CCD6; border-radius: 8px; background: #fff; font-size: 14px; font-weight: 700; cursor: pointer">Undo the whole slot</button>
+                          </sc-if>
+                        </div>
+                      </div>
+                    </sc-if>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-if>
+            <div style="flex: none; display: flex; gap: 4px; padding: 8px 8px 16px; border-top: 1px solid #E1E4EA; background: #FFFFFF">
+              <sc-for list="{{ sNav }}" as="n" hint-placeholder-count="5">
+                <button type="button" onClick="{{ n.onPick }}" style="flex: 1; min-height: 52px; border: none; border-radius: 12px; font-size: 13px; font-weight: 700; cursor: pointer; background: {{ n.bg }}; color: {{ n.fg }}">{{ n.label }}</button>
+              </sc-for>
+            </div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ isSCal }}">
+          <div style="flex: 1; min-height: 0; display: flex; flex-direction: column; background: #E5E9F0">
+            <div style="flex: none; display: flex; align-items: center; gap: 6px; padding: 2px 12px 10px">
+              <button type="button" onClick="{{ onPrevMonth }}" style="min-width: 44px; min-height: 44px; border: 1px solid #DDE1E8; border-radius: 10px; background: #fff; font-size: 16px; font-weight: 700; cursor: pointer">‹</button>
+              <button type="button" onClick="{{ onJump }}" style="flex: 1; min-height: 44px; border: 1px solid #DDE1E8; border-radius: 10px; background: #fff; font-size: 17px; font-weight: 800; cursor: pointer">{{ monthLabel }}</button>
+              <button type="button" onClick="{{ onNextMonth }}" style="min-width: 44px; min-height: 44px; border: 1px solid #DDE1E8; border-radius: 10px; background: #fff; font-size: 16px; font-weight: 700; cursor: pointer">›</button>
+            </div>
+            <sc-if value="{{ calLoading }}">
+              <div style="flex: 1; padding: 10px 14px; display: flex; flex-direction: column; gap: 8px">
+                <span style="font-size: 14px; color: #6B7280">Loading the record…</span>
+                <span style="height: 220px; border-radius: 12px; background: #EEF0F4; display: block"></span>
+              </div>
+            </sc-if>
+            <sc-if value="{{ calError }}">
+              <div style="flex: 1; padding: 14px; display: flex; flex-direction: column; gap: 10px">
+                <div style="padding: 14px; border-radius: 10px; background: #FDECE8; border: 1px solid #B14A34; display: flex; flex-direction: column; gap: 8px">
+                  <span style="font-size: 15px; font-weight: 700; color: #8E2F1E">The record could not be loaded</span>
+                  <span style="font-size: 14px; line-height: 1.45; color: #45423C">Nothing was lost. This is a reading problem, not a saving problem.</span>
+                  <button type="button" onClick="{{ onRetryCal }}" style="align-self: flex-start; min-height: 40px; padding: 6px 14px; border: none; border-radius: 8px; background: #8E2F1E; color: #fff; font-size: 14px; font-weight: 700; cursor: pointer">Try again</button>
+                </div>
+              </div>
+            </sc-if>
+            <sc-if value="{{ calEmpty }}">
+              <div style="flex: 1; padding: 24px 18px; display: flex; flex-direction: column; gap: 10px; justify-content: center">
+                <span style="font-size: 19px; font-weight: 800">Nothing recorded yet</span>
+                <span style="font-size: 15px; line-height: 1.5; color: #4B5563">Once medicines are added and the first day is marked, it will appear here. Days stay readable forever; the last seven days can still be corrected.</span>
+                <button type="button" onClick="{{ nav.sMedForm }}" style="align-self: flex-start; min-height: 44px; padding: 8px 16px; border: none; border-radius: 10px; background: #2A3B5E; color: #fff; font-size: 14px; font-weight: 700; cursor: pointer">Add the first medicine</button>
+              </div>
+            </sc-if>
+            <sc-if value="{{ calMonth }}">
+              <div style="flex: 1; min-height: 0; overflow-y: auto; padding: 0 12px 14px; display: flex; flex-direction: column; gap: 8px">
+                <div style="display: flex; gap: 4px">
+                  <sc-for list="{{ calWeekdays }}" as="w" hint-placeholder-count="7">
+                    <span style="flex: 1; text-align: center; font-size: 11px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: #6B7280">{{ w.name }}</span>
+                  </sc-for>
+                </div>
+                <sc-for list="{{ calWeeks }}" as="w" hint-placeholder-count="5">
+                  <div style="display: flex; gap: 4px">
+                    <sc-for list="{{ w.days }}" as="d" hint-placeholder-count="7">
+                      <sc-if value="{{ d.blank }}"><span style="flex: 1"></span></sc-if>
+                      <sc-if value="{{ d.notToday }}">
+                        <button type="button" onClick="{{ d.onOpen }}" style="flex: 1; min-height: 52px; border-radius: 10px; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; background: {{ d.bg }}; color: {{ d.fg }}; border: 1px solid {{ d.line }}">
+                          <span style="font-size: 15px; font-weight: 700; font-variant-numeric: tabular-nums">{{ d.num }}</span>
+                          <span style="font-size: 11px; font-weight: 800; line-height: 1">{{ d.glyph }}</span>
+                        </button>
+                      </sc-if>
+                      <sc-if value="{{ d.isToday }}">
+                        <button type="button" onClick="{{ d.onOpen }}" style="flex: 1; min-height: 52px; border-radius: 10px; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; background: {{ d.bg }}; color: {{ d.fg }}; border: 3px solid #2A3B5E">
+                          <span style="font-size: 15px; font-weight: 800; font-variant-numeric: tabular-nums">{{ d.num }}</span>
+                          <span style="font-size: 11px; font-weight: 800; line-height: 1">{{ d.glyph }}</span>
+                        </button>
+                      </sc-if>
+                    </sc-for>
+                  </div>
+                </sc-for>
+                <div style="margin-top: 4px; padding: 12px 14px; border-radius: 10px; background: #FFFFFF; border: 1px solid #E1E4EA; display: flex; flex-direction: column; gap: 7px">
+                  <span style="font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; color: #6B7280">What the marks mean</span>
+                  <span style="font-size: 13px; color: #374151"><strong>✓</strong> every medicine dealt with · <strong>○</strong> something still unmarked · <strong>—</strong> something not taken · <strong>·</strong> nothing was due</span>
+                  <span style="font-size: 13px; color: #374151"><strong>▣</strong> before the mark = a read-only record, older than a week and no longer editable · plain white with no mark = a future day, not markable</span>
+                  <span style="font-size: 13px; color: #6B7280">No scores, no streaks — just what happened.</span>
+                </div>
+              </div>
+            </sc-if>
+            <div style="flex: none; display: flex; gap: 4px; padding: 8px 8px 16px; border-top: 1px solid #E1E4EA; background: #FFFFFF">
+              <sc-for list="{{ sNav }}" as="n" hint-placeholder-count="5">
+                <button type="button" onClick="{{ n.onPick }}" style="flex: 1; min-height: 52px; border: none; border-radius: 12px; font-size: 13px; font-weight: 700; cursor: pointer; background: {{ n.bg }}; color: {{ n.fg }}">{{ n.label }}</button>
+              </sc-for>
+            </div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ isSCalDay }}">
+          <div style="flex: 1; min-height: 0; display: flex; flex-direction: column; background: #E5E9F0">
+            <div style="flex: none; padding: 2px 14px 10px; display: flex; flex-direction: column; gap: 4px">
+              <button type="button" onClick="{{ nav.sCal }}" style="align-self: flex-start; min-height: 44px; padding: 6px 8px; border: none; background: none; color: #2A3B5E; font-size: 15px; font-weight: 700; cursor: pointer">‹ September 2026</button>
+              <span style="font-size: 22px; font-weight: 800; letter-spacing: -0.02em; padding: 0 4px">{{ dayLabel }}</span>
+            </div>
+            <div style="flex: 1; min-height: 0; overflow-y: auto; padding: 0 14px 14px; display: flex; flex-direction: column; gap: 10px">
+              <sc-if value="{{ dayLocked }}">
+                <div style="padding: 12px 14px; border-radius: 10px; background: #ECEBEE; border: 1px solid #BEC0C7; display: flex; gap: 10px">
+                  <span style="font-size: 14px; font-weight: 800; color: #3F4048">▣</span>
+                  <span style="font-size: 14px; line-height: 1.45; color: #3F4048">Kept as a record. Days older than a week cannot be changed — you can still read everything and open the medicines.</span>
+                </div>
+              </sc-if>
+              <sc-if value="{{ dayFuture }}">
+                <div style="padding: 12px 14px; border-radius: 10px; background: #FFFFFF; border: 1px dashed #C7CCD6; display: flex; gap: 10px">
+                  <span style="font-size: 14px; line-height: 1.45; color: #4B5563">This day has not happened yet. You can see what is planned, but nothing can be marked.</span>
+                </div>
+              </sc-if>
+              <sc-if value="{{ dayEditable }}">
+                <div style="padding: 10px 14px; border-radius: 10px; background: #EEF1F6; border: 1px solid #C4CCDD">
+                  <span style="font-size: 13px; color: #2A3B5E; font-weight: 600">You can still correct this day.</span>
+                </div>
+              </sc-if>
+              <sc-if value="{{ dayNoMeds }}">
+                <div style="padding: 18px; border-radius: 12px; background: #FFFFFF; border: 1px solid #E1E4EA; display: flex; flex-direction: column; gap: 6px">
+                  <span style="font-size: 17px; font-weight: 800">No medicines were due</span>
+                  <span style="font-size: 14px; line-height: 1.45; color: #4B5563">Nothing was scheduled on this day, so there is nothing to mark.</span>
+                </div>
+              </sc-if>
+              <sc-for list="{{ daySlots }}" as="s" hint-placeholder-count="3">
+                <div style="border-radius: 12px; background: #FFFFFF; border: 1px solid #E1E4EA; overflow: hidden">
+                  <div style="display: flex; align-items: center; gap: 10px; padding: 12px 14px; background: {{ s.bg }}">
+                    <span style="width: 24px; height: 24px; border-radius: 999px; border: 2px solid {{ s.fg }}; color: {{ s.fg }}; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800">{{ s.glyph }}</span>
+                    <span style="font-size: 16px; font-weight: 700">{{ s.name }} · {{ s.t }}</span>
+                    <span style="margin-left: auto; font-size: 13px; font-weight: 700; color: {{ s.fg }}">{{ s.statusLabel }}</span>
+                  </div>
+                  <sc-for list="{{ s.meds }}" as="m" hint-placeholder-count="2">
+                    <div style="border-top: 1px solid #EEF0F4; padding: 12px 14px; display: flex; align-items: center; gap: 10px">
+                      <button type="button" onClick="{{ m.onOpen }}" style="flex: 1; min-width: 0; display: flex; align-items: center; gap: 10px; border: none; background: none; padding: 0; cursor: pointer; text-align: left">
+                        <span style="width: 36px; height: 36px; flex: none; border-radius: 8px; border: 1px solid #DDE1E8; background: repeating-linear-gradient(45deg, #F3F4F7 0 5px, #E9EBF0 5px 10px)"></span>
+                        <span style="display: flex; flex-direction: column">
+                          <span style="font-size: 15px; font-weight: 700">{{ m.name }} {{ m.strength }}</span>
+                          <span style="font-size: 13px; color: {{ m.fg }}; font-weight: 600">{{ m.glyph }} {{ m.statusLabel }}</span>
+                        </span>
+                      </button>
+                      <sc-if value="{{ dayEditable }}">
+                        <button type="button" onClick="{{ m.onMark }}" style="flex: none; min-height: 40px; padding: 6px 10px; border: 1px solid #2A3B5E; border-radius: 8px; background: #fff; color: #2A3B5E; font-size: 13px; font-weight: 700; cursor: pointer">Change</button>
+                      </sc-if>
+                    </div>
+                  </sc-for>
+                </div>
+              </sc-for>
+            </div>
+            <div style="flex: none; display: flex; gap: 4px; padding: 8px 8px 16px; border-top: 1px solid #E1E4EA; background: #FFFFFF">
+              <sc-for list="{{ sNav }}" as="n" hint-placeholder-count="5">
+                <button type="button" onClick="{{ n.onPick }}" style="flex: 1; min-height: 52px; border: none; border-radius: 12px; font-size: 13px; font-weight: 700; cursor: pointer; background: {{ n.bg }}; color: {{ n.fg }}">{{ n.label }}</button>
+              </sc-for>
+            </div>
+          </div>
+        </sc-if>
+        <sc-if value="{{ isSMeds }}">
+          <div style="flex: 1; min-height: 0; display: flex; flex-direction: column; background: #E5E9F0">
+            <div style="flex: none; padding: 2px 14px 10px; display: flex; align-items: center; gap: 10px">
+              <span style="font-size: 23px; font-weight: 800; letter-spacing: -0.02em">Medicines</span>
+              <button type="button" onClick="{{ nav.sMedForm }}" style="margin-left: auto; min-height: 44px; padding: 8px 16px; border: none; border-radius: 10px; background: #2A3B5E; color: #fff; font-size: 14px; font-weight: 700; cursor: pointer">Add medicine</button>
+            </div>
+            <sc-if value="{{ medsLoading }}">
+              <div style="flex: 1; padding: 4px 14px; display: flex; flex-direction: column; gap: 8px">
+                <span style="font-size: 14px; color: #6B7280">Loading medicines…</span>
+                <span style="height: 68px; border-radius: 12px; background: #EEF0F4; display: block"></span>
+                <span style="height: 68px; border-radius: 12px; background: #F1F3F6; display: block"></span>
+              </div>
+            </sc-if>
+            <sc-if value="{{ medsEmpty }}">
+              <div style="flex: 1; padding: 20px 16px; display: flex; flex-direction: column; gap: 12px; justify-content: center">
+                <span style="font-size: 20px; font-weight: 800">No medicines yet</span>
+                <span style="font-size: 15px; line-height: 1.5; color: #4B5563">Add the first medicine with a photo of the pill and the packet. Margaret's Today screen stays empty until then, and it tells her you are setting things up.</span>
+                <button type="button" onClick="{{ nav.sMedForm }}" style="align-self: flex-start; min-height: 46px; padding: 10px 18px; border: none; border-radius: 10px; background: #2A3B5E; color: #fff; font-size: 15px; font-weight: 700; cursor: pointer">Add the first medicine</button>
+              </div>
+            </sc-if>
+            <sc-if value="{{ medsActive }}">
+              <div style="flex: 1; min-height: 0; overflow-y: auto; padding: 0 14px 14px; display: flex; flex-direction: column; gap: 8px">
+                <sc-for list="{{ activeMeds }}" as="m" hint-placeholder-count="5">
+                  <div style="border-radius: 12px; background: #FFFFFF; border: 1px solid #E1E4EA; display: flex; align-items: center; gap: 10px; padding: 12px">
+                    <span style="width: 44px; height: 44px; flex: none; border-radius: 8px; border: 1px solid #DDE1E8; background: repeating-linear-gradient(45deg, #F3F4F7 0 5px, #E9EBF0 5px 10px)"></span>
+                    <button type="button" onClick="{{ m.onOpen }}" style="flex: 1; min-width: 0; border: none; background: none; padding: 0; text-align: left; cursor: pointer; display: flex; flex-direction: column; gap: 2px">
+                      <span style="font-size: 16px; font-weight: 700">{{ m.name }} {{ m.strength }}</span>
+                      <span style="font-size: 13px; color: #4B5563">{{ m.sched }}</span>
+                      <span style="font-size: 12px; font-weight: 700; color: #6B7280">{{ m.photoState }}</span>
+                    </button>
+                    <button type="button" onClick="{{ m.onArchive }}" style="flex: none; min-height: 40px; padding: 6px 10px; border: 1px solid #C7CCD6; border-radius: 8px; background: #fff; font-size: 12px; font-weight: 700; cursor: pointer">Archive</button>
+                  </div>
+                </sc-for>
+                <button type="button" onClick="{{ onToggleArchived }}" style="align-self: flex-start; margin-top: 4px; min-height: 44px; padding: 8px 12px; border: none; background: none; color: #2A3B5E; font-size: 14px; font-weight: 700; text-decoration: underline; cursor: pointer">{{ archivedLabel }}</button>
+                <sc-if value="{{ medsShowArchived }}">
+                  <div style="display: flex; flex-direction: column; gap: 8px">
+                    <sc-for list="{{ archivedMeds }}" as="a" hint-placeholder-count="1">
+                      <div style="border-radius: 12px; background: #F1F2F5; border: 1px dashed #C7CCD6; display: flex; align-items: center; gap: 10px; padding: 12px">
+                        <span style="display: flex; flex-direction: column; gap: 2px; flex: 1"><span style="font-size: 15px; font-weight: 700; color: #4B5563">{{ a.name }} {{ a.strength }}</span><span style="font-size: 12px; color: #6B7280">{{ a.note }}</span></span>
+                        <button type="button" onClick="{{ a.onRestore }}" style="min-height: 40px; padding: 6px 12px; border: 1px solid #2A3B5E; border-radius: 8px; background: #fff; color: #2A3B5E; font-size: 13px; font-weight: 700; cursor: pointer">Restore</button>
+                      </div>
+                    </sc-for>
+                    <span style="font-size: 13px; color: #6B7280">Archived medicines stay out of Today and out of the pill box, but their past record is kept.</span>
+                  </div>
+                </sc-if>
+              </div>
+            </sc-if>
+            <div style="flex: none; display: flex; gap: 4px; padding: 8px 8px 16px; border-top: 1px solid #E1E4EA; background: #FFFFFF">
+              <sc-for list="{{ sNav }}" as="n" hint-placeholder-count="5">
+                <button type="button" onClick="{{ n.onPick }}" style="flex: 1; min-height: 52px; border: none; border-radius: 12px; font-size: 13px; font-weight: 700; cursor: pointer; background: {{ n.bg }}; color: {{ n.fg }}">{{ n.label }}</button>
+              </sc-for>
+            </div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ isSForm }}">
+          <div style="flex: 1; min-height: 0; display: flex; flex-direction: column; background: #E5E9F0">
+            <div style="flex: none; display: flex; align-items: center; gap: 8px; padding: 2px 10px 10px; border-bottom: 1px solid #E1E4EA">
+              <button type="button" onClick="{{ nav.sMeds }}" style="min-height: 44px; padding: 8px 10px; border: none; background: none; color: #2A3B5E; font-size: 15px; font-weight: 700; cursor: pointer">Cancel</button>
+              <span style="font-size: 16px; font-weight: 800">Edit medicine</span>
+              <button type="button" onClick="{{ onSaveMed }}" style="margin-left: auto; min-height: 44px; padding: 8px 16px; border: none; border-radius: 10px; background: #2A3B5E; color: #fff; font-size: 14px; font-weight: 700; cursor: pointer">Save</button>
+            </div>
+            <div style="flex: 1; min-height: 0; overflow-y: auto; padding: 12px 14px 16px; display: flex; flex-direction: column; gap: 16px">
+              <sc-if value="{{ formSaving }}">
+                <div style="padding: 12px 14px; border-radius: 10px; background: #EEF1F6; border: 1px solid #C4CCDD; display: flex; flex-direction: column; gap: 8px"><span style="font-size: 14px; font-weight: 700">Saving…</span><span style="height: 6px; border-radius: 999px; background: #D8DCE4; display: block; overflow: hidden"><span style="display: block; width: 55%; height: 100%; background: #2A3B5E"></span></span></div>
+              </sc-if>
+              <sc-if value="{{ formErrors }}">
+                <div style="padding: 14px; border-radius: 10px; background: #FDECE8; border: 1px solid #B14A34; display: flex; flex-direction: column; gap: 6px">
+                  <span style="font-size: 14px; font-weight: 800; color: #8E2F1E">Four things need fixing before this can be saved</span>
+                  <span style="font-size: 13px; line-height: 1.5; color: #45423C">A name is needed · the dose must be a number above zero · at least one schedule is needed · “every few days” needs a starting date</span>
+                </div>
+              </sc-if>
+              <div style="display: flex; flex-direction: column; gap: 10px">
+                <span style="font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; color: #6B7280">What it is</span>
+                <label for="mname" style="font-size: 13px; font-weight: 700; color: #374151">Name</label>
+                <sc-if value="{{ formClean }}">
+                  <div id="mname" style="min-height: 48px; border-radius: 10px; border: 1px solid #C7CCD6; background: #fff; padding: 12px 14px; font-size: 16px">Metformin</div>
+                </sc-if>
+                <sc-if value="{{ formErrors }}">
+                  <div id="mname" style="min-height: 48px; border-radius: 10px; border: 2px solid #B14A34; background: #fff; padding: 12px 14px; font-size: 16px; color: #9CA3AF">Type the name as it is written on the packet</div>
+                  <span style="font-size: 13px; font-weight: 700; color: #8E2F1E">A name is needed — this is what Margaret will read.</span>
+                </sc-if>
+                <div style="display: flex; gap: 8px">
+                  <span style="flex: 1; display: flex; flex-direction: column; gap: 6px"><span style="font-size: 13px; font-weight: 700; color: #374151">Strength</span><span style="min-height: 48px; border-radius: 10px; border: 1px solid #C7CCD6; background: #fff; padding: 12px 14px; font-size: 16px">500 mg</span></span>
+                  <span style="flex: 1; display: flex; flex-direction: column; gap: 6px"><span style="font-size: 13px; font-weight: 700; color: #374151">How many</span><span style="min-height: 48px; border-radius: 10px; border: 1px solid #C7CCD6; background: #fff; padding: 12px 14px; font-size: 16px">1</span></span>
+                </div>
+                <span style="font-size: 13px; font-weight: 700; color: #374151">Form</span>
+                <div style="display: flex; gap: 6px; flex-wrap: wrap">
+                  <span style="padding: 8px 14px; border-radius: 999px; background: #2A3B5E; color: #fff; font-size: 13px; font-weight: 700">Tablet</span>
+                  <span style="padding: 8px 14px; border-radius: 999px; background: #fff; border: 1px solid #C7CCD6; font-size: 13px; font-weight: 600">Capsule</span>
+                  <span style="padding: 8px 14px; border-radius: 999px; background: #fff; border: 1px solid #C7CCD6; font-size: 13px; font-weight: 600">Liquid</span>
+                  <span style="padding: 8px 14px; border-radius: 999px; background: #fff; border: 1px solid #C7CCD6; font-size: 13px; font-weight: 600">Drops</span>
+                  <span style="padding: 8px 14px; border-radius: 999px; background: #fff; border: 1px solid #C7CCD6; font-size: 13px; font-weight: 600">Inhaler</span>
+                  <span style="padding: 8px 14px; border-radius: 999px; background: #fff; border: 1px solid #C7CCD6; font-size: 13px; font-weight: 600">Patch</span>
+                  <span style="padding: 8px 14px; border-radius: 999px; background: #fff; border: 1px solid #C7CCD6; font-size: 13px; font-weight: 600">Other</span>
+                </div>
+                <span style="font-size: 13px; font-weight: 700; color: #374151">What it is for (Margaret sees this)</span>
+                <span style="min-height: 48px; border-radius: 10px; border: 1px solid #C7CCD6; background: #fff; padding: 12px 14px; font-size: 16px">Blood sugar</span>
+                <span style="font-size: 13px; font-weight: 700; color: #374151">Notes</span>
+                <span style="min-height: 72px; border-radius: 10px; border: 1px solid #C7CCD6; background: #fff; padding: 12px 14px; font-size: 16px">Take with food.</span>
+                <span style="font-size: 12px; color: #6B7280; line-height: 1.45">Write only what helps her take it. CarePair does not check doses or interactions.</span>
+              </div>
+              <div style="display: flex; flex-direction: column; gap: 10px">
+                <span style="font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; color: #6B7280">Photos</span>
+                <div style="display: flex; gap: 8px">
+                  <div style="flex: 1; display: flex; flex-direction: column; gap: 6px">
+                    <sc-if value="{{ formUploading }}">
+                      <span style="height: 110px; border-radius: 10px; border: 1px solid #C7CCD6; background: #EEF0F4; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: #4B5563">Uploading… 60%</span>
+                    </sc-if>
+                    <sc-if value="{{ formUploadFail }}">
+                      <span style="height: 110px; border-radius: 10px; border: 2px solid #B14A34; background: #FDECE8; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; font-size: 12px; font-weight: 700; color: #8E2F1E; text-align: center; padding: 8px">Photo failed<span style="font-size: 11px; font-weight: 600; color: #45423C">too large to process</span></span>
+                    </sc-if>
+                    <button type="button" onClick="{{ onCurPill }}" style="height: 110px; border-radius: 10px; border: 1px solid #C7CCD6; background: repeating-linear-gradient(45deg, #F3F4F7 0 6px, #E9EBF0 6px 12px); cursor: pointer; font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: #4B5563">pill photo</button>
+                    <span style="font-size: 12px; color: #4B5563">Pill photo · <button type="button" onClick="{{ onSuggestPhoto }}" style="border: none; background: none; padding: 0; color: #2A3B5E; font-size: 12px; font-weight: 700; text-decoration: underline; cursor: pointer">share with others</button></span>
+                  </div>
+                  <div style="flex: 1; display: flex; flex-direction: column; gap: 6px">
+                    <button type="button" onClick="{{ onCurPacket }}" style="height: 110px; border-radius: 10px; border: 1px dashed #C7CCD6; background: #FFFFFF; cursor: pointer; font-size: 12px; font-weight: 700; color: #2A3B5E">Add packet photo</button>
+                    <span style="font-size: 12px; color: #6B7280">No packet photo yet</span>
+                  </div>
+                </div>
+                <button type="button" onClick="{{ onCommunity }}" style="min-height: 46px; border: 1px solid #2A3B5E; border-radius: 10px; background: #fff; color: #2A3B5E; font-size: 14px; font-weight: 700; cursor: pointer">Look it up in the shared list</button>
+                <span style="font-size: 12px; color: #6B7280; line-height: 1.45">Optional. It only ever fills in the name, strength and photos — you can ignore it and type everything yourself.</span>
+              </div>
+              <div style="display: flex; flex-direction: column; gap: 10px">
+                <span style="font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; color: #6B7280">When she takes it</span>
+                <sc-for list="{{ schedules }}" as="sc" hint-placeholder-count="2">
+                  <div style="border-radius: 12px; background: #fff; border: 1px solid #E1E4EA; padding: 12px; display: flex; flex-direction: column; gap: 10px">
+                    <div style="display: flex; align-items: center; gap: 8px">
+                      <span style="font-size: 15px; font-weight: 700">{{ sc.kind }}</span>
+                      <button type="button" onClick="{{ sc.onRemove }}" style="margin-left: auto; min-height: 40px; padding: 6px 10px; border: 1px solid #C7CCD6; border-radius: 8px; background: #fff; font-size: 12px; font-weight: 700; cursor: pointer">Remove</button>
+                    </div>
+                    <div style="display: flex; gap: 6px; flex-wrap: wrap">
+                      <span style="padding: 7px 12px; border-radius: 999px; background: #2A3B5E; color: #fff; font-size: 12px; font-weight: 700">Every day</span>
+                      <span style="padding: 7px 12px; border-radius: 999px; background: #fff; border: 1px solid #C7CCD6; font-size: 12px; font-weight: 600">Every few days</span>
+                      <span style="padding: 7px 12px; border-radius: 999px; background: #fff; border: 1px solid #C7CCD6; font-size: 12px; font-weight: 600">Certain weekdays</span>
+                    </div>
+                    <div style="display: flex; gap: 8px">
+                      <span style="flex: 1; display: flex; flex-direction: column; gap: 4px"><span style="font-size: 12px; font-weight: 700; color: #374151">Time of day</span><span style="min-height: 44px; border-radius: 8px; border: 1px solid #C7CCD6; background: #fff; padding: 10px 12px; font-size: 15px">{{ sc.slot }}</span></span>
+                      <span style="flex: 1; display: flex; flex-direction: column; gap: 4px"><span style="font-size: 12px; font-weight: 700; color: #374151">Exact time (optional)</span><span style="min-height: 44px; border-radius: 8px; border: 1px solid #C7CCD6; background: #fff; padding: 10px 12px; font-size: 15px">{{ sc.time }}</span></span>
+                    </div>
+                  </div>
+                </sc-for>
+                <sc-if value="{{ formErrors }}">
+                  <div style="border-radius: 12px; background: #fff; border: 2px solid #B14A34; padding: 12px; display: flex; flex-direction: column; gap: 8px">
+                    <span style="font-size: 15px; font-weight: 700">Every few days</span>
+                    <span style="font-size: 13px; font-weight: 700; color: #8E2F1E">Choose the day it starts from, otherwise we cannot work out which days it falls on.</span>
+                    <span style="min-height: 44px; border-radius: 8px; border: 2px solid #B14A34; background: #fff; padding: 10px 12px; font-size: 15px; color: #9CA3AF">Starting date</span>
+                    <span style="font-size: 13px; font-weight: 700; color: #8E2F1E">Also: pick at least one weekday for the third schedule.</span>
+                  </div>
+                </sc-if>
+                <button type="button" onClick="{{ onAddSchedule }}" style="min-height: 46px; border: 1px dashed #2A3B5E; border-radius: 10px; background: #fff; color: #2A3B5E; font-size: 14px; font-weight: 700; cursor: pointer">Add another time</button>
+                <button type="button" onClick="{{ nav.sTimes }}" style="min-height: 40px; border: none; background: none; color: #2A3B5E; font-size: 13px; font-weight: 700; text-decoration: underline; cursor: pointer; align-self: flex-start">The time of day I need is not in the list</button>
+              </div>
+              <div style="display: flex; flex-direction: column; gap: 8px; padding-top: 4px; border-top: 1px solid #E1E4EA">
+                <button type="button" onClick="{{ onSaveInvalid }}" style="min-height: 40px; border: none; background: none; color: #6B7280; font-size: 12px; text-decoration: underline; cursor: pointer; align-self: flex-start">demo: try saving with things missing</button>
+                <button type="button" onClick="{{ nav.sMeds }}" style="min-height: 46px; border: 1px solid #8E2F1E; border-radius: 10px; background: #fff; color: #8E2F1E; font-size: 14px; font-weight: 700; cursor: pointer">Archive this medicine…</button>
+              </div>
+            </div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ isSTimes }}">
+          <div style="flex: 1; min-height: 0; display: flex; flex-direction: column; background: #E5E9F0">
+            <div style="flex: none; display: flex; align-items: center; gap: 8px; padding: 2px 10px 10px; border-bottom: 1px solid #E1E4EA">
+              <button type="button" onClick="{{ nav.sSettings }}" style="min-height: 44px; padding: 8px 10px; border: none; background: none; color: #2A3B5E; font-size: 15px; font-weight: 700; cursor: pointer">Back</button>
+              <span style="font-size: 16px; font-weight: 800">Times of day</span>
+              <button type="button" onClick="{{ onSaveTimes }}" style="margin-left: auto; min-height: 44px; padding: 8px 16px; border: none; border-radius: 10px; background: #2A3B5E; color: #fff; font-size: 14px; font-weight: 700; cursor: pointer">Save</button>
+            </div>
+            <div style="flex: 1; min-height: 0; overflow-y: auto; padding: 12px 14px 16px; display: flex; flex-direction: column; gap: 10px">
+              <span style="font-size: 14px; line-height: 1.5; color: #4B5563">These are the words Margaret sees on her Today screen, and the compartments in the pill box. Keep them few and obvious.</span>
+              <sc-for list="{{ timeRows }}" as="t" hint-placeholder-count="4">
+                <div style="border-radius: 12px; background: #fff; border: 1px solid #E1E4EA; padding: 12px; display: flex; flex-direction: column; gap: 10px">
+                  <div style="display: flex; gap: 8px">
+                    <span style="flex: 2; display: flex; flex-direction: column; gap: 4px"><span style="font-size: 12px; font-weight: 700; color: #374151">Name</span><span style="min-height: 44px; border-radius: 8px; border: 1px solid #C7CCD6; background: #fff; padding: 10px 12px; font-size: 16px; font-weight: 600">{{ t.name }}</span></span>
+                    <span style="flex: 1; display: flex; flex-direction: column; gap: 4px"><span style="font-size: 12px; font-weight: 700; color: #374151">Time</span><span style="min-height: 44px; border-radius: 8px; border: 1px solid #C7CCD6; background: #fff; padding: 10px 12px; font-size: 16px">{{ t.t }}</span></span>
+                  </div>
+                  <div style="display: flex; align-items: center; gap: 10px">
+                    <span style="font-size: 12px; color: #6B7280">{{ t.uses }}</span>
+                    <button type="button" onClick="{{ t.onRemove }}" style="margin-left: auto; min-height: 40px; padding: 6px 10px; border: 1px solid #8E2F1E; border-radius: 8px; background: #fff; color: #8E2F1E; font-size: 12px; font-weight: 700; cursor: pointer">Remove</button>
+                  </div>
+                </div>
+              </sc-for>
+              <button type="button" onClick="{{ onAddSlot }}" style="min-height: 48px; border: 1px dashed #2A3B5E; border-radius: 10px; background: #fff; color: #2A3B5E; font-size: 14px; font-weight: 700; cursor: pointer">Add a time of day</button>
+              <span style="font-size: 12px; color: #6B7280">At least one time of day must stay.</span>
+            </div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ isSSettings }}">
+          <div style="flex: 1; min-height: 0; display: flex; flex-direction: column; background: #E5E9F0">
+            <div style="flex: none; padding: 2px 14px 10px"><span style="font-size: 23px; font-weight: 800; letter-spacing: -0.02em">Settings</span></div>
+            <div style="flex: 1; min-height: 0; overflow-y: auto; padding: 0 14px 14px; display: flex; flex-direction: column; gap: 18px">
+              <div style="display: flex; flex-direction: column; gap: 8px">
+                <span style="font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; color: #6B7280">Connection</span>
+                <div style="border-radius: 12px; background: #fff; border: 1px solid #E1E4EA; padding: 14px; display: flex; flex-direction: column; gap: 10px">
+                  <span style="font-size: 16px; font-weight: 700">Margaret's household</span>
+                  <span style="font-size: 13px; color: #4B5563">Connected on 2 August with code K7F2QM. You are her only helper.</span>
+                  <button type="button" onClick="{{ onDisconnect }}" style="align-self: flex-start; min-height: 44px; padding: 8px 14px; border: 1px solid #8E2F1E; border-radius: 10px; background: #fff; color: #8E2F1E; font-size: 14px; font-weight: 700; cursor: pointer">Disconnect…</button>
+                </div>
+              </div>
+              <div style="display: flex; flex-direction: column; gap: 8px">
+                <span style="font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; color: #6B7280">Your alerts</span>
+                <div style="border-radius: 12px; background: #fff; border: 1px solid #E1E4EA; padding: 14px; display: flex; flex-direction: column; gap: 12px">
+                  <div style="display: flex; align-items: center; gap: 10px">
+                    <span style="display: flex; flex-direction: column; gap: 2px; flex: 1"><span style="font-size: 15px; font-weight: 700">Tell me if a medicine is not marked</span><span style="font-size: 13px; color: #4B5563">Only for medicines that were due — never a summary or a score.</span></span>
+                    <button type="button" onClick="{{ onSupNotif }}" style="flex: none; min-height: 40px; padding: 8px 14px; border: 1px solid #2A3B5E; border-radius: 999px; background: #fff; color: #2A3B5E; font-size: 13px; font-weight: 700; cursor: pointer">Change</button>
+                  </div>
+                  <span style="font-size: 13px; font-weight: 700; color: #374151">How long to wait first</span>
+                  <div style="display: flex; gap: 6px; flex-wrap: wrap">
+                    <sc-for list="{{ escOptions }}" as="e" hint-placeholder-count="4">
+                      <button type="button" onClick="{{ e.onPick }}" style="min-height: 42px; padding: 8px 14px; border-radius: 999px; border: 1px solid #C7CCD6; font-size: 13px; font-weight: 700; cursor: pointer; background: {{ e.bg }}; color: {{ e.fg }}">{{ e.label }}</button>
+                    </sc-for>
+                  </div>
+                </div>
+              </div>
+              <div style="display: flex; flex-direction: column; gap: 8px">
+                <span style="font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; color: #6B7280">Household</span>
+                <button type="button" onClick="{{ nav.sTimes }}" style="border-radius: 12px; background: #fff; border: 1px solid #E1E4EA; padding: 14px; min-height: 56px; display: flex; align-items: center; gap: 10px; cursor: pointer; text-align: left">
+                  <span style="display: flex; flex-direction: column; gap: 2px"><span style="font-size: 15px; font-weight: 700">Times of day</span><span style="font-size: 13px; color: #4B5563">Morning, Midday, Evening, Bedtime</span></span>
+                  <span style="margin-left: auto; font-size: 15px; color: #6B7280">›</span>
+                </button>
+              </div>
+              <div style="display: flex; flex-direction: column; gap: 8px">
+                <span style="font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; color: #6B7280">Appearance</span>
+                <div style="border-radius: 12px; background: #fff; border: 1px solid #E1E4EA; overflow: hidden; display: flex">
+                  <sc-for list="{{ themes }}" as="t" hint-placeholder-count="3">
+                    <button type="button" onClick="{{ t.onPick }}" style="flex: 1; min-height: 48px; border: none; border-right: 1px solid #EEF0F4; font-size: 13px; font-weight: 700; cursor: pointer; background: {{ t.bg }}; color: {{ t.fg }}">{{ t.label }}</button>
+                  </sc-for>
+                </div>
+              </div>
+              <div style="display: flex; flex-direction: column; gap: 8px">
+                <span style="font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; color: #6B7280">About</span>
+                <div style="border-radius: 12px; background: #fff; border: 1px solid #E1E4EA; padding: 14px; display: flex; flex-direction: column; gap: 6px">
+                  <span style="font-size: 13px; color: #374151">CarePair 2.0 (build 214)</span>
+                  <span style="font-size: 13px; line-height: 1.5; color: #4B5563">CarePair records what you and Margaret tell it. It does not check doses, interactions or give medical advice.</span>
+                  <button type="button" onClick="{{ nav.how }}" style="align-self: flex-start; min-height: 40px; border: none; background: none; padding: 0; color: #2A3B5E; font-size: 13px; font-weight: 700; text-decoration: underline; cursor: pointer">How it works</button>
+                </div>
+              </div>
+            </div>
+            <div style="flex: none; display: flex; gap: 4px; padding: 8px 8px 16px; border-top: 1px solid #E1E4EA; background: #FFFFFF">
+              <sc-for list="{{ sNav }}" as="n" hint-placeholder-count="5">
+                <button type="button" onClick="{{ n.onPick }}" style="flex: 1; min-height: 52px; border: none; border-radius: 12px; font-size: 13px; font-weight: 700; cursor: pointer; background: {{ n.bg }}; color: {{ n.fg }}">{{ n.label }}</button>
+              </sc-for>
+            </div>
+          </div>
+        </sc-if>
+        <sc-if value="{{ showMedSheet }}">
+          <div style="position: absolute; inset: 0; background: rgba(28,26,23,0.45); display: flex; align-items: flex-end; z-index: 20">
+            <div style="width: 100%; max-height: 92%; background: #FBF9F5; border-radius: 26px 26px 0 0; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 -10px 40px rgba(0,0,0,0.25)">
+              <div style="flex: none; display: flex; align-items: center; gap: 10px; padding: 14px 18px 10px; border-bottom: 1px solid #E4DFD4">
+                <span style="font-size: 15px; font-weight: 700; color: #7C766A">{{ msSlotName }}</span>
+                <button type="button" onClick="{{ onMsClose }}" style="margin-left: auto; min-height: 48px; padding: 8px 16px; border: 2px solid #211F1B; border-radius: 12px; background: #FFFFFF; font-size: 16px; font-weight: 700; cursor: pointer">Close</button>
+              </div>
+              <div style="flex: 1; min-height: 0; overflow-y: auto; padding: 16px 18px 18px; display: flex; flex-direction: column; gap: 16px">
+                <div style="display: flex; flex-direction: column; gap: 4px">
+                  <span style="font-size: 30px; font-weight: 800; letter-spacing: -0.02em; line-height: 1.1">{{ msName }}</span>
+                  <span style="font-size: 20px; font-weight: 700; color: #45423C">{{ msStrength }} · {{ msDose }}</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-radius: 12px; background: {{ msStatusBg }}; border: 2px solid {{ msStatusFg }}">
+                  <span style="font-size: 19px; font-weight: 800; color: {{ msStatusFg }}">{{ msStatus }}</span>
+                </div>
+                <div style="display: flex; gap: 10px">
+                  <button type="button" onClick="{{ onMsPill }}" style="flex: 1; height: 140px; border-radius: 16px; border: 1px solid #DDD7CB; background: repeating-linear-gradient(45deg, #F2EEE6 0 8px, #E8E3D8 8px 16px); cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px"><span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #55514A">pill photo</span><span style="font-size: 15px; font-weight: 700; color: #1F5340; text-decoration: underline">Make it bigger</span></button>
+                  <sc-if value="{{ msHasPacket }}">
+                    <button type="button" onClick="{{ onMsPacket }}" style="flex: 1; height: 140px; border-radius: 16px; border: 1px solid #DDD7CB; background: repeating-linear-gradient(45deg, #EFEAE1 0 8px, #E5E0D4 8px 16px); cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px"><span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #55514A">packet photo</span><span style="font-size: 15px; font-weight: 700; color: #1F5340; text-decoration: underline">Make it bigger</span></button>
+                  </sc-if>
+                  <sc-if value="{{ msNoPacket }}">
+                    <span style="flex: 1; height: 140px; border-radius: 16px; border: 1px dashed #C5BEAE; background: #FBF9F5; display: flex; align-items: center; justify-content: center; text-align: center; padding: 12px; font-size: 15px; color: #7C766A">No packet photo yet</span>
+                  </sc-if>
+                </div>
+                <div style="border-radius: 16px; background: #FFFFFF; border: 1px solid #DDD7CB; overflow: hidden; display: flex; flex-direction: column">
+                  <span style="display: flex; flex-direction: column; gap: 2px; padding: 14px 16px; border-bottom: 1px solid #EFEAE1"><span style="font-size: 15px; font-weight: 700; color: #7C766A">What it is for</span><span style="font-size: 19px">{{ msPurpose }}</span></span>
+                  <sc-if value="{{ msHasNotes }}">
+                    <span style="display: flex; flex-direction: column; gap: 2px; padding: 14px 16px; border-bottom: 1px solid #EFEAE1"><span style="font-size: 15px; font-weight: 700; color: #7C766A">Notes</span><span style="font-size: 19px; line-height: 1.4">{{ msNotes }}</span></span>
+                  </sc-if>
+                  <span style="display: flex; flex-direction: column; gap: 2px; padding: 14px 16px; border-bottom: 1px solid #EFEAE1"><span style="font-size: 15px; font-weight: 700; color: #7C766A">When</span><span style="font-size: 19px">{{ msTimes }}</span></span>
+                  <span style="display: flex; flex-direction: column; gap: 2px; padding: 14px 16px"><span style="font-size: 15px; font-weight: 700; color: #7C766A">Form</span><span style="font-size: 19px">{{ msForm }}</span></span>
+                </div>
+              </div>
+              <div style="flex: none; padding: 12px 18px 20px; border-top: 1px solid #E4DFD4; background: #F2EEE6; display: flex; flex-direction: column; gap: 10px">
+                <sc-if value="{{ msNotTaken }}">
+                  <button type="button" onClick="{{ onMsTake }}" style="min-height: 64px; border: none; border-radius: 16px; background: #1F5340; color: #FBF9F5; font-size: 20px; font-weight: 800; cursor: pointer">I have taken this</button>
+                </sc-if>
+                <sc-if value="{{ msTaken }}">
+                  <button type="button" onClick="{{ onMsClear }}" style="min-height: 60px; border: 2px solid #B9B2A3; border-radius: 16px; background: #FFFFFF; font-size: 18px; font-weight: 700; cursor: pointer">Undo — I have not taken it</button>
+                </sc-if>
+                <sc-if value="{{ msUnmarked }}">
+                  <button type="button" onClick="{{ onMsSkip }}" style="min-height: 56px; border: 2px solid #B9B2A3; border-radius: 16px; background: #FFFFFF; font-size: 17px; font-weight: 700; color: #45423C; cursor: pointer">Not taking this today</button>
+                </sc-if>
+                <sc-if value="{{ msSkipped }}">
+                  <button type="button" onClick="{{ onMsClear }}" style="min-height: 56px; border: 2px solid #B9B2A3; border-radius: 16px; background: #FFFFFF; font-size: 17px; font-weight: 700; color: #45423C; cursor: pointer">Put this back on the list</button>
+                </sc-if>
+              </div>
+            </div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ showCompSheet }}">
+          <div style="position: absolute; inset: 0; background: rgba(28,26,23,0.45); display: flex; align-items: flex-end; z-index: 20">
+            <div style="width: 100%; max-height: 80%; background: #FBF9F5; border-radius: 26px 26px 0 0; display: flex; flex-direction: column; overflow: hidden">
+              <div style="flex: none; padding: 16px 18px 12px; border-bottom: 1px solid #E4DFD4; display: flex; align-items: flex-start; gap: 10px">
+                <span style="display: flex; flex-direction: column; gap: 2px"><span style="font-size: 22px; font-weight: 800">{{ compDate }}</span><span style="font-size: 16px; color: #55514A">{{ compSlot }} compartment</span></span>
+                <button type="button" onClick="{{ onCloseSheet }}" style="margin-left: auto; min-height: 44px; padding: 8px 14px; border: 2px solid #211F1B; border-radius: 12px; background: #fff; font-size: 15px; font-weight: 700; cursor: pointer">Close</button>
+              </div>
+              <div style="flex: 1; min-height: 0; overflow-y: auto; padding: 14px 18px 20px; display: flex; flex-direction: column; gap: 10px">
+                <sc-for list="{{ compItems }}" as="i" hint-placeholder-count="2">
+                  <div style="display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 14px; background: #FFFFFF; border: 1px solid #DDD7CB">
+                    <span style="width: 52px; height: 52px; flex: none; border-radius: 12px; border: 1px solid #DDD7CB; background: repeating-linear-gradient(45deg, #F2EEE6 0 6px, #E8E3D8 6px 12px)"></span>
+                    <span style="display: flex; flex-direction: column; gap: 2px"><span style="font-size: 18px; font-weight: 700">{{ i.name }} {{ i.strength }}</span><span style="font-size: 16px; color: #45423C">{{ i.qty }}</span></span>
+                  </div>
+                </sc-for>
+                <span style="font-size: 15px; color: #7C766A; line-height: 1.45">This is what belongs in that compartment. Putting it there does not mark anything as taken.</span>
+              </div>
+            </div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ showCommunity }}">
+          <div style="position: absolute; inset: 0; background: rgba(28,26,23,0.45); display: flex; align-items: flex-end; z-index: 20">
+            <div style="width: 100%; max-height: 84%; background: #E5E9F0; border-radius: 22px 22px 0 0; display: flex; flex-direction: column; overflow: hidden">
+              <div style="flex: none; padding: 14px 16px 10px; border-bottom: 1px solid #E1E4EA; display: flex; align-items: center; gap: 10px">
+                <span style="font-size: 16px; font-weight: 800">Shared medicine list</span>
+                <button type="button" onClick="{{ onCloseSheet }}" style="margin-left: auto; min-height: 44px; padding: 8px 14px; border: 1px solid #2A3B5E; border-radius: 10px; background: #fff; color: #2A3B5E; font-size: 14px; font-weight: 700; cursor: pointer">Close</button>
+              </div>
+              <div style="flex: 1; min-height: 0; overflow-y: auto; padding: 12px 16px 18px; display: flex; flex-direction: column; gap: 10px">
+                <span style="min-height: 46px; border-radius: 10px; border: 1px solid #C7CCD6; background: #fff; padding: 12px 14px; font-size: 16px">metfor|</span>
+                <span style="font-size: 13px; color: #6B7280">3 matches from other households. Nothing is sent from your phone by searching.</span>
+                <button type="button" onClick="{{ onUseCommunity }}" style="display: flex; align-items: center; gap: 10px; padding: 12px; border-radius: 12px; background: #fff; border: 1px solid #E1E4EA; cursor: pointer; text-align: left">
+                  <span style="width: 44px; height: 44px; flex: none; border-radius: 8px; border: 1px solid #DDE1E8; background: repeating-linear-gradient(45deg, #F3F4F7 0 5px, #E9EBF0 5px 10px)"></span>
+                  <span style="display: flex; flex-direction: column; gap: 2px"><span style="font-size: 15px; font-weight: 700">Metformin 500 mg</span><span style="font-size: 13px; color: #4B5563">Tablet · pill and packet photo</span></span>
+                  <span style="margin-left: auto; font-size: 13px; font-weight: 700; color: #2A3B5E">Use</span>
+                </button>
+                <button type="button" onClick="{{ onUseCommunity }}" style="display: flex; align-items: center; gap: 10px; padding: 12px; border-radius: 12px; background: #fff; border: 1px solid #E1E4EA; cursor: pointer; text-align: left">
+                  <span style="width: 44px; height: 44px; flex: none; border-radius: 8px; border: 1px solid #DDE1E8; background: repeating-linear-gradient(45deg, #F3F4F7 0 5px, #E9EBF0 5px 10px)"></span>
+                  <span style="display: flex; flex-direction: column; gap: 2px"><span style="font-size: 15px; font-weight: 700">Metformin 850 mg</span><span style="font-size: 13px; color: #4B5563">Tablet · pill photo only</span></span>
+                  <span style="margin-left: auto; font-size: 13px; font-weight: 700; color: #2A3B5E">Use</span>
+                </button>
+                <div style="padding: 12px; border-radius: 12px; background: #EEF1F6; border: 1px solid #C4CCDD; display: flex; flex-direction: column; gap: 6px">
+                  <span style="font-size: 13px; line-height: 1.5; color: #1F2937">Using an entry only fills in the name, strength and photos. You still choose the dose, the purpose and the times — and you can change anything afterwards.</span>
+                  <button type="button" onClick="{{ onCloseSheet }}" style="align-self: flex-start; min-height: 40px; border: none; background: none; padding: 0; color: #2A3B5E; font-size: 13px; font-weight: 700; text-decoration: underline; cursor: pointer">No thanks, I will type it myself</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ showMonthPicker }}">
+          <div style="position: absolute; inset: 0; background: rgba(28,26,23,0.45); display: flex; align-items: flex-end; z-index: 20">
+            <div style="width: 100%; background: #E5E9F0; border-radius: 22px 22px 0 0; padding: 16px; display: flex; flex-direction: column; gap: 12px">
+              <div style="display: flex; align-items: center"><span style="font-size: 16px; font-weight: 800">Jump to a month</span><button type="button" onClick="{{ onCloseSheet }}" style="margin-left: auto; min-height: 44px; padding: 8px 14px; border: 1px solid #2A3B5E; border-radius: 10px; background: #fff; color: #2A3B5E; font-size: 14px; font-weight: 700; cursor: pointer">Close</button></div>
+              <div style="display: flex; align-items: center; gap: 10px; justify-content: center">
+                <button type="button" onClick="{{ onPrevMonth }}" style="min-width: 44px; min-height: 44px; border: 1px solid #DDE1E8; border-radius: 10px; background: #fff; font-size: 16px; cursor: pointer">−</button>
+                <span style="font-size: 20px; font-weight: 800; font-variant-numeric: tabular-nums">2026</span>
+                <button type="button" onClick="{{ onNextMonth }}" style="min-width: 44px; min-height: 44px; border: 1px solid #DDE1E8; border-radius: 10px; background: #fff; font-size: 16px; cursor: pointer">+</button>
+              </div>
+              <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px">
+                <button type="button" onClick="{{ onCloseSheet }}" style="min-height: 48px; border: 1px solid #DDE1E8; border-radius: 10px; background: #fff; font-size: 14px; font-weight: 700; cursor: pointer">Jan</button>
+                <button type="button" onClick="{{ onCloseSheet }}" style="min-height: 48px; border: 1px solid #DDE1E8; border-radius: 10px; background: #fff; font-size: 14px; font-weight: 700; cursor: pointer">Feb</button>
+                <button type="button" onClick="{{ onCloseSheet }}" style="min-height: 48px; border: 1px solid #DDE1E8; border-radius: 10px; background: #fff; font-size: 14px; font-weight: 700; cursor: pointer">Mar</button>
+                <button type="button" onClick="{{ onCloseSheet }}" style="min-height: 48px; border: 1px solid #DDE1E8; border-radius: 10px; background: #fff; font-size: 14px; font-weight: 700; cursor: pointer">Apr</button>
+                <button type="button" onClick="{{ onCloseSheet }}" style="min-height: 48px; border: 1px solid #DDE1E8; border-radius: 10px; background: #fff; font-size: 14px; font-weight: 700; cursor: pointer">May</button>
+                <button type="button" onClick="{{ onCloseSheet }}" style="min-height: 48px; border: 1px solid #DDE1E8; border-radius: 10px; background: #fff; font-size: 14px; font-weight: 700; cursor: pointer">Jun</button>
+                <button type="button" onClick="{{ onCloseSheet }}" style="min-height: 48px; border: 1px solid #DDE1E8; border-radius: 10px; background: #fff; font-size: 14px; font-weight: 700; cursor: pointer">Jul</button>
+                <button type="button" onClick="{{ onCloseSheet }}" style="min-height: 48px; border: 1px solid #DDE1E8; border-radius: 10px; background: #fff; font-size: 14px; font-weight: 700; cursor: pointer">Aug</button>
+                <button type="button" onClick="{{ onCloseSheet }}" style="min-height: 48px; border: 2px solid #2A3B5E; border-radius: 10px; background: #2A3B5E; color: #fff; font-size: 14px; font-weight: 700; cursor: pointer">Sep</button>
+                <button type="button" onClick="{{ onCloseSheet }}" style="min-height: 48px; border: 1px solid #DDE1E8; border-radius: 10px; background: #fff; font-size: 14px; font-weight: 700; cursor: pointer">Oct</button>
+                <button type="button" onClick="{{ onCloseSheet }}" style="min-height: 48px; border: 1px solid #DDE1E8; border-radius: 10px; background: #fff; font-size: 14px; font-weight: 700; cursor: pointer">Nov</button>
+                <button type="button" onClick="{{ onCloseSheet }}" style="min-height: 48px; border: 1px solid #DDE1E8; border-radius: 10px; background: #fff; font-size: 14px; font-weight: 700; cursor: pointer">Dec</button>
+              </div>
+            </div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ showBoxTimes }}">
+          <div style="position: absolute; inset: 0; background: rgba(28,26,23,0.45); display: flex; align-items: flex-end; z-index: 20">
+            <div style="width: 100%; background: #FBF9F5; border-radius: 24px 24px 0 0; padding: 18px; display: flex; flex-direction: column; gap: 12px">
+              <span style="font-size: 22px; font-weight: 800">Which compartments does the box have?</span>
+              <span style="font-size: 16px; line-height: 1.45; color: #45423C">Tick the times of day that exist as compartments in the plastic box.</span>
+              <sc-for list="{{ boxTimeOptions }}" as="b" hint-placeholder-count="4">
+                <button type="button" onClick="{{ b.onToggle }}" style="min-height: 62px; display: flex; align-items: center; gap: 14px; padding: 12px 16px; border-radius: 14px; cursor: pointer; text-align: left; background: {{ b.bg }}; border: 2px solid {{ b.line }}">
+                  <span style="width: 30px; height: 30px; flex: none; border-radius: 8px; border: 2px solid #1F5340; display: flex; align-items: center; justify-content: center; font-size: 17px; font-weight: 800; color: #1F5340; background: #fff">{{ b.glyph }}</span>
+                  <span style="font-size: 19px; font-weight: 700">{{ b.name }}</span>
+                  <span style="margin-left: auto; font-size: 17px; color: #55514A">{{ b.t }}</span>
+                </button>
+              </sc-for>
+              <button type="button" onClick="{{ onCloseSheet }}" style="min-height: 60px; border: none; border-radius: 16px; background: #1F5340; color: #FBF9F5; font-size: 18px; font-weight: 800; cursor: pointer">Done</button>
+            </div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ showShare }}">
+          <div style="position: absolute; inset: 0; background: rgba(28,26,23,0.45); display: flex; align-items: flex-end; z-index: 20">
+            <div style="width: 100%; background: #FBF9F5; border-radius: 24px 24px 0 0; padding: 18px; display: flex; flex-direction: column; gap: 12px">
+              <span style="font-size: 21px; font-weight: 800">Send your code to your helper</span>
+              <button type="button" onClick="{{ onCopyCode }}" style="min-height: 62px; display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-radius: 14px; border: 2px solid #211F1B; background: #fff; font-size: 18px; font-weight: 700; cursor: pointer; text-align: left">WhatsApp</button>
+              <button type="button" onClick="{{ onCopyCode }}" style="min-height: 62px; display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-radius: 14px; border: 2px solid #211F1B; background: #fff; font-size: 18px; font-weight: 700; cursor: pointer; text-align: left">Text message</button>
+              <button type="button" onClick="{{ onCopyCode }}" style="min-height: 62px; display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-radius: 14px; border: 2px solid #211F1B; background: #fff; font-size: 18px; font-weight: 700; cursor: pointer; text-align: left">Copy the code</button>
+              <button type="button" onClick="{{ onCloseSheet }}" style="min-height: 56px; border: none; border-radius: 16px; background: #F2EEE6; font-size: 17px; font-weight: 700; cursor: pointer">Cancel</button>
+            </div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ showOutside }}">
+          <div style="position: absolute; inset: 0; background: rgba(28,26,23,0.45); display: flex; align-items: flex-end; z-index: 20">
+            <div style="width: 100%; background: #FBF9F5; border-radius: 24px 24px 0 0; padding: 18px; display: flex; flex-direction: column; gap: 12px">
+              <span style="font-size: 24px; font-weight: 800; letter-spacing: -0.02em">These stay out of the box</span>
+              <sc-for list="{{ outsideBox }}" as="o" hint-placeholder-count="2">
+                <div style="padding: 14px 16px; border-radius: 14px; background: #FFFFFF; border: 3px solid #DDD7CB; display: flex; flex-direction: column; gap: 3px">
+                  <span style="font-size: 21px; font-weight: 800">{{ o.name }}</span>
+                  <span style="font-size: 18px; color: #45423C">{{ o.dose }}</span>
+                  <span style="font-size: 18px; font-weight: 700; color: #7A5410">{{ o.reason }}</span>
+                </div>
+              </sc-for>
+              <button type="button" onClick="{{ onCloseSheet }}" style="min-height: 62px; border: none; border-radius: 16px; background: #1F5340; color: #FBF9F5; font-size: 19px; font-weight: 800; cursor: pointer">Done</button>
+            </div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ showPhoto }}">
+          <div style="position: absolute; inset: 0; background: #14120F; display: flex; flex-direction: column; z-index: 30">
+            <div style="flex: none; display: flex; align-items: center; padding: 16px 18px">
+              <span style="font-size: 17px; font-weight: 700; color: #F5F1E8">{{ photoLabel }}</span>
+              <button type="button" onClick="{{ onClosePhoto }}" style="margin-left: auto; min-height: 52px; padding: 10px 20px; border: 2px solid #F5F1E8; border-radius: 14px; background: transparent; color: #F5F1E8; font-size: 17px; font-weight: 700; cursor: pointer">Close</button>
+            </div>
+            <div style="flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; padding: 12px">
+              <span style="width: 100%; height: 100%; border-radius: 18px; background: repeating-linear-gradient(45deg, #2B2721 0 12px, #211E19 12px 24px); display: flex; align-items: center; justify-content: center; font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #A39B8C; text-align: center; padding: 20px">full-size photo</span>
+            </div>
+            <span style="flex: none; padding: 14px 20px 28px; font-size: 17px; line-height: 1.45; color: #DCD5C8">{{ photoCaption }}</span>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ showDialog }}">
+          <div style="position: absolute; inset: 0; background: rgba(28,26,23,0.5); display: flex; align-items: center; justify-content: center; padding: 20px; z-index: 40">
+            <div style="width: 100%; background: #FBF9F5; border-radius: 22px; padding: 22px; display: flex; flex-direction: column; gap: 14px; box-shadow: 0 20px 50px rgba(0,0,0,0.3)">
+              <span style="font-size: 23px; font-weight: 800; letter-spacing: -0.015em; line-height: 1.2">{{ dlgTitle }}</span>
+              <span style="font-size: 17px; line-height: 1.5; color: #45423C">{{ dlgBody }}</span>
+              <div style="display: flex; flex-direction: column; gap: 10px; padding-top: 4px">
+                <button type="button" onClick="{{ onDlgConfirm }}" style="min-height: 60px; border: none; border-radius: 14px; color: #FBF9F5; font-size: 18px; font-weight: 800; cursor: pointer; background: {{ dlgBg }}">{{ dlgConfirm }}</button>
+                <button type="button" onClick="{{ onDlgCancel }}" style="min-height: 56px; border: 2px solid #B9B2A3; border-radius: 14px; background: #FFFFFF; font-size: 17px; font-weight: 700; cursor: pointer">{{ dlgCancel }}</button>
+              </div>
+            </div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ showToast }}">
+          <div style="position: absolute; left: 12px; right: 12px; bottom: 96px; z-index: 50; display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-radius: 16px; background: #211F1B; box-shadow: 0 10px 30px rgba(0,0,0,0.3)">
+            <span style="font-size: 17px; font-weight: 700; color: #FBF9F5; line-height: 1.3">{{ toastText }}</span>
+            <sc-if value="{{ toastUndo }}">
+              <button type="button" onClick="{{ onToastUndo }}" style="margin-left: auto; flex: none; min-height: 44px; padding: 8px 16px; border: 2px solid #FBF9F5; border-radius: 12px; background: transparent; color: #FBF9F5; font-size: 16px; font-weight: 800; cursor: pointer">Undo</button>
+            </sc-if>
+          </div>
+        </sc-if>
+
+      </div>
+      <p style="margin: 0; font-size: 14px; line-height: 1.5; color: #55514A"><strong style="font-weight: 700">{{ screenName }}</strong> — {{ purpose }}</p>
+      <div style="display: flex; gap: 8px; flex-wrap: wrap">
+        <sc-for list="{{ variants }}" as="v" hint-placeholder-count="0">
+          <button type="button" onClick="{{ v.onPick }}" style="min-height: 34px; padding: 5px 12px; border-radius: 999px; font-size: 13px; font-weight: 600; cursor: pointer; border: 1px solid #B9B2A3; background: {{ v.bg }}; color: {{ v.fg }}">{{ v.label }}</button>
+        </sc-for>
+      </div>
+    </div>
+
+    <div style="flex: 1; min-width: 320px; display: flex; flex-direction: column; gap: 16px">
+      <div style="display: flex; gap: 8px; flex-wrap: wrap">
+        <sc-for list="{{ tabs }}" as="t" hint-placeholder-count="4">
+          <button type="button" onClick="{{ t.onPick }}" style="min-height: 40px; padding: 8px 16px; border-radius: 999px; font-size: 14px; font-weight: 700; cursor: pointer; border: 1px solid #211F1B; background: {{ t.bg }}; color: {{ t.fg }}">{{ t.label }}</button>
+        </sc-for>
+      </div>
+      <sc-if value="{{ tabMap }}" hint-placeholder-val="{{ true }}">
+        <div style="display: flex; flex-direction: column; gap: 18px">
+          <p style="margin: 0; font-size: 15px; line-height: 1.55; color: #45423C; max-width: 62ch">Tap any screen to load it in the phone. The chips under the phone switch that screen between its empty, loading, offline and error states. Everything marks, undoes, confirms and toasts for real.</p>
+          <sc-for list="{{ mapGroups }}" as="g" hint-placeholder-count="4">
+            <div style="display: flex; flex-direction: column; gap: 8px">
+              <span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: #7C766A">{{ g.title }}</span>
+              <div style="display: flex; flex-direction: column; gap: 6px">
+                <sc-for list="{{ g.items }}" as="i" hint-placeholder-count="4">
+                  <button type="button" onClick="{{ i.onGo }}" style="display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; min-height: 46px; padding: 11px 14px; border-radius: 12px; border: 1px solid #C9C2B3; cursor: pointer; text-align: left; background: {{ i.bg }}; color: {{ i.fg }}">
+                    <span style="font-size: 15px; font-weight: 700">{{ i.label }}</span>
+                    <span style="font-size: 13px; opacity: 0.75">{{ i.note }}</span>
+                  </button>
+                </sc-for>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ tabSystem }}">
+        <div style="display: flex; flex-direction: column; gap: 20px; max-width: 70ch">
+          <div style="display: flex; flex-direction: column; gap: 10px">
+            <h3 style="margin: 0; font-size: 20px; font-weight: 800">Two dialects of one system</h3>
+            <p style="margin: 0; font-size: 15px; line-height: 1.55; color: #45423C">Same components, same colours, same words. What changes between roles is <strong>density and scale</strong>, so the roles feel intentionally different without being two unrelated products.</p>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px">
+              <div style="padding: 14px; border-radius: 12px; background: #FBF9F5; border: 2px solid #DDD7CB; display: flex; flex-direction: column; gap: 6px">
+                <span style="font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; color: #7C766A">Taking medicines</span>
+                <span style="font-size: 14px; line-height: 1.5; color: #45423C">Warm paper #FBF9F5 · body 19–21px · titles 28–30px · every target ≥ 56px · 3px borders on every card · 3 nav items · <strong>no scrolling anywhere except Settings</strong> — cards divide the screen with flex instead, so content always fits the first view</span>
+              </div>
+              <div style="padding: 14px; border-radius: 12px; background: #E5E9F0; border: 1px solid #C7CCD6; display: flex; flex-direction: column; gap: 6px">
+                <span style="font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; color: #6B7280">Helping</span>
+                <span style="font-size: 14px; line-height: 1.5; color: #374151">Cool grey #F7F8FA · body 13–15px · titles 22px · targets ≥ 40px · 5 nav items · lists and grids · 1px borders</span>
+              </div>
+            </div>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 10px">
+            <h3 style="margin: 0; font-size: 20px; font-weight: 800">Colour + shape + word, never colour alone</h3>
+            <div style="display: flex; flex-wrap: wrap; gap: 8px">
+              <span style="padding: 10px 14px; border-radius: 10px; background: #E7F1EA; border: 2px solid #1F5340; color: #1F5340; font-size: 14px; font-weight: 700">✓ Taken</span>
+              <span style="padding: 10px 14px; border-radius: 10px; background: #F2EEE6; border: 2px solid #55514A; color: #55514A; font-size: 14px; font-weight: 700">○ Not marked yet</span>
+              <span style="padding: 10px 14px; border-radius: 10px; background: #FBEAE5; border: 2px solid #8E2F1E; color: #8E2F1E; font-size: 14px; font-weight: 700">! Not taken yet</span>
+              <span style="padding: 10px 14px; border-radius: 10px; background: #ECEBEE; border: 2px solid #3F4048; color: #3F4048; font-size: 14px; font-weight: 700">— Not taking today</span>
+              <span style="padding: 10px 14px; border-radius: 10px; background: #FBF9F5; border: 2px dashed #C5BEAE; color: #7C766A; font-size: 14px; font-weight: 700">future / not markable</span>
+              <span style="padding: 10px 14px; border-radius: 10px; background: #ECEBEE; border: 2px solid #BEC0C7; color: #3F4048; font-size: 14px; font-weight: 700">▣ read-only record</span>
+            </div>
+            <p style="margin: 0; font-size: 15px; line-height: 1.55; color: #45423C">Type is Public Sans (chosen for legibility at large sizes and in the smaller helper views) with IBM Plex Mono reserved for codes and photo placeholders. Green #1F5340 means “done or go”; amber #7A5410 means “needs attention, no blame”; red #8E2F1E is used <em>only</em> for destructive or overdue, never for a skipped medicine.</p>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 8px">
+            <h3 style="margin: 0; font-size: 20px; font-weight: 800">Pattern rules</h3>
+            <ul style="margin: 0; padding-left: 20px; font-size: 15px; line-height: 1.6; color: #45423C">
+              <li>Full screens for places you live in; bottom sheets for things you look at (medicine, compartment, shared list); centre dialogs only for consequences.</li>
+              <li>Every state-changing tap produces a toast; anything reversible carries <strong>Undo</strong> in the toast itself.</li>
+              <li>Destructive actions are outlined in red, never filled — the filled green button is always the safe one.</li>
+              <li>No icon carries meaning alone; the glyphs above are typographic so they scale with text size.</li>
+            </ul>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ tabWhy }}">
+        <div style="display: flex; flex-direction: column; gap: 16px; max-width: 70ch">
+          <div style="display: flex; flex-direction: column; gap: 6px">
+            <h3 style="margin: 0; font-size: 20px; font-weight: 800">1 · Today is a single list of times, not a list of medicines</h3>
+            <p style="margin: 0; font-size: 15px; line-height: 1.6; color: #45423C">A person asks “what do I take now?”, not “how is metformin doing?”. Three time cards fill the screen, the one that is due is the loud one, and a medicine list only appears when a time is opened. Taps to complete the daily task: two.</p>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 6px">
+            <h3 style="margin: 0; font-size: 20px; font-weight: 800">2 · Marking is written in the first person</h3>
+            <p style="margin: 0; font-size: 15px; line-height: 1.6; color: #45423C">“I have taken this” instead of “Mark as taken”, “Not taking this today” instead of “Skip”. It removes the sense of reporting to a system, and it makes the difference from the pill box obvious — that button says “It is in the box”.</p>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 6px">
+            <h3 style="margin: 0; font-size: 20px; font-weight: 800">3 · The box flow can never mark a dose</h3>
+            <p style="margin: 0; font-size: 15px; line-height: 1.6; color: #45423C">Filling has its own vocabulary (“in the box”), its own progress bar labelled as job progress, a blue information band that says so on entry, and no “taken” affordance anywhere in the flow. The check screen shows quantities to compare with the tray and explicitly refuses to certify it.</p>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 6px">
+            <h3 style="margin: 0; font-size: 20px; font-weight: 800">4 · The helper’s honesty layer</h3>
+            <p style="margin: 0; font-size: 15px; line-height: 1.6; color: #45423C">The helper is always looking at a copy of someone else’s day, so the top of their Today states how old the data is and offers a manual check. The first mark of a session asks for confirmation and then never asks again — replaced by a quiet persistent chip that reminds them they are acting on her behalf.</p>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 6px">
+            <h3 style="margin: 0; font-size: 20px; font-weight: 800">5 · No numbers about the person</h3>
+            <p style="margin: 0; font-size: 15px; line-height: 1.6; color: #45423C">The only counts in the product are quantities of pills and “2 of 4 in the box”. Days read “all dealt with” or “something still unmarked”; nothing is ever a percentage, a streak or a score, and a skipped medicine is styled neutral grey — not red.</p>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 6px">
+            <h3 style="margin: 0; font-size: 20px; font-weight: 800">6 · Undo instead of “are you sure”</h3>
+            <p style="margin: 0; font-size: 15px; line-height: 1.6; color: #45423C">Dose marking is instant with Undo in the toast — confirmation dialogs are spent only where a tap has consequences outside the phone: rotating the code, signing out, disconnecting, archiving, removing a time of day, and sharing a photo with strangers.</p>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ tabReview }}">
+        <div style="display: flex; flex-direction: column; gap: 16px; max-width: 70ch">
+          <p style="margin: 0; font-size: 15px; line-height: 1.6; color: #45423C">Requirements I would change, combine or drop — none of these remove a capability from the brief:</p>
+          <div style="display: flex; flex-direction: column; gap: 12px">
+            <div style="padding: 14px; border-radius: 12px; background: #FBF9F5; border: 1px solid #DDD7CB; display: flex; flex-direction: column; gap: 5px">
+              <span style="font-size: 15px; font-weight: 800">Combine “role can be changed in Settings” into one visible escape hatch</span>
+              <span style="font-size: 14px; line-height: 1.55; color: #45423C">A role switcher is a trap for the person taking medicines — one wrong tap and they are in an admin app. Kept as a small underlined “Change role” at the very bottom of Settings, below sign-out, rather than a setting row.</span>
+            </div>
+            <div style="padding: 14px; border-radius: 12px; background: #FBF9F5; border: 1px solid #DDD7CB; display: flex; flex-direction: column; gap: 5px">
+              <span style="font-size: 15px; font-weight: 800">“Mark a whole slot” should not be the primary elder action</span>
+              <span style="font-size: 14px; line-height: 1.55; color: #45423C">It is real and reversible, but it lives at the bottom of an opened time card as an outlined button. Making it primary invites marking everything at 8am before anything is swallowed.</span>
+            </div>
+            <div style="padding: 14px; border-radius: 12px; background: #FBF9F5; border: 1px solid #DDD7CB; display: flex; flex-direction: column; gap: 5px">
+              <span style="font-size: 15px; font-weight: 800">Appearance: drop “Dark” from the elder settings? No — but default to Match system</span>
+              <span style="font-size: 14px; line-height: 1.55; color: #45423C">Kept all three, worded as “How it looks”. Low-vision users often need the dark option; the risk is accidental selection, which the ✓-marked list makes visible and one tap to revert.</span>
+            </div>
+            <div style="padding: 14px; border-radius: 12px; background: #FBF9F5; border: 1px solid #DDD7CB; display: flex; flex-direction: column; gap: 5px">
+              <span style="font-size: 15px; font-weight: 800">Community photo sharing should be opt-in per photo, not a global preference</span>
+              <span style="font-size: 14px; line-height: 1.55; color: #45423C">A blanket “share my photos” toggle is a privacy hazard nobody remembers setting. Replaced with a per-photo “share with others” action that carries its own confirmation.</span>
+            </div>
+            <div style="padding: 14px; border-radius: 12px; background: #FBF9F5; border: 1px solid #DDD7CB; display: flex; flex-direction: column; gap: 5px">
+              <span style="font-size: 15px; font-weight: 800">Supporter escalation delay needs a floor, and a name</span>
+              <span style="font-size: 14px; line-height: 1.55; color: #45423C">“Escalation delay” is jargon. Worded as “How long to wait first”, framed as alerting the helper — never as a warning aimed at the person taking medicines, who never sees it.</span>
+            </div>
+            <div style="padding: 14px; border-radius: 12px; background: #FFF4E0; border: 1px solid #A6741C; display: flex; flex-direction: column; gap: 5px">
+              <span style="font-size: 15px; font-weight: 800">Open question worth your decision</span>
+              <span style="font-size: 14px; line-height: 1.55; color: #45423C">Locked history is set at 7 days here, and the pill-box week starts on Monday. Both are product policy rather than design — tell me the real values and I will change the copy and the calendar rules.</span>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ tabCheck }}">
+        <div style="display: flex; flex-direction: column; gap: 16px; max-width: 70ch">
+          <h3 style="margin: 0; font-size: 20px; font-weight: 800">Could an 80-year-old do the daily task unaided?</h3>
+          <p style="margin: 0; font-size: 15px; line-height: 1.6; color: #45423C">The daily task is: <em>see what is due now and say I took it.</em> On the built flow that is <strong>one tap</strong> — “I have taken these” sits on the time card itself, on the first screen, with no scrolling and no navigation. “See the pills” is the second, optional path for when she wants to check the pill against the photo. Delivered as a PWA, so it is the same one-tap screen whether she opens it from the home-screen icon or the browser.</p>
+          <div style="display: flex; flex-direction: column; gap: 10px">
+            <div style="padding: 14px; border-radius: 12px; background: #E7F1EA; border: 1px solid #1F5340; display: flex; flex-direction: column; gap: 5px">
+              <span style="font-size: 15px; font-weight: 800; color: #14362a">Passes</span>
+              <span style="font-size: 14px; line-height: 1.6; color: #1F2937">No horizontal gestures, no swipe-to-anything, no long-press, no hidden menus, no timeout. Nothing on Today is destructive. Body text is 18px minimum and status is never colour-only. The overdue time card is the only loud thing on screen, so the eye lands on the right card first. Every mark is reversible from the same spot it was made.</span>
+            </div>
+            <div style="padding: 14px; border-radius: 12px; background: #FFF4E0; border: 1px solid #A6741C; display: flex; flex-direction: column; gap: 5px">
+              <span style="font-size: 15px; font-weight: 800; color: #7A5410">Residual risks to test with real users</span>
+              <span style="font-size: 14px; line-height: 1.6; color: #45423C">1 · “Not taking this today” could be read as “I am not taking any of these” — worth testing against “Leave this one out today”. 2 · The opened time card scrolls when three or more medicines are in it; scrolling is the only learned behaviour the flow requires. 3 · Undo lives in the toast for four seconds; a slow reader will instead have to re-open the medicine and tap “Undo — I have not taken it”, which works but is a longer path. 4 · If the helper marks a dose remotely while she is looking at the card, the status changes under her; a gentler arrival animation with “your helper marked this” would be the next thing I build.</span>
+            </div>
+          </div>
+          <p style="margin: 0; font-size: 15px; line-height: 1.6; color: #45423C">The pill-box flow is deliberately not part of the daily task. It is a weekly job, it is longer, and it is written for whoever is doing it at the kitchen table — most often the helper, on either phone.</p>
+        </div>
+      </sc-if>
+    </div>
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;startRole&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;Choose at the welcome screen&quot;,&quot;Person taking medicines&quot;,&quot;Helper&quot;],&quot;default&quot;:&quot;Choose at the welcome screen&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Prototype&quot;},&quot;lockedAfterDays&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:7,&quot;min&quot;:1,&quot;max&quot;:30,&quot;unit&quot;:&quot; days&quot;,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Product rules&quot;},&quot;confirmEveryMark&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Product rules&quot;}}">
+class Component extends DCLogic {
+  slots = [
+    { id: 'morning', name: 'Morning', t: '8:00 am' },
+    { id: 'midday', name: 'Midday', t: '1:00 pm' },
+    { id: 'evening', name: 'Evening', t: '6:00 pm' },
+    { id: 'night', name: 'Bedtime', t: '9:30 pm' }
+  ];
+  meds = [
+    { id: 'amlo', name: 'Amlodipine', strength: '5 mg', dose: '1 tablet', form: 'Tablet', purpose: 'Blood pressure', notes: 'Take with a glass of water. Sit up for a few minutes afterwards.', repeat: 'Every day', slots: ['morning'], due: true, box: true, photos: 'both', week: 7, per: { morning: 1 }, days: 'Every day, morning' },
+    { id: 'metf', name: 'Metformin', strength: '500 mg', dose: '1 tablet', form: 'Tablet', purpose: 'Blood sugar', notes: 'Take with food.', repeat: 'Every day', slots: ['morning', 'evening'], due: true, box: true, photos: 'both', week: 14, per: { morning: 1, evening: 1 }, days: 'Every day, morning and evening' },
+    { id: 'ator', name: 'Atorvastatin', strength: '20 mg', dose: '1 tablet', form: 'Tablet', purpose: 'Cholesterol', notes: '', repeat: 'Every day', slots: ['night'], due: true, box: true, photos: 'pill', week: 7, per: { night: 1 }, days: 'Every day, bedtime' },
+    { id: 'cole', name: 'Colecalciferol', strength: '800 IU', dose: '1 capsule', form: 'Capsule', purpose: 'Vitamin D', notes: '', repeat: 'Every 3 days, from 14 September', slots: ['morning'], due: false, box: true, photos: 'both', week: 3, per: { morning: 1 }, days: 'Mon 14, Thu 17, Sun 20 — morning' },
+    { id: 'salb', name: 'Salbutamol inhaler', strength: '100 mcg', dose: '2 puffs', form: 'Inhaler', purpose: 'Breathing', notes: 'Shake before use. Rinse your mouth after.', repeat: 'Mondays and Thursdays', slots: ['evening'], due: false, box: false, out: 'Inhalers do not fit the box', photos: 'packet' },
+    { id: 'lata', name: 'Latanoprost drops', strength: '0.005%', dose: '1 drop in each eye', form: 'Drops', purpose: 'Eye pressure', notes: 'Keep the bottle in the fridge.', repeat: 'Every day', slots: ['night'], due: true, box: false, out: 'Drops stay in the fridge', photos: 'packet' }
+  ];
+  state = {
+    screen: 'welcome', role: null, how: 0, signin: 'idle', pair: 'idle', code: '',
+    tab: 'map', openSlot: 'evening', sheet: null, sheetMed: null, sheetComp: null,
+    dialog: null, photo: null, toast: null, onBehalf: false,
+    doses: { 'morning/amlo': 'taken', 'morning/metf': 'taken' },
+    eTodayVar: 'normal', sTodayVar: 'normal', calVar: 'month', medsVar: 'active',
+    formVar: 'clean', fillVar: 'ready', fillIdx: 0, filled: {},
+    boxTimes: { morning: true, midday: false, evening: true, night: true },
+    day: null, theme: 'Match system', reminders: 'on', supNotif: true, esc: '1 hour',
+    timeSlots: [
+      { id: 'morning', name: 'Morning', t: '8:00 am', uses: 3 },
+      { id: 'midday', name: 'Midday', t: '1:00 pm', uses: 0 },
+      { id: 'evening', name: 'Evening', t: '6:00 pm', uses: 2 },
+      { id: 'night', name: 'Bedtime', t: '9:30 pm', uses: 2 }
+    ]
+  };
+
+  // ---- shared behaviour ----
+  toast(text, undo) {
+    clearTimeout(this._tt);
+    this.setState({ toast: { text: text, undo: !!undo, onUndo: undo || null } });
+    this._tt = setTimeout(() => this.setState({ toast: null }), 4200);
+  }
+  closeAll = () => this.setState({ sheet: null, dialog: null, photo: null });
+  openPhoto = (label, caption) => this.setState({ photo: { label: label, caption: caption } });
+  doseKey(slot, med) { return slot + '/' + med; }
+  doseOf(slot, med) { return this.state.doses[this.doseKey(slot, med)] || 'unmarked'; }
+  setDose(slot, medId, status, label) {
+    const key = this.doseKey(slot, medId);
+    const prev = this.state.doses[key] || 'unmarked';
+    const apply = () => {
+      const d = Object.assign({}, this.state.doses);
+      if (status === 'unmarked') { delete d[key]; } else { d[key] = status; }
+      this.setState({ doses: d });
+      this.toast(label, () => {
+        const back = Object.assign({}, this.state.doses);
+        if (prev === 'unmarked') { delete back[key]; } else { back[key] = prev; }
+        this.setState({ doses: back, toast: null });
+      });
+    };
+    const needsOk = !this.state.onBehalf || this.props.confirmEveryMark;
+    if (this.state.role === 'supporter' && needsOk && status !== 'unmarked') {
+      this.setState({ dialog: {
+        title: 'Mark this for Margaret?',
+        body: 'You are recording this on her behalf. It will show on her phone as already dealt with. We will not ask again while you are in the app.',
+        confirm: 'Yes, mark on her behalf', cancel: 'Not now', danger: false,
+        onConfirm: () => { this.setState({ onBehalf: true, dialog: null }); apply(); }
+      } });
+      return;
+    }
+    apply();
+  }
+  slotCards(role) {
+    const s = this.state;
+    const now = 18.66;
+    const at = { morning: 8, midday: 13, evening: 18, night: 21.5 };
+    return this.slots.map(sl => {
+      const ms = this.meds.filter(m => m.due && m.slots.indexOf(sl.id) >= 0);
+      if (!ms.length) return null;
+      const st = ms.map(m => this.doseOf(sl.id, m.id));
+      const marked = st.filter(x => x !== 'unmarked').length;
+      const skipped = st.filter(x => x === 'skipped').length;
+      const late = at[sl.id] < now && marked < ms.length;
+      let key = marked === 0 ? 'open' : (marked < ms.length ? 'part' : 'done');
+      const text = key === 'done' ? (skipped ? 'All dealt with · ' + skipped + ' not taken' : 'All taken') : (key === 'part' ? marked + ' of ' + ms.length + ' dealt with' : (late ? 'Not taken yet' : 'Still to come'));
+      const tone = key === 'done' ? { bg: '#E7F1EA', fg: '#1F5340', line: '#9CC0AC', glyph: '✓' }
+        : late ? { bg: '#FBEAE5', fg: '#8E2F1E', line: '#E0AB9D', glyph: '!' }
+        : { bg: '#F2EEE6', fg: '#55514A', line: '#DDD7CB', glyph: '○' };
+      return {
+        id: sl.id, name: sl.name, t: sl.t, count: ms.length + (ms.length === 1 ? ' medicine' : ' medicines'),
+        medNames: ms.length === 1 ? ms[0].name : (ms.length === 2 ? ms[0].name + ' and ' + ms[1].name : ms[0].name + ' and ' + (ms.length - 1) + ' more'),
+        takeLabel: ms.length === 1 ? 'I have taken it' : 'I have taken these',
+        onOpenPage: () => this.setState({ screen: 'e_slot', openSlot: sl.id }),
+        statusText: text, bg: tone.bg, fg: tone.fg, line: tone.line, glyph: tone.glyph,
+        open: s.openSlot === sl.id, chevron: s.openSlot === sl.id ? 'Hide' : 'Open',
+        onToggle: () => this.setState({ openSlot: s.openSlot === sl.id ? null : sl.id }),
+        allDone: key === 'done', notAllDone: key !== 'done',
+        onMarkAll: () => {
+          const d = Object.assign({}, s.doses);
+          ms.forEach(m => { d[this.doseKey(sl.id, m.id)] = 'taken'; });
+          const before = s.doses;
+          const commit = () => { this.setState({ doses: d }); this.toast('All of ' + sl.name.toLowerCase() + ' marked as taken', () => this.setState({ doses: before, toast: null })); };
+          if (s.role === 'supporter' && !s.onBehalf) {
+            this.setState({ dialog: { title: 'Mark all of ' + sl.name.toLowerCase() + ' for Margaret?', body: 'You are recording ' + ms.length + ' medicines on her behalf. We will not ask again while you are in the app.', confirm: 'Yes, mark on her behalf', cancel: 'Not now', onConfirm: () => { this.setState({ onBehalf: true, dialog: null }); commit(); } } });
+          } else { commit(); }
+        },
+        onUndoAll: () => {
+          const d = Object.assign({}, s.doses); const before = s.doses;
+          ms.forEach(m => { delete d[this.doseKey(sl.id, m.id)]; });
+          this.setState({ doses: d }); this.toast(sl.name + ' marks cleared', () => this.setState({ doses: before, toast: null }));
+        },
+        meds: ms.map(m => {
+          const st2 = this.doseOf(sl.id, m.id);
+          const tone2 = st2 === 'taken' ? { bg: '#E7F1EA', fg: '#1F5340', g: '✓', label: 'Taken' }
+            : st2 === 'skipped' ? { bg: '#ECEBEE', fg: '#3F4048', g: '—', label: 'Not taking today' }
+            : { bg: '#FFFFFF', fg: '#55514A', g: '○', label: 'Not marked yet' };
+          return {
+            key: sl.id + m.id, name: m.name, strength: m.strength, dose: m.dose, purpose: m.purpose,
+            statusLabel: tone2.label, chipBg: tone2.bg, chipFg: tone2.fg, glyph: tone2.g,
+            taken: st2 === 'taken', skipped: st2 === 'skipped', unmarked: st2 === 'unmarked',
+            notTaken: st2 !== 'taken',
+            onOpen: () => this.setState({ sheet: 'med', sheetMed: { med: m, slot: sl.id, slotName: sl.name } }),
+            onTake: () => this.setDose(sl.id, m.id, 'taken', m.name + ' marked as taken'),
+            onClear: () => this.setDose(sl.id, m.id, 'unmarked', m.name + ' mark cleared'),
+            onSkip: () => this.setDose(sl.id, m.id, 'skipped', m.name + ' marked as not taking today')
+          };
+        })
+      };
+    }).filter(Boolean);
+  }
+  go = (screen, extra) => this.setState(Object.assign({ screen: screen }, extra || {}));
+
+  howPages = [
+    { t: 'Pick who you are', b: 'One phone belongs to the person taking the medicines. The other belongs to whoever helps them. Each phone shows only what that person needs.', a: '[ two phones side by side ]' },
+    { t: 'The helper sets things up', b: 'The helper adds each medicine with a photo of the pill and the packet, what it is for, and the times of day it is taken.', a: '[ medicine card with pill + packet photo ]' },
+    { t: 'Follow the day', b: 'The person taking the medicines sees one screen: Morning, Evening, Bedtime. Tap a time to see the medicines, tap a medicine to see the pill.', a: '[ Today screen with three time cards ]' },
+    { t: 'Fill the weekly box', b: 'Once a week, whoever fills the plastic pill box is walked through it one medicine at a time. Filling the box never marks anything as taken.', a: '[ seven-day pill box, three compartments a day ]' }
+  ];
+
+  panelVals() {
+    const s = this.state;
+    const V = {
+      e_today: [['normal', 'Normal day'], ['nonedue', 'Nothing due today'], ['empty', 'No medicines yet'], ['loading', 'Loading'], ['offline', 'Offline / waiting to sync']],
+      s_today: [['normal', 'Normal'], ['stale', 'Data 3 hours old'], ['datediff', 'Phone date differs'], ['loading', 'Refreshing'], ['syncfail', 'Sync failed']],
+      s_cal: [['month', 'Month'], ['loading', 'Loading history'], ['error', 'Could not load'], ['empty', 'No activity yet']],
+      s_meds: [['active', 'Active'], ['archived', 'Archived shown'], ['loading', 'Loading'], ['empty', 'No medicines']],
+      s_medform: [['clean', 'Editing'], ['errors', 'Validation errors'], ['uploading', 'Photo uploading'], ['uploadfail', 'Photo upload failed'], ['saving', 'Saving']],
+      fill_start: [['ready', 'Ready to start'], ['resume', 'Unfinished session'], ['noslots', 'No box times set'], ['nothing', 'Nothing due this week']]
+    };
+    const keyFor = { e_today: 'eTodayVar', s_today: 'sTodayVar', s_cal: 'calVar', s_meds: 'medsVar', s_medform: 'formVar', fill_start: 'fillVar' };
+    const list = V[s.screen] || [];
+    const stateKey = keyFor[s.screen];
+    const variants = list.map(([k, label]) => ({
+      label: label, onPick: () => this.setState({ [stateKey]: k }),
+      bg: s[stateKey] === k ? '#211F1B' : '#FBF9F5', fg: s[stateKey] === k ? '#FBF9F5' : '#45423C'
+    }));
+    const mk = (label, screen, note, extra) => ({
+      label: label, note: note, onGo: () => this.go(screen, extra || {}),
+      bg: s.screen === screen ? '#211F1B' : 'transparent', fg: s.screen === screen ? '#FBF9F5' : '#1C1A17'
+    });
+    const names = {
+      welcome: 'Welcome / choose role', how: 'How it works', signin: 'Sign in — person taking medicines', pair: 'Helper pairing',
+      e_today: 'Today — person taking medicines', e_slot: 'One time of day — person taking medicines', e_settings: 'Settings — person taking medicines',
+      fill_start: 'Fill the box — start', fill_step: 'Fill the box — one medicine', fill_check: 'Fill the box — check the box',
+      s_today: 'Today — helper', s_cal: 'Calendar — helper', s_cal_day: 'One day — helper',
+      s_meds: 'Medicines — helper', s_medform: 'Add / edit medicine', s_times: 'Times of day', s_settings: 'Settings — helper'
+    };
+    const purposes = {
+      welcome: 'Splits the two products at the first tap. Two role buttons, nothing competing.',
+      how: 'Four read-only cards. Creates no data, so it is safe to open from anywhere.',
+      signin: 'Google-only sign-in; on success it creates or resumes the household and its share code.',
+      pair: 'The helper joins with a six-character code — no account, no password.',
+      e_today: 'One screen, no scrolling. Each time of day shows its name, its time and the medicine names — and can be marked as taken straight from this screen.',
+      e_slot: 'Opened only when she wants to see the pills. One medicine per block, photo first, each with its own button. No scrolling.',
+      e_settings: 'Only four things: account and code, reminders, appearance, about. No medicine administration.',
+      fill_start: 'Shared by both roles. Sets the week and which times of day live in the physical box, and states plainly that nothing here is marked as taken.',
+      fill_step: 'One medicine at a time: photos, weekly total, and which days need it. Marked as “put in the box”, never as “taken”.',
+      fill_check: 'A picture of the tray to compare against. The app never claims the tray is correct.',
+      s_today: 'Slot-first day for the helper, plus data freshness, manual refresh, and a nudge to the other phone.',
+      s_cal: 'Month history with six visually and textually distinct day states. No scores, no streaks.',
+      s_cal_day: 'One day in detail: slots, medicines, and whether the day can still be edited.',
+      s_meds: 'Inventory: active medicines, photo state, archive and restore.',
+      s_medform: 'Everything about one medicine, including one or more schedules and optional community reference.',
+      s_times: 'Names and times of the slots the whole household is organised around.',
+      s_settings: 'Connection, the helper’s own alerts, times of day, appearance, about.'
+    };
+    return {
+      screenName: names[s.screen] || s.screen, purpose: purposes[s.screen] || '', variants: variants,
+      roleTaker: s.role === 'taker', roleSupporter: s.role === 'supporter',
+      tabMap: s.tab === 'map', tabSystem: s.tab === 'system', tabWhy: s.tab === 'why', tabReview: s.tab === 'review', tabCheck: s.tab === 'check',
+      mapGroups: [
+        { title: 'Getting started — shared', items: [
+          mk('Welcome / choose role', 'welcome', 'Two roles + How it works'),
+          mk('How it works', 'how', '4 read-only cards'),
+          mk('Sign in (taker)', 'signin', 'Google · loading · failure'),
+          mk('Helper pairing', 'pair', 'Code · invalid · offline · success')
+        ] },
+        { title: 'Person taking medicines', items: [
+          mk('Today', 'e_today', '5 states — use the chips under the phone', { role: 'taker' }),
+          mk('One time of day', 'e_slot', 'The pills in that slot', { role: 'taker', openSlot: 'night' }),
+          mk('Settings', 'e_settings', 'Code · reminders · appearance', { role: 'taker' })
+        ] },
+        { title: 'Fill the box — either role', items: [
+          mk('Start', 'fill_start', '4 states'),
+          mk('One medicine', 'fill_step', 'Photos · weekly total · days'),
+          mk('Check the box', 'fill_check', '7 days × chosen compartments')
+        ] },
+        { title: 'Helper', items: [
+          mk('Today', 's_today', '5 states · on-behalf confirmation', { role: 'supporter' }),
+          mk('Calendar', 's_cal', 'Month · 4 states', { role: 'supporter' }),
+          mk('One day', 's_cal_day', 'Editable · read-only · future', { role: 'supporter' }),
+          mk('Medicines', 's_meds', '4 states · archive', { role: 'supporter' }),
+          mk('Add / edit medicine', 's_medform', '5 states · community search', { role: 'supporter' }),
+          mk('Times of day', 's_times', 'Rename · retime · add · remove', { role: 'supporter' }),
+          mk('Settings', 's_settings', 'Connection · alerts · appearance', { role: 'supporter' })
+        ] }
+      ]
+    };
+  }
+
+  componentDidMount() {
+    const r = this.props.startRole;
+    if (r === 'Person taking medicines') this.setState({ role: 'taker', screen: 'e_today' });
+    if (r === 'Helper') this.setState({ role: 'supporter', screen: 's_today', pair: 'done', code: 'K7F2QM' });
+  }
+  lockDays() { return this.props.lockedAfterDays || 7; }
+  dayStatus(num) {
+    const map = { 4: 'skipped', 6: 'nodue', 9: 'part', 11: 'skipped', 13: 'part' };
+    if (num > 13) return 'future';
+    return map[num] || 'done';
+  }
+  openDay = (num) => {
+    const wk = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    const st = this.dayStatus(num);
+    this.setState({ screen: 's_cal_day', day: { num: num, label: wk[num % 7] + ' ' + num + ' September', status: st }, sheet: null });
+  };
+  supVals() {
+    const s = this.state;
+    const on = (k) => s.screen === k;
+    const sTab = (k, label, go, match) => ({ label: label, onPick: go, bg: match ? '#2A3B5E' : 'transparent', fg: match ? '#FFFFFF' : '#4B5563' });
+    const wk = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    const weeks = [];
+    let row = [{ blank: true }];
+    for (let n = 1; n <= 30; n++) {
+      const st = this.dayStatus(n);
+      const tone = st === 'done' ? { bg: '#E7F1EA', fg: '#1F5340', g: '✓', b: '#9CC0AC' }
+        : st === 'part' ? { bg: '#FFF4E0', fg: '#7A5410', g: '○', b: '#C89A3C' }
+        : st === 'skipped' ? { bg: '#ECEBEE', fg: '#3F4048', g: '—', b: '#BEC0C7' }
+        : st === 'nodue' ? { bg: '#FBF9F5', fg: '#9A958A', g: '·', b: '#E4DFD4' }
+        : { bg: '#FFFFFF', fg: '#6B7280', g: '', b: '#DDE1E8' };
+      const locked = n < 14 - this.lockDays();
+      row.push({
+        blank: false, num: String(n), glyph: locked ? '▣ ' + tone.g : tone.g, bg: tone.bg, fg: tone.fg, line: st === 'part' ? '#C89A3C' : tone.b,
+        isToday: n === 13, notToday: n !== 13, locked: locked, future: st === 'future',
+        onOpen: () => this.openDay(n)
+      });
+      if (row.length === 7) { weeks.push({ days: row }); row = []; }
+    }
+    if (row.length) { while (row.length < 7) row.push({ blank: true }); weeks.push({ days: row }); }
+    const d = s.day || { num: 13, label: 'Sunday 13 September', status: 'part' };
+    const dst = d.status;
+    const canned = { done: ['taken', 'taken', 'taken'], part: ['taken', 'unmarked', 'unmarked'], skipped: ['taken', 'skipped', 'taken'], future: ['future', 'future', 'future'] };
+    const seq = canned[dst] || canned.part;
+    const daySlots = (dst === 'nodue') ? [] : this.slots.filter(sl => sl.id !== 'midday').map((sl, i) => {
+      const stt = seq[i] || 'unmarked';
+      const tone = stt === 'taken' ? { bg: '#E7F1EA', fg: '#1F5340', g: '✓', l: 'Taken' }
+        : stt === 'skipped' ? { bg: '#ECEBEE', fg: '#3F4048', g: '—', l: 'Not taken' }
+        : stt === 'future' ? { bg: '#FFFFFF', fg: '#6B7280', g: '', l: 'Not yet' }
+        : { bg: '#FFF4E0', fg: '#7A5410', g: '○', l: 'Not marked' };
+      const ms = this.meds.filter(m => m.due && m.slots.indexOf(sl.id) >= 0);
+      return {
+        name: sl.name, t: sl.t, statusLabel: tone.l, bg: tone.bg, fg: tone.fg, glyph: tone.g,
+        meds: ms.map(m => ({
+          name: m.name, strength: m.strength, dose: m.dose, statusLabel: tone.l, glyph: tone.g, fg: tone.fg,
+          onOpen: () => this.setState({ sheet: 'med', sheetMed: { med: m, slot: sl.id, slotName: sl.name } }),
+          onMark: () => this.setDose(sl.id, m.id, 'taken', m.name + ' marked as taken on ' + d.label)
+        }))
+      };
+    });
+    const active = this.meds.map(m => ({
+      name: m.name, strength: m.strength, sched: m.repeat + ' · ' + m.slots.map(x => x).join(', '),
+      photoState: m.photos === 'both' ? 'Pill + packet photo' : m.photos === 'pill' ? 'Pill photo only' : 'Packet photo only',
+      photoOk: m.photos === 'both', photoPartial: m.photos !== 'both',
+      onOpen: () => this.go('s_medform', { formVar: 'clean' }),
+      onArchive: () => this.setState({ dialog: {
+        title: 'Archive ' + m.name + '?', danger: true,
+        body: 'It disappears from Today and from the pill box, but the past record stays in the calendar. You can restore it at any time.',
+        confirm: 'Archive', cancel: 'Keep it',
+        onConfirm: () => { this.setState({ dialog: null }); this.toast(m.name + ' archived'); }
+      } })
+    }));
+    return {
+      isSToday: on('s_today'), isSCal: on('s_cal'), isSCalDay: on('s_cal_day'), isSMeds: on('s_meds'),
+      isSForm: on('s_medform'), isSTimes: on('s_times'), isSSettings: on('s_settings'),
+      sNav: [
+        sTab('s_today', 'Today', () => this.go('s_today'), on('s_today')),
+        sTab('s_cal', 'Calendar', () => this.go('s_cal'), on('s_cal') || on('s_cal_day')),
+        sTab('s_meds', 'Medicines', () => this.go('s_meds'), on('s_meds') || on('s_medform')),
+        sTab('fill_start', 'Box', () => this.go('fill_start'), s.screen.indexOf('fill') === 0),
+        sTab('s_settings', 'Settings', () => this.go('s_settings'), on('s_settings') || on('s_times'))
+      ],
+      sSlots: this.slotCards('supporter'),
+      sNormal: s.sTodayVar === 'normal' || s.sTodayVar === 'stale' || s.sTodayVar === 'datediff',
+      sLoading: s.sTodayVar === 'loading',
+      sStale: s.sTodayVar === 'stale', sSyncFail: s.sTodayVar === 'syncfail', sDateDiff: s.sTodayVar === 'datediff',
+      syncLabel: s.sTodayVar === 'stale' ? 'Last updated 3 hours ago' : 'Updated 2 minutes ago',
+      syncFresh: s.sTodayVar !== 'stale',
+      onRefresh: () => { this.setState({ sTodayVar: 'loading' }); setTimeout(() => { this.setState({ sTodayVar: 'normal' }); this.toast('Up to date'); }, 900); },
+      onSendReminder: () => this.toast('Reminder sent to Margaret\u2019s phone'),
+      onBehalfActive: s.onBehalf,
+      monthLabel: 'September 2026',
+      calWeeks: weeks, calWeekdays: wk.map(x => ({ name: x })),
+      calMonth: s.calVar === 'month', calLoading: s.calVar === 'loading', calError: s.calVar === 'error', calEmpty: s.calVar === 'empty',
+      onPrevMonth: () => this.toast('Showing August 2026'),
+      onNextMonth: () => this.toast('Showing October 2026'),
+      onJump: () => this.setState({ sheet: 'month' }),
+      onRetryCal: () => { this.setState({ calVar: 'loading' }); setTimeout(() => this.setState({ calVar: 'month' }), 800); },
+      dayLabel: d.label, daySlots: daySlots,
+      dayNoMeds: dst === 'nodue',
+      dayEditable: d.num >= 14 - this.lockDays() && d.num <= 13, dayLocked: d.num < 14 - this.lockDays(), dayFuture: d.num > 13,
+      medsActive: s.medsVar === 'active' || s.medsVar === 'archived', medsLoading: s.medsVar === 'loading', medsEmpty: s.medsVar === 'empty',
+      medsShowArchived: s.medsVar === 'archived',
+      onToggleArchived: () => this.setState({ medsVar: s.medsVar === 'archived' ? 'active' : 'archived' }),
+      archivedLabel: s.medsVar === 'archived' ? 'Hide archived' : 'Show archived',
+      activeMeds: active,
+      archivedMeds: [{ name: 'Ramipril', strength: '2.5 mg', note: 'Archived 2 August', onRestore: () => this.toast('Ramipril restored') }],
+      formClean: s.formVar === 'clean', formErrors: s.formVar === 'errors', formSaving: s.formVar === 'saving',
+      formUploading: s.formVar === 'uploading', formUploadFail: s.formVar === 'uploadfail',
+      onSaveMed: () => { this.setState({ formVar: 'saving' }); setTimeout(() => { this.go('s_meds'); this.toast('Metformin saved'); }, 900); },
+      onSaveInvalid: () => this.setState({ formVar: 'errors' }),
+      onCommunity: () => this.setState({ sheet: 'community' }),
+      onUseCommunity: () => { this.setState({ sheet: null }); this.toast('Name, strength and photos filled in'); },
+      onSuggestPhoto: () => this.setState({ dialog: {
+        title: 'Suggest this photo to others?',
+        body: 'Your pill photo replaces the shared one for Metformin 500 mg for everyone who uses it. No other information is shared.',
+        confirm: 'Suggest photo', cancel: 'Keep it private',
+        onConfirm: () => { this.setState({ dialog: null }); this.toast('Photo suggested — thank you'); }
+      } }),
+      schedules: [
+        { kind: 'Every day', slot: 'Morning', time: '8:00 am', detail: '', onRemove: () => this.toast('Schedule removed') },
+        { kind: 'Every day', slot: 'Evening', time: '6:00 pm', detail: '', onRemove: () => this.toast('Schedule removed') }
+      ],
+      onAddSchedule: () => this.toast('Schedule added — choose its days'),
+      timeRows: s.timeSlots.map((sl, i) => ({
+        name: sl.name, t: sl.t, uses: sl.uses === 0 ? 'Not used by any medicine' : sl.uses + (sl.uses === 1 ? ' medicine uses this' : ' medicines use this'),
+        onRemove: () => {
+          if (s.timeSlots.length === 1) { this.toast('Keep at least one time of day'); return; }
+          this.setState({ dialog: {
+            title: 'Remove ' + sl.name + '?', danger: true,
+            body: sl.uses ? sl.uses + ' medicine schedules use ' + sl.name + '. They will need a new time of day before they appear on Today again.' : 'No medicines use ' + sl.name + ', so nothing else changes.',
+            confirm: 'Remove ' + sl.name, cancel: 'Keep it',
+            onConfirm: () => { const ts = s.timeSlots.filter(x => x.id !== sl.id); this.setState({ timeSlots: ts, dialog: null }); this.toast(sl.name + ' removed'); }
+          } });
+        }
+      })),
+      onAddSlot: () => { this.setState({ timeSlots: s.timeSlots.concat([{ id: 'new' + s.timeSlots.length, name: 'New time', t: '3:00 pm', uses: 0 }]) }); this.toast('Time of day added'); },
+      onSaveTimes: () => { this.go('s_settings'); this.toast('Times of day saved'); },
+      supNotifOn: s.supNotif,
+      onSupNotif: () => { this.setState({ supNotif: !s.supNotif }); this.toast(s.supNotif ? 'Your alerts turned off' : 'Your alerts turned on'); },
+      escOptions: ['30 minutes', '1 hour', '2 hours', '3 hours'].map(k => ({
+        label: k, onPick: () => { this.setState({ esc: k }); this.toast('Saved — you will hear after ' + k); },
+        bg: s.esc === k ? '#2A3B5E' : '#FFFFFF', fg: s.esc === k ? '#FFFFFF' : '#1F2937'
+      })),
+      onDisconnect: () => this.setState({ dialog: {
+        title: 'Disconnect from Margaret\u2019s household?', danger: true,
+        body: 'You will stop seeing her medicines and stop getting alerts. Her medicines and history are not deleted. You would need her code again to reconnect.',
+        confirm: 'Disconnect', cancel: 'Stay connected',
+        onConfirm: () => this.go('welcome', { dialog: null, role: null, pair: 'idle', code: '', onBehalf: false })
+      } })
+    };
+  }
+
+  fillVals() {
+    const s = this.state;
+    const boxMeds = this.meds.filter(m => m.box);
+    const activeSlots = this.slots.filter(sl => s.boxTimes[sl.id]);
+    const on = (m, day) => (m.id === 'cole' ? [14, 17, 20].indexOf(day) >= 0 : true);
+    const dayNames = ['Mon 14', 'Tue 15', 'Wed 16', 'Thu 17', 'Fri 18', 'Sat 19', 'Sun 20'];
+    const cur = boxMeds[Math.min(s.fillIdx, boxMeds.length - 1)];
+    const filledCount = boxMeds.filter(m => s.filled[m.id]).length;
+    const isFilled = !!(cur && s.filled[cur.id]);
+    return {
+      isFillStart: s.screen === 'fill_start', isFillStep: s.screen === 'fill_step', isFillCheck: s.screen === 'fill_check',
+      fillReady: s.fillVar === 'ready', fillResume: s.fillVar === 'resume',
+      fillNoSlots: s.fillVar === 'noslots', fillNothing: s.fillVar === 'nothing',
+      fillHasWork: s.fillVar === 'ready' || s.fillVar === 'resume',
+      weekLabel: 'Mon 14 — Sun 20 September',
+      boxTimesLabel: activeSlots.map(sl => sl.name).join(', ') || 'None chosen',
+      boxCountLabel: boxMeds.length + ' medicines go in the box',
+      onPickWeek: () => this.toast('Week changed to Mon 21 — Sun 27 September'),
+      onEditBoxTimes: () => this.setState({ sheet: 'boxtimes' }),
+      boxTimeOptions: this.slots.map(sl => ({
+        name: sl.name, t: sl.t, on: !!s.boxTimes[sl.id],
+        glyph: s.boxTimes[sl.id] ? '✓' : ' ',
+        bg: s.boxTimes[sl.id] ? '#E7F1EA' : '#FFFFFF',
+        line: s.boxTimes[sl.id] ? '#1F5340' : '#DDD7CB',
+        onToggle: () => {
+          const bt = Object.assign({}, s.boxTimes);
+          const nextOn = !bt[sl.id];
+          if (!nextOn && Object.keys(bt).filter(k => bt[k]).length === 1) { this.toast('Keep at least one time in the box'); return; }
+          bt[sl.id] = nextOn; this.setState({ boxTimes: bt });
+        }
+      })),
+      outsideBox: this.meds.filter(m => !m.box).map(m => ({ name: m.name, dose: m.dose, reason: m.out })),
+      fillProgress: 'Medicine ' + (Math.min(s.fillIdx, boxMeds.length - 1) + 1) + ' of ' + boxMeds.length,
+      fillBarWidth: Math.round(((Math.min(s.fillIdx, boxMeds.length - 1) + 1) / boxMeds.length) * 100) + '%',
+      fillDoneCount: filledCount + ' of ' + boxMeds.length + ' put in the box',
+      curName: cur ? cur.name : '', curStrength: cur ? cur.strength : '', curPurpose: cur ? cur.purpose : '',
+      curWeekQty: cur ? cur.week + ' ' + (cur.form === 'Capsule' ? 'capsules' : 'tablets') + ' for the whole week' : '',
+      curDays: cur ? cur.days : '',
+      curRows: cur ? dayNames.map((dn, i) => {
+        const day = 14 + i;
+        const parts = activeSlots.filter(sl => cur.per[sl.id] && on(cur, day)).map(sl => sl.name.toLowerCase() + ' ' + cur.per[sl.id]);
+        return { day: dn, text: parts.length ? parts.join(' · ') : 'nothing', none: !parts.length };
+      }) : [],
+      curChips: cur ? ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((dn, i) => {
+        const day = 14 + i;
+        const q = activeSlots.reduce((a, sl) => a + ((cur.per[sl.id] && on(cur, day)) ? cur.per[sl.id] : 0), 0);
+        return { day: dn, qty: q ? String(q) : '–', bg: q ? '#E7F1EA' : '#F2EEE6', fg: q ? '#14362a' : '#9A958A', line: q ? '#1F5340' : '#DDD7CB' };
+      }) : [],
+      curFilled: isFilled, curNotFilled: !isFilled,
+      onCurPill: () => this.openPhoto((cur ? cur.name : '') + ' — the pill', 'Check the pill in your hand matches this.'),
+      onCurPacket: () => this.openPhoto((cur ? cur.name : '') + ' — the packet', 'The box it comes in.'),
+      onFill: () => { const f = Object.assign({}, s.filled); f[cur.id] = true; this.setState({ filled: f, fillIdx: Math.min(s.fillIdx + 1, boxMeds.length - 1) }); this.toast(cur.name + ' put in the box'); },
+      onUndoFill: () => { const f = Object.assign({}, s.filled); delete f[cur.id]; this.setState({ filled: f }); this.toast(cur.name + ' unmarked'); },
+      onFillNext: () => this.setState({ fillIdx: Math.min(s.fillIdx + 1, boxMeds.length - 1) }),
+      onFillBack: () => (s.fillIdx === 0 ? this.go('fill_start') : this.setState({ fillIdx: s.fillIdx - 1 })),
+      fillIsLast: s.fillIdx >= boxMeds.length - 1, fillNotLast: s.fillIdx < boxMeds.length - 1,
+      checkRows: dayNames.map((dn, i) => {
+        const day = 14 + i;
+        return {
+          day: dn,
+          cells: activeSlots.map(sl => {
+            const items = boxMeds.filter(m => m.per[sl.id] && on(m, day));
+            const qty = items.reduce((a, m) => a + m.per[sl.id], 0);
+            return {
+              slot: sl.name, qty: qty ? String(qty) : '–', empty: !qty,
+              bg: qty ? '#FFFFFF' : '#F2EEE6',
+              onOpen: () => this.setState({ sheet: 'comp', sheetComp: {
+                date: dn + ' September', slot: sl.name + ' · ' + sl.t,
+                items: items.map(m => ({ name: m.name, strength: m.strength, qty: m.per[sl.id] + ' × ' + m.form.toLowerCase() }))
+              } })
+            };
+          })
+        };
+      }),
+      checkSlotHeads: activeSlots.map(sl => ({ name: sl.name })),
+      onFinishFill: () => { this.go(s.role === 'supporter' ? 's_today' : 'e_today'); this.toast('Box marked as prepared for this week'); }
+    };
+  }
+
+  elderVals() {
+    const s = this.state;
+    const tab = (k, label, go) => ({
+      label: label, onPick: go,
+      bg: s.screen === k || (k === 'fill_start' && s.screen.indexOf('fill') === 0) ? '#211F1B' : 'transparent',
+      fg: s.screen === k || (k === 'fill_start' && s.screen.indexOf('fill') === 0) ? '#FBF9F5' : '#45423C'
+    });
+    const rem = s.reminders;
+    const cards = this.slotCards('taker');
+    const page = cards.filter(c => c.id === s.openSlot)[0] || cards[0] || null;
+    return {
+      isEToday: s.screen === 'e_today', isESettings: s.screen === 'e_settings', isESlot: s.screen === 'e_slot',
+      pageName: page ? page.name : '', pageTime: page ? page.t : '',
+      pageStatus: page ? page.statusText : '', pageBg: page ? page.bg : '#F2EEE6', pageFg: page ? page.fg : '#55514A',
+      pageGlyph: page ? page.glyph : '', pageMeds: page ? page.meds : [],
+      pageAllDone: page ? page.allDone : false, pageNotAllDone: page ? page.notAllDone : false,
+      pageTakeLabel: page ? page.takeLabel : '', onPageMarkAll: page ? page.onMarkAll : this.closeAll,
+      onPageUndoAll: page ? page.onUndoAll : this.closeAll,
+      eNav: [
+        tab('e_today', 'Today', () => this.go('e_today')),
+        tab('fill_start', 'Fill the box', () => this.go('fill_start')),
+        tab('e_settings', 'Settings', () => this.go('e_settings'))
+      ],
+      eSlots: cards,
+      onOutside: () => this.setState({ sheet: 'outside' }),
+      eNormal: s.eTodayVar === 'normal' || s.eTodayVar === 'offline',
+      eEmpty: s.eTodayVar === 'empty', eLoading: s.eTodayVar === 'loading',
+      eOffline: s.eTodayVar === 'offline',
+      eNoneDue: s.eTodayVar === 'nonedue',
+      dateLabel: 'Sunday 13 September',
+      code: 'K7F2QM',
+      onCopyCode: () => this.toast('Code copied'),
+      onShare: () => this.setState({ sheet: 'share' }),
+      onRotate: () => this.setState({ dialog: {
+        title: 'Make a new code?', danger: true,
+        body: 'Your current code K7F2QM stops working straight away. Anyone helping you now will be disconnected and will need the new code.',
+        confirm: 'Make a new code', cancel: 'Keep this code',
+        onConfirm: () => { this.setState({ dialog: null }); this.toast('New code made: R4T8BN'); }
+      } }),
+      onSignOut: () => this.setState({ dialog: {
+        title: 'Sign out of CarePair?', danger: true,
+        body: 'Your medicines stay safe. You will need to sign in with Google again to see your day, and reminders will stop until you do.',
+        confirm: 'Sign out', cancel: 'Stay signed in',
+        onConfirm: () => this.go('welcome', { dialog: null, role: null, signin: 'idle' })
+      } }),
+      remOn: rem === 'on', remOff: rem === 'off', remBlocked: rem === 'blocked',
+      remStatus: rem === 'on' ? 'Reminders are on' : rem === 'off' ? 'Reminders are off' : 'Reminders are not available',
+      remNote: rem === 'on' ? 'Your phone will show a reminder at each medicine time.' : rem === 'off' ? 'Turn them on and your phone will remind you at each medicine time.' : 'This phone has blocked notifications for CarePair. Allow them in your phone settings, then come back.',
+      remBg: rem === 'on' ? '#E7F1EA' : rem === 'off' ? '#F2EEE6' : '#FFF4E0',
+      remFg: rem === 'on' ? '#1F5340' : rem === 'off' ? '#55514A' : '#7A5410',
+      remGlyph: rem === 'on' ? '✓' : rem === 'off' ? '○' : '!',
+      onRemToggle: () => {
+        if (s.reminders === 'on') { this.setState({ reminders: 'off' }); this.toast('Reminders turned off'); return; }
+        this.setState({ dialog: {
+          title: 'Allow reminders?', body: 'Your phone will ask permission to show CarePair reminders. Choose Allow on the next message.',
+          confirm: 'Ask my phone', cancel: 'Not now',
+          onConfirm: () => { this.setState({ dialog: null, reminders: 'on' }); this.toast('Reminders turned on'); }
+        } });
+      },
+      onTestReminder: () => this.toast('Test reminder sent to this phone'),
+      onTestFail: () => this.toast('Could not send the test reminder — check your internet'),
+      themes: ['Match system', 'Light', 'Dark'].map(k => ({
+        label: k, onPick: () => { this.setState({ theme: k }); this.toast('Appearance saved'); },
+        bg: s.theme === k ? '#211F1B' : '#FFFFFF', fg: s.theme === k ? '#FBF9F5' : '#1C1A17',
+        glyph: s.theme === k ? '✓' : ' '
+      }))
+    };
+  }
+
+  overlayVals() {
+    const s = this.state;
+    const d = s.dialog || {};
+    const sm = s.sheetMed;
+    const m = sm ? sm.med : null;
+    const st = sm ? this.doseOf(sm.slot, m.id) : 'unmarked';
+    const tone = st === 'taken' ? { bg: '#E7F1EA', fg: '#1F5340', label: '✓ Taken' }
+      : st === 'skipped' ? { bg: '#ECEBEE', fg: '#3F4048', label: '— Not taking today' }
+      : { bg: '#F2EEE6', fg: '#55514A', label: '○ Not marked yet' };
+    return {
+      showDialog: !!s.dialog, dlgTitle: d.title, dlgBody: d.body,
+      dlgConfirm: d.confirm || 'Confirm', dlgCancel: d.cancel || 'Cancel',
+      dlgBg: d.danger ? '#8E2F1E' : '#1F5340',
+      onDlgConfirm: d.onConfirm || this.closeAll,
+      onDlgCancel: () => this.setState({ dialog: null }),
+      showPhoto: !!s.photo,
+      photoLabel: s.photo ? s.photo.label : '', photoCaption: s.photo ? s.photo.caption : '',
+      onClosePhoto: () => this.setState({ photo: null }),
+      showToast: !!s.toast, toastText: s.toast ? s.toast.text : '',
+      toastUndo: !!(s.toast && s.toast.undo), onToastUndo: s.toast && s.toast.onUndo ? s.toast.onUndo : this.closeAll,
+      showMedSheet: s.sheet === 'med' && !!sm,
+      msName: m ? m.name : '', msStrength: m ? m.strength : '', msDose: m ? m.dose : '',
+      msForm: m ? m.form : '', msPurpose: m ? m.purpose : '', msNotes: m ? m.notes : '',
+      msHasNotes: !!(m && m.notes), msNoNotes: !!(m && !m.notes),
+      msRepeat: m ? m.repeat : '', msTimes: m ? m.days || m.repeat : '',
+      msSlotName: sm ? sm.slotName : '',
+      msStatus: tone.label, msStatusBg: tone.bg, msStatusFg: tone.fg,
+      msTaken: st === 'taken', msSkipped: st === 'skipped', msUnmarked: st === 'unmarked',
+      msNotTaken: st !== 'taken',
+      msHasPacket: !!(m && m.photos !== 'pill'), msNoPacket: !!(m && m.photos === 'pill'),
+      onMsPill: () => this.openPhoto((m ? m.name : '') + ' — the pill', 'One ' + (m ? m.dose : '') + '. This is what it looks like.'),
+      onMsPacket: () => this.openPhoto((m ? m.name : '') + ' — the packet', 'The box it comes in.'),
+      onMsTake: () => { this.setDose(sm.slot, m.id, 'taken', m.name + ' marked as taken'); this.setState({ sheet: null }); },
+      onMsClear: () => { this.setDose(sm.slot, m.id, 'unmarked', m.name + ' mark cleared'); this.setState({ sheet: null }); },
+      onMsSkip: () => { this.setDose(sm.slot, m.id, 'skipped', m.name + ' marked as not taking today'); this.setState({ sheet: null }); },
+      onMsClose: () => this.setState({ sheet: null }),
+      showCompSheet: s.sheet === 'comp' && !!s.sheetComp,
+      compDate: s.sheetComp ? s.sheetComp.date : '', compSlot: s.sheetComp ? s.sheetComp.slot : '',
+      compItems: s.sheetComp ? s.sheetComp.items : [],
+      showCommunity: s.sheet === 'community',
+      showMonthPicker: s.sheet === 'month',
+      showBoxTimes: s.sheet === 'boxtimes',
+      showShare: s.sheet === 'share',
+      showOutside: s.sheet === 'outside',
+      onCloseSheet: () => this.setState({ sheet: null })
+    };
+  }
+
+  renderVals() {
+    const s = this.state;
+    const nav = {
+      welcome: () => this.go('welcome', { signin: 'idle', pair: 'idle', code: '', how: 0 }),
+      how: () => this.go('how', { how: 0 }),
+      howNext: () => (s.how >= 3 ? this.go('welcome', { how: 0 }) : this.setState({ how: s.how + 1 })),
+      howBack: () => (s.how === 0 ? this.go('welcome') : this.setState({ how: s.how - 1 })),
+      signin: () => this.go('signin', { signin: 'idle', role: 'taker' }),
+      doSignin: () => {
+        this.setState({ signin: 'loading' });
+        setTimeout(() => this.setState({ signin: 'done', screen: 'e_today', role: 'taker' }), 1100);
+      },
+      pair: () => this.go('pair', { pair: 'idle', code: '', role: 'supporter' }),
+      typeGood: () => this.setState({ code: 'K7F2QM', pair: 'idle' }),
+      typeBad: () => this.setState({ code: 'ZZ11ZZ', pair: 'idle' }),
+      doPair: () => {
+        if (!s.code) { this.setState({ code: 'K7F2QM' }); }
+        this.setState({ pair: 'loading' });
+        const bad = s.code === 'ZZ11ZZ';
+        setTimeout(() => this.setState({ pair: bad ? 'invalid' : 'done' }), 900);
+      },
+      sToday: () => this.go('s_today', { role: 'supporter' }),
+      eToday: () => this.go('e_today', { role: 'taker', sheet: null, dialog: null }),
+      eSettings: () => this.go('e_settings', { sheet: null, dialog: null }),
+      fill: () => this.go('fill_start', { sheet: null, dialog: null }),
+      fillStep: () => this.go('fill_step', { fillIdx: 0 }),
+      fillCheck: () => this.go('fill_check'),
+      sCal: () => this.go('s_cal', { sheet: null, dialog: null }),
+      sCalDay: () => this.go('s_cal_day'),
+      sMeds: () => this.go('s_meds', { sheet: null, dialog: null }),
+      sMedForm: () => this.go('s_medform', { formVar: 'clean' }),
+      sTimes: () => this.go('s_times'),
+      sSettings: () => this.go('s_settings', { sheet: null, dialog: null }),
+      back: () => this.go(s.role === 'supporter' ? 's_today' : 'e_today')
+    };
+
+    const tabs = [
+      { k: 'map', label: 'Screen map' },
+      { k: 'system', label: 'Design system' },
+      { k: 'why', label: 'Rationale' },
+      { k: 'review', label: 'Requirement review' },
+      { k: 'check', label: 'Usability check' }
+    ].map(t => ({
+      label: t.label, onPick: () => this.setState({ tab: t.k }),
+      bg: s.tab === t.k ? '#211F1B' : 'transparent', fg: s.tab === t.k ? '#FBF9F5' : '#1C1A17'
+    }));
+
+    const names = {
+      welcome: 'Welcome / choose role', how: 'How it works', signin: 'Sign in (person taking medicines)',
+      pair: 'Helper pairing'
+    };
+    const purposes = {
+      welcome: 'Splits the two products at the first tap. Nothing else on the screen competes with the two role buttons.',
+      how: 'Four informational cards. Read-only: creates no data, so it is safe to open from anywhere.',
+      signin: 'Google-only sign-in for the person taking medicines; on success it creates or resumes the household and its share code.',
+      pair: 'The helper joins with a six-character code — no account, no password. Includes invalid code, connection failure, loading and success.'
+    };
+
+    const base = {
+      clock: '6:40',
+      nav: nav, tabs: tabs,
+      screenName: names[s.screen] || s.screen,
+      purpose: purposes[s.screen] || '',
+      variants: [],
+      isWelcome: s.screen === 'welcome',
+      isHow: s.screen === 'how',
+      isSignin: s.screen === 'signin',
+      isPair: s.screen === 'pair',
+      howTitle: this.howPages[s.how].t,
+      howBody: this.howPages[s.how].b,
+      howArt: this.howPages[s.how].a,
+      howCount: (s.how + 1) + ' of 4',
+      howBackLabel: s.how === 0 ? 'Close' : 'Back',
+      howNextLabel: s.how === 3 ? 'Done' : 'Next',
+      signinIdle: s.signin === 'idle',
+      signinLoading: s.signin === 'loading',
+      signinError: s.signin === 'error',
+      pairCode: s.code || '– – – – – –',
+      pairInvalid: s.pair === 'invalid',
+      pairFailed: s.pair === 'failed',
+      pairLoading: s.pair === 'loading',
+      pairDone: s.pair === 'done',
+      pairNotDone: s.pair !== 'done'
+    };
+    return Object.assign(base, this.elderVals(), this.fillVals(), this.supVals(), this.overlayVals(), this.panelVals());
+  }
+}
+
+</script>
+</body>
+</html>

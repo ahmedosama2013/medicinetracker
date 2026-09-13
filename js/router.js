@@ -8,7 +8,7 @@
  */
 
 import { S } from './strings.js';
-import { el, clear, emptyState } from './ui.js';
+import { clear, emptyState, closeOverlays } from './ui.js';
 
 const routes = new Map();
 let currentMode = null;
@@ -96,9 +96,28 @@ function runCleanup() {
   activeCleanup = null;
 }
 
+/* The FULL hash the screen on display was rendered for, query included.
+ *
+ * `refresh()` re-renders the same hash in place and must NOT dismiss an open
+ * sheet -- the elder's Realtime, the helper's poll and the midnight check all
+ * call it while someone may be reading one. A genuine navigation must.
+ *
+ * The query is part of the comparison because two of the app's real
+ * navigations only change it: #/organiser?step=check -> #/organiser, and
+ * #/slot?id=morning -> #/slot?id=evening. Keyed on the bare path, a sheet
+ * opened on the check screen survived the trip back to the start screen. */
+let renderedHash = null;
+
 async function renderRoute(route, path) {
   if (!route) return;
   const app = document.getElementById('app');
+
+  /* Overlays belong to the screen that opened them. Left alone, a medicine
+   * sheet survived the navigation underneath it and its Close button returned
+   * to a card that no longer existed. */
+  const hash = window.location.hash;
+  if (renderedHash !== null && renderedHash !== hash) closeOverlays();
+  renderedHash = hash;
 
   const mine = generation + 1;
   generation = mine;

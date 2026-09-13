@@ -5,7 +5,7 @@ A medicine reminder and pill identification app for elderly users. Runs in the b
 It solves three problems:
 
 1. **Which pill is which.** Every medicine can carry a photo the helper took themselves, shown full screen with one tap. This is the point of the app.
-2. **What was taken.** One tap marks a whole time of day as done, and a month calendar shows the record.
+2. **What was taken.** One tap on the Today screen marks a whole time of day as done — no navigating first — and a month calendar shows the record.
 3. **Filling the weekly pill box.** A guided screen walks through one medicine at a time — its photos, how many to take out for the week, and which compartment each goes in — then shows what should be in each compartment to count against the tray. It never marks anything as taken.
 
 A helper's edits reach the elder's phone within a few seconds, live — no exporting or importing a file. See [docs/architecture.md](docs/architecture.md) for how.
@@ -18,10 +18,15 @@ The app asks one question on first run — *"Who uses this phone?"* — and beco
 
 | | **Simple** (the person taking medicines) | **Supporter** (the person helping) |
 |---|---|---|
-| Sees | Today, Calendar, Settings | Medicines, Settings |
-| Does | Marks doses done, checks photos | Adds medicines, photos, times |
+| Sees | Today, Fill the box, Settings | Today, Calendar, Medicines, Box, Settings |
+| Does | Marks doses done, checks photos | Adds medicines, photos, times; follows the day |
 | Account | Signs in with Google, once | None. Enters a code from the simple person's Settings screen |
-| Interface | 20px minimum text, 56px minimum targets | Normal density, forms are fine |
+| Interface | Warm dark canvas, 17px text floor, 44px target floor, 54–64px primary actions | Cool grey canvas, 13–16px text, denser lists and forms |
+
+The simple side is built around one claim: **marking a dose is one tap from the
+first screen.** No calendar tab, no cycling controls, no confirm dialogs — undo
+is always one tap away in the same place the mark was made. See
+[docs/ui.md](docs/ui.md) for the rules behind that and what they cost.
 
 The simple person's Google account owns the household and its share code. A supporter's device holds only that code — nothing about a supporter is ever stored server-side. That's a deliberate tradeoff at this app's scale (a handful of households): lower friction for the helper, at the cost of not knowing *which* supporter made a given edit, and a code rotation cutting off everyone who had the old one, not just one person. See [docs/architecture.md](docs/architecture.md) for the reasoning.
 
@@ -49,6 +54,8 @@ python3 -m http.server 8000
 
 Then open http://localhost:8000/. Service workers and IndexedDB both work on `localhost` without HTTPS. You'll need `js/config.js` pointing at a real Supabase project (see above) for sign-in and sync to do anything.
 
+One thing to know while working on the UI: **the service worker serves `js/` and `css/` network-first with a 2.5s timeout**, so an edit normally reaches a reload — but a stale cache can still win, and then you are debugging code that is not running. If a change seems not to apply, unregister the worker and clear its caches from DevTools (or in the console: `navigator.serviceWorker.getRegistrations().then(r => r.forEach(x => x.unregister()))`, then `caches.keys().then(k => k.forEach(c => caches.delete(c)))`) and reload twice.
+
 ## Deploying
 
 Push to `main` and point GitHub Pages at the repository root, same as always — the frontend is still a static site with relative paths. `js/config.js`'s values are safe to commit, so there's nothing to inject at deploy time.
@@ -68,6 +75,7 @@ Free at this app's scale (a handful of households): Supabase's free tier covers 
 - **One household per Google account, one account per household**, for now — a caregiver looking after two parents needs two accounts. Multiple supporters *can* share one household's code, though.
 - **A supporter's write access is only as secure as the code.** Anyone who has it can add or edit medicines; there's no per-supporter identity or audit trail. Rotating the code in Settings cuts off everyone who had the old one.
 - **No clinical logic.** No interaction checking, no dose validation, no advice. This is a memory aid.
+- **The typeface comes from a CDN.** The redesign specifies Public Sans (and IBM Plex Mono for the household code), loaded from Google Fonts with `display=swap`. Offline, or before it arrives, the app renders in the system stack — a visual downgrade, not a functional one, since nothing is hidden and the fallback's metrics are close enough not to reflow the cards. This reverses the earlier "no webfont" rule; [docs/ui.md](docs/ui.md) has the reasoning.
 
 ---
 
@@ -78,9 +86,9 @@ Free at this app's scale (a handful of households): Supabase's free tier covers 
 | [docs/flow.md](docs/flow.md) | **Start here.** What both people do, step by step, and what to do when something goes wrong |
 | [docs/architecture.md](docs/architecture.md) | How it works: data model, the rules that must not be broken |
 | [docs/repo-structure.md](docs/repo-structure.md) | What every file does |
-| [docs/ui.md](docs/ui.md) | Every screen, and the design rules behind them |
+| [docs/ui.md](docs/ui.md) | **Every screen, and the design rules behind them.** Current as of the v4 elder-first redesign |
 | [docs/notifications.md](docs/notifications.md) | Every push the app sends: when it fires, what it says, and where to change the wording |
-| [docs/phase-3-plan.md](docs/phase-3-plan.md) | Organiser mode: the plan for the phase currently being built |
+| [docs/phase-3-plan.md](docs/phase-3-plan.md) | Historical: organiser mode, the plan and what it got wrong. Shipped; the screens have since been redrawn |
 | [docs/medicine-tracker-plan-v3.md](docs/medicine-tracker-plan-v3.md) | Historical: the original local-only build spec, superseded by the online-sync design above |
 | [docs/next-steps.md](docs/next-steps.md) | Everything deliberately deferred (reminders and two-way sync are now done) |
 | [docs/setup.md](docs/setup.md) | **Start here if you're standing this up.** Backend setup, step by step: Supabase project, Google OAuth, migration, VAPID keys, deploying |

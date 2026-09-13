@@ -1,8 +1,18 @@
-/* DOM helpers plus the three overlay primitives: dialog, sheet, toast.
+/* DOM helpers, the screen scaffold, and the four overlay primitives: sheet,
+ * dialog, toast, photo viewer.
  *
  * No template strings with interpolated data anywhere in the app: everything
  * user-entered goes in through textContent, so a medicine called
  * "<img onerror=...>" is just a medicine with a silly name.
+ *
+ * Pattern rules from the handoff, enforced here rather than per view:
+ *   - Full screens for places you live in.
+ *   - Bottom sheets for things you LOOK AT (a medicine, a compartment, the
+ *     shared list).
+ *   - Centre dialogs ONLY for consequences, with an explicitly named action
+ *     ("Remove Morning" / "Keep it") and the destructive button in red.
+ *   - Every state-changing tap raises a toast; anything reversible carries
+ *     Undo in the toast itself. Undo is never behind a confirm dialog.
  */
 
 import { S } from './strings.js';
@@ -59,6 +69,56 @@ export function clear(node) {
 
 export const icon = name => el('span.icon', { 'aria-hidden': 'true', dataset: { icon: name } });
 
+/* ---- the screen scaffold -------------------------------------------------
+ *
+ * Every view renders exactly ONE .screen into #app. The shell is a fixed
+ * viewport column -- a head that does not move, one scrolling region, an
+ * optional foot, and the bottom nav below all of it -- which is what makes the
+ * layout behave the same on a 320px phone and a 430px one. A taller screen
+ * only gives the scroll region more room, so more slot cards fit before it
+ * scrolls. That is the handoff's entire responsive rule; there is never a
+ * second column. */
+
+/**
+ * screen({ head, body, scroll, foot, supporter })
+ *   head       fixed, above the scroll region
+ *   scroll     the one scrolling region (use for lists, Settings)
+ *   body       a non-scrolling flexible region (use for centred empties)
+ *   foot       fixed, below the scroll region and above the nav
+ *   supporter  paint this screen in the helper's palette before a role exists
+ */
+export function screen({ head, body, scroll, foot, supporter = false, className = '' } = {}) {
+  const node = el(`div.screen${supporter ? '.screen-sup' : ''}${className ? `.${className}` : ''}`);
+  if (head) append(node, el('div.screen-head', head));
+  if (scroll) append(node, el('div.screen-scroll', scroll));
+  if (body) append(node, el('div.screen-centre', body));
+  if (foot) append(node, el('div.screen-foot', foot));
+  return node;
+}
+
+/**
+ * Replace whatever is in #app with one screen, in a single mutation.
+ *
+ * `keepScroll` carries the scroll position of the outgoing `.screen-scroll`
+ * onto the incoming one. Several screens rebuild themselves wholesale on every
+ * tap rather than swapping one node -- a chip on the medicine form, a dose row
+ * on the helper's Today -- and without this the person is thrown back to the
+ * top of a long form for changing "Tablet" to "Capsule". It is opt-in because
+ * a genuine navigation must NOT keep it: arriving on a new screen part way
+ * down is its own kind of wrong.
+ */
+export function mount(app, node, { keepScroll = false } = {}) {
+  const previous = keepScroll ? app.querySelector('.screen-scroll') : null;
+  const top = previous ? previous.scrollTop : 0;
+  clear(app);
+  app.appendChild(node);
+  if (top) {
+    const next = node.querySelector('.screen-scroll');
+    if (next) next.scrollTop = top;
+  }
+  return node;
+}
+
 /**
  * Light, dark, or whatever the phone says.
  *
@@ -77,11 +137,8 @@ export function applyTheme(theme) {
 /**
  * Shown while a screen waits on the network.
  *
- * Supporter screens go through code-gated RPCs and, for photos, an edge
- * function that can cold-start -- so "tapped a row, nothing happened yet" is a
- * real second or more. Without this the app looked frozen and people tapped
- * again. `aria-busy` and the live region matter as much as the spinner: a
- * screen reader gets silence otherwise.
+ * `aria-busy` and the live region matter as much as the spinner: a screen
+ * reader gets silence otherwise.
  */
 export function loadingState(message = S.loading) {
   return el('div.loading', { role: 'status', 'aria-busy': 'true' }, [
@@ -90,19 +147,22 @@ export function loadingState(message = S.loading) {
   ]);
 }
 
+/** An indeterminate progress bar. The only motion in the elder view. */
+export function progressBar(className = '') {
+  return el(`span.progress${className ? `.${className}` : ''}`, { 'aria-hidden': 'true' }, el('span'));
+}
+
 // ---- how much to take -----------------------------------------------------
 
 /**
- * "2 tablets", "\u00bd tablet", "10 ml" -- how much to take, in words.
+ * "2 tablets", "½ tablet", "10 ml" -- how much to take, in words.
  *
  * The number lives in `doseQty` and the noun comes from `form`, which is what
  * makes this both countable (the organiser has to add it up) and translatable
  * (the noun is a string, not something a supporter typed).
  *
  * The `dosage` fallback is not dead code. Snapshots frozen before migration
- * 0011 carry the old free-text value and are deliberately never rewritten --
- * that is the entire point of freezing a past day -- so a calendar day from
- * before the migration renders whatever it actually recorded at the time.
+ * 0011 carry the old free-text value and are deliberately never rewritten.
  */
 export function doseText(medicine) {
   if (!medicine) return '';
@@ -116,14 +176,7 @@ export function doseText(medicine) {
   return `${doseAmount(qty)} ${qty <= 1 ? one : many}`;
 }
 
-/**
- * Just the number: "2", "½", "1½".
- *
- * Split out from doseText because the organiser grid puts this inside a dot
- * roughly 28px across, where a unit will not fit and does not need to -- every
- * cell in a medicine's row is the same medicine, so the noun is already in the
- * heading above the grid.
- */
+/** Just the number: "2", "½", "1½". */
 export function doseAmount(qty) {
   const n = Number(qty);
   if (!Number.isFinite(n) || n <= 0) return '';
@@ -135,52 +188,37 @@ export function doseAmount(qty) {
 
 // ---- pill identity --------------------------------------------------------
 
-/* A medicine has exactly one visual identity -- its photo -- and it appears at
- * every size, on every screen, in both roles. See css/app.css section 6.
+/* Recognising the physical pill is the reason this app exists, so the photo is
+ * the medicine's one visual identity and it appears at every size in both
+ * roles. Where a household has no photo yet the tile is a hatch placeholder
+ * labelled "pill photo" -- honest about a missing asset rather than pretending
+ * with a generic icon, and a visible job for the helper to do.
  *
  * Only two glyphs exist so far: a pill and a droplet. The droplet earns its
  * place because liquids and drops are the things that must NOT go in a weekly
- * organiser -- which is exactly what js/organiser.js's BOX_FORMS keys off, so
- * the distinction is load-bearing now rather than later. Per-form glyphs for
- * capsule, inhaler and injection are a later refinement, not a fake one now. */
+ * organiser -- which is exactly what js/organiser.js's BOX_FORMS keys off. */
 const FORM_ICON = {
   liquid: 'drop',
   drops: 'drop',
 };
 
-/** Stable 0-5 tone for a medicine, so its fallback tile looks the same
- * everywhere. Not an attempt to guess the pill's real colour -- it cannot be
- * known from a name, and anywhere the real colour would matter the UI counts
- * instead. This is only a distinguishable, consistent marker. */
-export function tileTone(id) {
-  const text = String(id || '');
-  let hash = 0;
-  for (let i = 0; i < text.length; i += 1) hash = (hash * 31 + text.charCodeAt(i)) >>> 0;
-  return hash % 6;
-}
-
 /**
  * pillTile({ id, url, form, alt, state, community, archived, size })
- *   state     null | 'taken' | 'skipped'
- *   community the photo came from the shared DRAP set, not this household
- *   size      null (44px) | 'sm' (34px) | 'lg' (56px)
+ *   state  null | 'taken' | 'skipped'
+ *   size   null (78px, E2) | 'lg' (96px) | 'md' (52px) | 'sm' (44px) | 'xs' (36px)
  */
 export function pillTile({
   id, url, form, alt = '', state = null,
-  community = false, archived = false, size = null,
+  community = false, archived = false, size = null, label = true,
 } = {}) {
   const classes = ['ptile'];
-  if (size === 'sm') classes.push('ptile-sm');
-  if (size === 'lg') classes.push('ptile-lg');
-  if (archived) classes.push('ptile-archived');
-  else if (!url) classes.push('ptile-empty');
+  if (size) classes.push(`ptile-${size}`);
 
-  const node = el(`span.${classes.join('.')}`, {
-    // A photo brings its own colour; only the fallback needs a tone.
-    dataset: url || archived ? null : { tone: String(tileTone(id)) },
-  }, url
+  const node = el(`span.${classes.join('.')}`, {}, url
     ? el('img', { src: url, alt })
-    : icon(archived ? 'box' : FORM_ICON[form] || 'pill'));
+    : (archived || !label
+      ? icon(archived ? 'box' : FORM_ICON[form] || 'pill')
+      : el('span', { html: 'pill<br>photo' })));
 
   const kind = state === 'taken' || state === 'skipped'
     ? state
@@ -195,11 +233,65 @@ export function pillTile({
   return node;
 }
 
+// ---- state tones ----------------------------------------------------------
+
+/* Colour + shape + word, never colour alone. Every consumer sets --state-fg
+ * (and --state-bg where there is a fill) on the node, and every child reads
+ * it, so one tone drives the border, the band, the ring and the status text.
+ *
+ * Red is used ONLY for overdue and destructive. "Not taking today" is a
+ * recorded outcome and is styled neutral grey -- never red, never a failure. */
+
+export const TONE = {
+  wait: { cls: 'state-wait', fg: 'var(--ink-3)', bg: 'var(--e-sunk)', glyph: '○' },
+  late: { cls: 'state-late', fg: 'var(--red)', bg: 'var(--red-tint)', glyph: '!' },
+  done: { cls: 'state-done', fg: 'var(--green)', bg: 'var(--green-tint)', glyph: '✓' },
+  skip: { cls: 'state-skip', fg: 'var(--neutral)', bg: 'var(--neutral-tint)', glyph: '—' },
+  none: { cls: 'state-none', fg: 'var(--s-muted)', bg: 'var(--card)', glyph: '' },
+};
+
+/** Per-dose tone: taken, not taking today, or not marked yet. */
+export function doseTone(state) {
+  if (state === 'taken') return { ...TONE.done, label: S.stateTakenLabel };
+  if (state === 'skipped') return { ...TONE.skip, label: S.stateSkippedLabel };
+  return { ...TONE.wait, label: S.stateUnmarkedLabel };
+}
+
+/** Paint a tone onto a node. Returns the node, so it chains. */
+export function paintTone(node, tone) {
+  node.style.setProperty('--state-fg', tone.fg);
+  node.style.setProperty('--state-bg', tone.bg);
+  return node;
+}
+
+/** A 24px ringed glyph in the state colour. */
+export function stateRing(tone, className = 'state-ring') {
+  return paintTone(el(`span.${className}`, { 'aria-hidden': 'true', text: tone.glyph }), tone);
+}
+
 // ---- overlays -------------------------------------------------------------
 
 const overlayHost = () => document.getElementById('overlay');
 
 let openCount = 0;
+
+/* Every live overlay's own close function, newest last.
+ *
+ * Navigating away has to take the overlays with it. Without this, opening a
+ * medicine sheet and then following a link inside it -- or being moved by the
+ * router's midnight check -- left the sheet sitting on top of a screen it knew
+ * nothing about, with a Close button that returned to a card no longer there.
+ * Tracked as closers rather than by emptying the host, so each layer also
+ * detaches its own keydown listener and restores focus. */
+const liveOverlays = new Set();
+
+/** Dismiss every open overlay. Called by the router on a real path change. */
+export function closeOverlays() {
+  for (const close of [...liveOverlays].reverse()) {
+    try { close(); } catch { /* a failed close must not block navigation */ }
+  }
+  liveOverlays.clear();
+}
 
 /* Everything that can hold focus inside a panel, in document order. */
 const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]), '
@@ -218,6 +310,7 @@ function mountOverlay(panel, { onDismiss, dismissible = true, className = '' } =
   document.body.classList.add('overlay-open');
 
   const close = () => {
+    liveOverlays.delete(close);
     if (!layer.isConnected) return;
     layer.remove();
     openCount = Math.max(0, openCount - 1);
@@ -229,8 +322,8 @@ function mountOverlay(panel, { onDismiss, dismissible = true, className = '' } =
 
     /* Back where they came from. Without this, closing a sheet dropped focus
      * to the top of the document and a keyboard user had to tab all the way
-     * back to the row they were on. The node may be gone -- redrawSlot
-     * replaces the slot that opened it -- hence the check. */
+     * back to the row they were on. The node may be gone -- a redraw replaces
+     * the card that opened it -- hence the check. */
     if (returnFocusTo?.isConnected) returnFocusTo.focus?.();
   };
 
@@ -239,14 +332,11 @@ function mountOverlay(panel, { onDismiss, dismissible = true, className = '' } =
   function onKey(event) {
     /* Only the topmost overlay answers. Every layer adds its own keydown
      * listener to `document`, so without this one Escape dismisses the whole
-     * stack at once -- closing a medicine sheet would also close the calendar
-     * day sheet underneath it and drop the person back to the month grid. */
+     * stack at once. */
     if (host.lastElementChild !== layer) return;
 
     /* Keep Tab inside the panel. aria-modal tells a screen reader the rest of
-     * the page is inert; it does nothing about the tab order, so focus walked
-     * straight out into the screen behind -- which for a keyboard or switch
-     * user is the difference between a modal and a decoration. */
+     * the page is inert; it does nothing about the tab order. */
     if (event.key === 'Tab') {
       const items = [...panel.querySelectorAll(FOCUSABLE)];
       if (!items.length) {
@@ -274,6 +364,7 @@ function mountOverlay(panel, { onDismiss, dismissible = true, className = '' } =
 
   if (dismissible) backdrop.addEventListener('click', dismiss);
   document.addEventListener('keydown', onKey);
+  liveOverlays.add(close);
 
   // Focus the first control so keyboard and screen-reader users land inside.
   requestAnimationFrame(() => {
@@ -285,10 +376,19 @@ function mountOverlay(panel, { onDismiss, dismissible = true, className = '' } =
 }
 
 /**
- * A modal question. Resolves true for the confirm action, false otherwise.
- * `body` may be a string or an array of nodes.
+ * A modal question, spent only where a tap has consequences outside the phone:
+ * rotating the code, signing out, disconnecting, archiving, removing a time of
+ * day, sharing a photo. Dose marking never uses one -- it is instant with Undo
+ * in the toast.
+ *
+ * `confirmLabel` must NAME the action ("Remove Morning", "Sign out"), and
+ * `cancelLabel` must name the alternative ("Keep it", "Stay signed in"). The
+ * two buttons are stacked, not side by side, because a named action is long
+ * and truncating it is exactly what a confirm dialog must not do.
  */
-export function confirmDialog({ title, body, confirmLabel = S.confirm, cancelLabel = S.cancel, danger = false }) {
+export function confirmDialog({
+  title, body, confirmLabel = S.confirm, cancelLabel = S.cancel, danger = false,
+}) {
   return new Promise(resolve => {
     let close;
     const finish = value => { close?.(); resolve(value); };
@@ -297,14 +397,16 @@ export function confirmDialog({ title, body, confirmLabel = S.confirm, cancelLab
       title ? el('h2.dialog-title', { text: title }) : null,
       el('div.dialog-body', typeof body === 'string' ? el('p', { text: body }) : body),
       el('div.dialog-actions', [
-        el('button.btn.btn-quiet', { type: 'button', text: cancelLabel, onclick: () => finish(false) }),
-        el(`button.btn.btn-primary${danger ? '.btn-danger' : ''}`, {
+        el(`button.dialog-confirm${danger ? '.dialog-confirm-danger' : ''}`, {
           type: 'button', text: confirmLabel, autofocus: true, onclick: () => finish(true),
+        }),
+        el('button.dialog-cancel', {
+          type: 'button', text: cancelLabel, onclick: () => finish(false),
         }),
       ]),
     ]);
 
-    close = mountOverlay(panel, { onDismiss: () => resolve(false) });
+    close = mountOverlay(panel, { onDismiss: () => resolve(false), className: 'dialog-layer' });
   });
 }
 
@@ -316,74 +418,85 @@ export function alertDialog({ title, body, closeLabel = S.close }) {
       title ? el('h2.dialog-title', { text: title }) : null,
       el('div.dialog-body', typeof body === 'string' ? el('p', { text: body }) : body),
       el('div.dialog-actions', [
-        el('button.btn.btn-primary', {
+        el('button.dialog-confirm', {
           type: 'button', text: closeLabel, autofocus: true,
           onclick: () => { close(); resolve(); },
         }),
       ]),
     ]);
-    close = mountOverlay(panel, { onDismiss: resolve });
+    close = mountOverlay(panel, { onDismiss: resolve, className: 'dialog-layer' });
   });
 }
 
-/** A panel sliding up from the bottom. Returns { close, setContent }. */
-export function openSheet({ title, content, onClose, panelClassName = '', layerClassName = '' }) {
-  const body = el('div.sheet-body');
+/**
+ * A panel rising from the bottom. Returns { close, setContent, body, setFoot }.
+ *
+ * `eyebrow` is the small label above the title (the slot name on a medicine
+ * sheet). `foot` is a fixed action block below the scrolling body -- the
+ * medicine sheet's take/undo buttons live there so they are always reachable
+ * without scrolling to the bottom of the notes.
+ */
+export function openSheet({
+  title, eyebrow = null, content, foot = null, onClose,
+  panelClassName = '', layerClassName = '', padded = false,
+}) {
+  const body = el(padded ? 'div.sheet-pad' : 'div.sheet-body');
   append(body, content);
 
-  const panel = el('div.sheet' + (panelClassName ? '.' + panelClassName : ''), {
+  const footNode = el('div.sheet-foot');
+  if (foot) append(footNode, foot);
+
+  const panel = el(`div.sheet${panelClassName ? `.${panelClassName}` : ''}`, {
     role: 'dialog', 'aria-modal': 'true', tabindex: '-1',
   }, [
-    el('div.sheet-head', [
-      el('h2.sheet-title', { text: title || '' }),
+    title || eyebrow ? el('div.sheet-head', [
+      eyebrow ? el('span.sheet-eyebrow', { text: eyebrow }) : null,
+      title ? el('h2.sheet-title', { text: title }) : null,
       el('button.sheet-close', {
-        type: 'button', 'aria-label': S.close,
-        onclick: () => api.close(),
-      }, '×'),
-    ]),
+        type: 'button', text: S.close, onclick: () => api.close(),
+      }),
+    ]) : null,
     body,
+    foot ? footNode : null,
   ]);
 
   const close = mountOverlay(panel, {
     onDismiss: onClose,
-    className: 'sheet-layer' + (layerClassName ? ' ' + layerClassName : ''),
+    className: `sheet-layer${layerClassName ? ` ${layerClassName}` : ''}`,
   });
+
   const api = {
     close: () => { close(); onClose?.(); },
     setContent: next => { clear(body); append(body, next); },
+    setFoot: next => { clear(footNode); append(footNode, next); },
     body,
   };
   return api;
 }
 
 /** Full-screen photo viewer. The reason the app exists, so it gets everything. */
-export function openPhotoViewer({ url, name, strength, altText }) {
+export function openPhotoViewer({ url, name, strength, altText, caption = null }) {
+  const label = [name, strength].filter(Boolean).join(' ');
   const panel = el('div.photoview', { role: 'dialog', 'aria-modal': 'true', tabindex: '-1' }, [
-    url
-      ? el('img.photoview-img', { src: url, alt: altText || name })
-      : el('div.photoview-empty', [icon('pill'), el('p', { text: S.noPhoto })]),
-    el('div.photoview-caption', [
-      el('strong.photoview-name', { text: name }),
-      strength ? el('span.photoview-strength', { text: strength }) : null,
+    el('div.photoview-bar', [
+      el('span.photoview-label', { text: label }),
+      el('button.photoview-close', {
+        type: 'button', text: S.closePhoto, onclick: () => close(),
+      }),
     ]),
-    el('button.photoview-close', { type: 'button', 'aria-label': S.closePhoto }, '×'),
+    el('div.photoview-stage', url
+      ? el('img.photoview-img', { src: url, alt: altText || label })
+      : el('div.photoview-empty', { text: S.noPhoto })),
+    caption ? el('p.photoview-caption', { text: caption }) : null,
   ]);
 
   const close = mountOverlay(panel, { className: 'photoview-layer' });
-  panel.addEventListener('click', () => close());
   return close;
 }
 
 /**
- * A blocking "working on it" panel, for something too slow to leave unexplained.
- *
- * Deliberately not dismissible and deliberately in the way. A disabled Save
- * button is honest but easy to miss -- it can be scrolled off screen entirely
- * on a long form -- and it leaves every other field editable while their values
- * are already on their way to the server.
- *
- * `setMessage` names the current step. The text is a live region, so the change
- * is announced rather than only shown.
+ * A blocking "working on it" panel, for something too slow to leave
+ * unexplained. Deliberately not dismissible and deliberately in the way.
  *
  * Returns { setMessage, close }. The caller MUST close it on every path.
  */
@@ -406,85 +519,94 @@ export function busyOverlay(message) {
 }
 
 let toastTimer = null;
-let toastHideTimer = null;
 
 /**
- * toast('Saved')
- * toast('Ibuprofen skipped', { actionLabel: 'Undo', onAction })
+ * toast('Something went wrong.')
  *
- * The action exists for the cycling dose target: tapping twice lands on
- * "skipped", which a person can reach without meaning to, so that state has
- * to announce itself and offer the way back. Never used for errors that need
- * a decision -- those are a dialog.
+ * The only transient UI in the app, and deliberately rare: a state change a
+ * person can already see (a button flipped, a row changed colour) does not
+ * also need a toast to say so. Reserved for what the screen cannot already
+ * show -- a failure, or a reminder actually being sent.
  */
-export function toast(message, { actionLabel = null, onAction = null } = {}) {
+export function toast(message) {
   const node = document.getElementById('toast');
   clearTimeout(toastTimer);
-  clearTimeout(toastHideTimer);
   clear(node);
   node.appendChild(el('span', { text: message }));
-
-  /* The pending hide is tracked, not fired and forgotten. A toast raised
-   * inside the 250ms fade-out of the previous one was made visible and then
-   * hidden again by that one's timer -- reachable by cycling two doses
-   * quickly, which is exactly when a toast matters. */
-  const hide = () => {
-    node.classList.remove('toast-on');
-    clearTimeout(toastHideTimer);
-    toastHideTimer = setTimeout(() => { node.hidden = true; }, 250);
-  };
-
-  if (actionLabel && onAction) {
-    node.appendChild(el('button.toast-action', {
-      type: 'button',
-      text: actionLabel,
-      onclick: () => { clearTimeout(toastTimer); hide(); onAction(); },
-    }));
-  }
-
   node.hidden = false;
-  node.classList.add('toast-on');
-  clearTimeout(toastTimer);
-  // Longer with an action: three seconds is not enough to notice an
-  // unintended change, read it, and reach the button.
-  toastTimer = setTimeout(hide, actionLabel ? 6000 : 2600);
+  toastTimer = setTimeout(() => { node.hidden = true; }, 3200);
 }
 
 // ---- small building blocks ------------------------------------------------
 
 export function field({ label, control, hint, error, id }) {
   return el('div.field', [
-    el('label.field-label', { for: id, text: label }),
+    label ? el('label.field-label', { for: id, text: label }) : null,
     control,
     hint ? el('p.field-hint', { text: hint }) : null,
     error ? el('p.field-error', { text: error }) : null,
   ]);
 }
 
-export function section(title, children, className = '') {
-  return el(`section.card${className ? `.${className}` : ''}`, [
-    title ? el('h2.card-title', { text: title }) : null,
+/** A labelled section in the elder's Settings: 15px/800 uppercase + a card. */
+/**
+ * Two big custom "radio" cards asking whether the household uses a physical
+ * pill organizer box. Not a pair of <input type="radio">: the whole card is
+ * the tap target, which a native radio's few-millimetre dot is not, and the
+ * dot inside each card only mimics one -- it carries no real radio semantics,
+ * `aria-pressed` on the button does that work instead.
+ *
+ * Shared by the sign-in screen and both roles' Settings; `dense` trims it to
+ * the supporter's tighter density without changing the elder's markup.
+ */
+export function organizerChoice(value, onSelect, { dense = false } = {}) {
+  const option = (optValue, label, hint) => {
+    const selected = (value !== false) === optValue;
+    return el(`button.organizer-option${dense ? '.organizer-option-dense' : ''}`, {
+      type: 'button',
+      'aria-pressed': String(selected),
+      onclick: () => onSelect(optValue),
+    }, [
+      el('span.organizer-option-dot', { 'aria-hidden': 'true' }),
+      el('span.organizer-option-text', [
+        el('span.organizer-option-label', { text: label }),
+        el('span.organizer-option-hint', { text: hint }),
+      ]),
+    ]);
+  };
+
+  return el('div.organizer-choice', [
+    option(true, S.organizerYes, S.organizerYesHint),
+    option(false, S.organizerNo, S.organizerNoHint),
+  ]);
+}
+
+export function settingsGroup(label, children) {
+  return el('div.sgroup', [
+    label ? el('span.slabel', { text: label }) : null,
     ...(Array.isArray(children) ? children : [children]),
   ]);
 }
 
-export function emptyState(title, body) {
-  return el('div.empty', [
-    el('p.empty-title', { text: title }),
-    body ? el('p.empty-body', { text: body }) : null,
+/** A supporter-density section: 12px/800 uppercase + a card. */
+export function supGroup(label, children) {
+  return el('div.sgroup', [
+    label ? el('span.s-legend', { text: label }) : null,
+    ...(Array.isArray(children) ? children : [children]),
   ]);
 }
 
-// ---- the share code: copy and WhatsApp ------------------------------------
+export function emptyState(title, body, action = null) {
+  return el('div.s-empty', [
+    el('p.s-empty-title', { text: title }),
+    body ? el('p.s-empty-body', { text: body }) : null,
+    action,
+  ]);
+}
 
-/* Shared by the Settings screen and Today's cold-start (before any medicine
- * has been added, where the code is the one thing on the page that matters).
- * Same behaviour everywhere the code appears; each caller only supplies its
- * own layout around it. */
+// ---- the share code: copy and send ---------------------------------------
 
-/** Copies the share code. Silent about *why* it might fail -- an insecure
- * context or a denied permission are both rare enough here (the app is
- * already installed and running over HTTPS) that a generic error reads fine. */
+/** Copies the share code. */
 export async function copyCode(code) {
   if (!code) return;
   try {
@@ -506,29 +628,64 @@ export async function shareCodeOnWhatsapp(code) {
   window.open(`https://wa.me/?text=${encodeURIComponent(S.shareCodeMessage(code))}`, '_blank');
 }
 
-/* A fixed literal, never interpolated -- the one thing the `html` prop above
- * is for. WhatsApp's own brand green rather than a themed colour: this button
- * launches one specific external app, and staying recognisable as that app's
- * own icon matters more than matching the rest of the page. */
+/** A fixed literal, never interpolated -- the one thing the `html` prop is for. */
 export function whatsappIcon() {
   return el('span.whatsapp-icon', {
     html: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2 22l5.25-1.38a9.9 9.9 0 0 0 4.79 1.22h.01c5.46 0 9.91-4.45 9.91-9.91C21.96 6.45 17.5 2 12.04 2zm5.83 14.02c-.24.68-1.4 1.32-1.93 1.4-.5.08-1.11.11-1.79-.11-.41-.13-.94-.3-1.62-.6-2.85-1.23-4.71-4.08-4.85-4.27-.14-.19-1.16-1.54-1.16-2.94 0-1.4.73-2.09.99-2.37.26-.28.57-.35.76-.35.19 0 .38 0 .55.01.18.01.41-.07.64.49.24.58.81 2 .88 2.14.07.14.12.31.02.5-.1.19-.15.31-.29.48-.14.17-.3.38-.43.51-.14.14-.29.29-.12.57.17.28.75 1.24 1.61 2 1.11.99 2.04 1.3 2.32 1.44.28.14.44.12.6-.07.16-.19.68-.79.86-1.06.18-.28.36-.23.6-.14.24.09 1.55.73 1.82.87.27.14.45.21.51.32.06.11.06.65-.18 1.33z"/></svg>',
   });
 }
 
-/** The code as a tap-to-copy control, plus a WhatsApp button beside it.
- * `codeClass` lets each caller supply its own size/weight for the code itself
- * (the Settings chip and Today's cold-start display look nothing alike);
- * the WhatsApp button is the same everywhere. */
-export function shareCodeRow(code, codeClass = 'setting-value.setting-code') {
-  return el('div.code-row', [
-    el(`button.${codeClass}`, {
-      type: 'button', text: code, onclick: () => copyCode(code),
+/**
+ * The "Send it" sheet: WhatsApp, a text message, or just the code.
+ *
+ * A sheet rather than the OS share panel because two of the three targets are
+ * specific apps we can open directly, and the third is the clipboard -- naming
+ * them is clearer to read out over a phone call than "Share…".
+ */
+export function openShareSheet(code) {
+  const sheet = openSheet({
+    padded: true,
+    content: [
+      el('span.ms-name', { text: S.shareSheetTitle, style: 'font-size: 21px' }),
+      el('button.share-row', {
+        type: 'button',
+        onclick: () => { sheet.close(); shareCodeOnWhatsapp(code); },
+      }, [whatsappIcon(), el('span', { text: S.shareWhatsapp })]),
+      el('a.share-row', {
+        href: `sms:?&body=${encodeURIComponent(S.shareCodeMessage(code))}`,
+        onclick: () => sheet.close(),
+      }, [el('span', { text: S.shareTextMessage })]),
+      el('button.share-row', {
+        type: 'button',
+        onclick: () => { sheet.close(); copyCode(code); },
+      }, [el('span', { text: S.shareCopyCode })]),
+      el('button.btn.btn-quiet', {
+        type: 'button', text: S.cancel, onclick: () => sheet.close(),
+      }),
+    ],
+  });
+  return sheet;
+}
+
+/**
+ * The code itself, at the size it is read out over a phone call, with Copy and
+ * Send it beneath. Shared by Today's cold start (38px) and Settings (34px).
+ */
+export function codeCard(code, { size = 'lg', label = S.settingsCodeForHelper, extra = null } = {}) {
+  return el('div.code-card', [
+    el('span.code-card-label', { text: label }),
+    el(`button.code-value${size === 'sm' ? '.code-value-sm' : ''}`, {
+      type: 'button', text: code, 'aria-label': S.copyCode, onclick: () => copyCode(code),
     }),
-    el('button.whatsapp-btn', {
-      type: 'button', 'aria-label': S.shareCodeWhatsapp,
-      onclick: () => shareCodeOnWhatsapp(code),
-    }, [whatsappIcon()]),
+    el('div.code-actions', [
+      el('button.btn.btn-green-outline', {
+        type: 'button', text: S.copyCode, onclick: () => copyCode(code),
+      }),
+      el('button.btn.btn-primary', {
+        type: 'button', text: S.sendCode, onclick: () => openShareSheet(code),
+      }),
+    ]),
+    extra,
   ]);
 }
 

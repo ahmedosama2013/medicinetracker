@@ -53,7 +53,7 @@ function signatureOf(routine, rows) {
     .sort().join('|');
   const slots = (routine?.slots || []).map(s => `${s.id}:${s.label}:${s.time}:${s.inBox}`).sort().join('|');
   const doses = (rows || []).map(r => `${r.id}:${r.status}:${r.loggedBy}`).sort().join('|');
-  return `${meds}#${schedules}#${slots}#${doses}`;
+  return `${meds}#${schedules}#${slots}#${doses}#${routine?.household?.usesOrganizer}`;
 }
 
 /* When the cache last actually reached the server. Surfaced on the
@@ -171,6 +171,14 @@ async function pullRoutine(code) {
   if (timezone) {
     await store.saveSettings({ timezone });
     setTimezone(timezone);
+  }
+
+  // Whether the household uses a physical organizer box, decided on either
+  // phone -- see js/store.js. `undefined` only on a server old enough to
+  // predate the column, which never happens once 0027 has run; still guarded
+  // the same way the timezone above is.
+  if (routine.household?.usesOrganizer !== undefined) {
+    await store.saveSettings({ usesOrganizer: routine.household.usesOrganizer });
   }
 
   return { routine, photos: () => cachePhotos(code, medicines, previousPaths) };

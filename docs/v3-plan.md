@@ -13,6 +13,21 @@ describes how the two devices work; [flow.md](flow.md) describes what the two
 people do. This file is the reasoning and the remaining work. Phases 0–2 are
 done and folded into those three; Phases 3–4 are still ahead.
 
+> **The visual layer described here has since been replaced.** v3 was a visual
+> overhaul that left the interaction model alone, and the model turned out to
+> be the problem: marking a dose meant opening a slot and then working a
+> cycling 30px circle. The **v4 elder-first redesign** rebuilt the elder side
+> around one-tap marking on Today, doubled the type floor, and dropped the
+> progress rail, the `Now` label, the collapsing photo strip, the time-of-day
+> colour bands and the dose target entirely. The supporter side kept its shape
+> and gained a contrast and honesty pass. See [ui.md](ui.md) and
+> `design_handoff_carepair_elder_ui/`.
+>
+> Everything in this file about the **architecture** — the supporter's lack of
+> a session, the cache they gained, the freeze line, the render serialisation —
+> is still exactly right and still load-bearing. It is the screen descriptions
+> that are history.
+
 This file exists because the interesting part of this work is not the CSS. It is
 that four of the wanted features are blocked on the same architectural fact —
 **a supporter device has no session** — and that fact is invisible from the

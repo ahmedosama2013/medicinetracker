@@ -3,210 +3,432 @@
  * One file so Urdu can be added later without hunting through views: the plan
  * is a second object of the same shape and a language setting.
  *
+ * The wording follows the CarePair redesign handoff and its copy rules:
+ *   - Plain language, no jargon, no medical advice.
+ *   - The elder's marking button always states the CURRENT true fact, in
+ *     second person, never the action a tap performs: "You have not taken
+ *     these yet" while unmarked, "You have already taken these" once it is --
+ *     tapping flips the medicine's state AND the button's own label together,
+ *     so the two are never seen out of step. Never "Confirm dose", never
+ *     "Undo". Both used to be first person ("I have taken these") describing
+ *     the action rather than the fact, which real elder testers read as the
+ *     app telling them something false the moment it did not match what was
+ *     actually true yet -- and "Undo" itself was simply not a word every
+ *     elder recognised as software jargon for "change your answer".
+ *   - Skipping is "Leave this one out today", never "Skip", and it is always
+ *     reversible with "Put it back on the list" -- the same "name the actual
+ *     opposite state" idea the marking copy above now follows too.
+ *   - Errors say what happened, that nothing was lost, and what to do next.
+ *   - Nobody's pronouns are assumed: the helper acts "on their behalf".
+ *
  * The one exception, and it is not a leak: push notification bodies live in
  * `supabase/functions/_shared/messages.ts`. Those are built server-side in
- * Deno and never reach the browser, so they cannot be read from here -- and
- * they answer to four extra rules (never name a medicine, never say "taken",
- * slot name in the title only, deterministic wording) that only apply to text
- * landing on a lock screen. See docs/notifications.md.
+ * Deno and never reach the browser.
  */
 
-export const APP_VERSION = '0.0.1';
+export const APP_VERSION = '2.0.0';
+
+/** "Umer Butt" -> "Umer". The stored household name is first + last; every
+ * screen that greets someone by name shows only the first. */
+export function firstNameOf(fullName) {
+  return fullName ? fullName.trim().split(/\s+/)[0] : '';
+}
 
 export const S = {
   appName: 'CarePair',
-  tagline: 'Built for the person taking the medicine, and the one making sure they do.',
+  tagline: 'Medicines, kept simple — for the person taking them and the person helping.',
 
-  // ---- onboarding -------------------------------------------------------
-  welcomeTitle: 'Who uses this phone?',
-  welcomeIntro: 'This only needs answering once.',
+  // ---- welcome / role picker --------------------------------------------
   roleSimple: 'I take the medicines',
-  roleSimpleHint: 'A simple screen showing what to take today.',
   roleSupporter: 'I help someone with their medicines',
-  roleSupporterHint: 'Add medicines, photos and times. They sync automatically.',
   roleChangeLater: 'You can change this later in Settings.',
-  howItWorks: 'See how it works',
-  howTitle: 'How it works',
-  howStep: (current, total) => 'Step ' + current + ' of ' + total,
-  howRoleTitle: 'Choose how you use it',
-  howRoleBody: 'Take the medicines yourself, or connect as the person who helps.',
-  howSetupTitle: 'Set up the routine together',
-  howSetupBody: 'Add medicines, dosages and times with pill and packet photos - photos and suggestions already available in the ever growing library.',
-  howTodayTitle: 'Follow the day together',
-  howTodayBody: 'See what is due, recognise each pill, mark it taken or skipped, and receive gentle reminders.',
-  howBoxTitle: 'Fill the pill box with confidence',
-  howBoxBody: 'The guided organiser shows you pictures what goes in every compartment and helps you check the finished tray.',
+
+  // ---- how it works (4-panel carousel) ----------------------------------
+  howItWorks: 'How it works',
+  howCount: (current, total) => `${current} of ${total}`,
+  howNote: 'Reading this changes nothing in the app. No medicines are added.',
+  howClose: 'Close',
   howBack: 'Back',
   howNext: 'Next',
-  howDone: 'Choose your role',
+  howDone: 'Done',
+  howPages: [
+    {
+      title: 'Pick who you are',
+      body: 'One phone belongs to the person taking the medicines. The other belongs to whoever helps them. Each phone shows only what that person needs.',
+      art: 'role',
+    },
+    {
+      title: 'The helper sets things up',
+      body: 'The helper adds each medicine with a photo of the pill and the packet, what it is for, and the times of day it is taken.',
+      art: 'setup',
+    },
+    {
+      title: 'Follow the day',
+      body: 'The person taking the medicines sees one screen: Morning, Evening, Bedtime. Tap a time to see the medicines, tap a medicine to see the pill.',
+      art: 'today',
+    },
+    {
+      title: 'Fill the weekly box',
+      body: 'Once a week, whoever fills the plastic pill box is walked through it one medicine at a time. Filling the box never marks anything as taken.',
+      art: 'box',
+    },
+  ],
 
-  // ---- sign in (simple) --------------------------------------------------
-  signInTitle: 'Sign in',
-  signInIntro: 'One tap, no password to remember. We dont store or collect any of your data.',
-  signInGoogle: 'Sign in with Google',
+  // ---- sign in (elder) --------------------------------------------------
+  signInTitle: 'Sign in so your helper can reach you',
+  signInIntro: 'One sign-in keeps your medicine list safe and lets your helper add medicines from their own phone.',
+  signInGoogle: 'Continue with Google',
+  signInNote: 'No new password to remember.',
+  signInLoading: 'Signing you in…',
+  signInLoadingNote: 'Setting up your household and your sharing code.',
+  signInErrorTitle: 'Sign-in did not finish',
+  signInErrorBody: 'The connection dropped. Nothing was changed. You can try again.',
+  tryAgain: 'Try again',
 
-  // ---- pairing (supporter) -----------------------------------------------
-  pairTitle: 'Enter the code',
-  pairIntro: 'Ask the person you are helping for their code, from their Settings screen.',
-  pairCodeLabel: 'Code',
-  pairCodeRequired: 'Enter the code first.',
-  pairCodeInvalid: 'That code is not valid. Check it and try again.',
-  pairConnectionError: 'Could not connect. Check your internet connection and try again.',
+  // ---- organizer box question (both roles' Settings, and sign-in) -------
+  organizerQuestion: 'Do you use a pill organizer box?',
+  organizerQuestionNote: 'This decides whether "Fill the Organizer" shows up in the menu.',
+  organizerYes: 'Yes, I use one',
+  organizerYesHint: 'Show a weekly "Fill the Organizer" reminder.',
+  organizerNo: 'No',
+  organizerNoHint: 'Take medicines straight from their packets instead.',
+  settingsOrganizerSection: 'Pill organizer',
+  organizerRefreshTitle: 'Refresh to update your menu',
+  organizerRefreshBody: 'The "Fill the Organizer" tab will show this change once the page refreshes.',
+  organizerRefreshConfirm: 'Refresh now',
+  organizerRefreshLater: 'Later',
+
+  // ---- pairing (helper) -------------------------------------------------
+  pairKicker: 'Helper setup',
+  pairTitle: 'Enter the code from their phone',
+  pairIntro: 'Ask them to open Settings on their phone and read you the six-character code. No account needed for you.',
+  pairCodeLabel: 'Household code',
+  pairCodePlaceholder: '– – – – – –',
+  pairInvalidTitle: 'That code was not found',
+  pairInvalidBody: 'Codes are six characters, letters and numbers. Check it with them and try again — or ask them to make a new code in Settings.',
+  pairFailedTitle: 'Could not connect',
+  pairFailedBody: 'The code looks right but we could not reach the household. Check your internet and retry.',
+  pairConnecting: 'Connecting…',
+  pairDoneTitle: name => `Connected to ${name || 'their household'}`,
+  pairDoneBody: 'You can now add medicines, set times, and follow the day. Marking a dose will always say you are doing it on their behalf.',
   pairConnect: 'Connect',
+  pairGoToToday: 'Go to Today',
+  pairRetry: 'Retry',
+  /* The short form of pairFailedBody, for the places that report a failed
+   * code-gated call in one line: the medicine list, the form and Times of day
+   * all reach the same RPC and fail the same way. */
+  pairConnectionError: 'Could not connect. Check your internet and try again.',
 
   // ---- navigation -------------------------------------------------------
   navToday: 'Today',
   navCalendar: 'Calendar',
   navSettings: 'Settings',
   navMedicines: 'Medicines',
+  navFillTheBox: 'Fill the Organizer box',
+  navBox: 'Pill Organizer',
 
-  // ---- today ------------------------------------------------------------
-  todayNothing: 'No medicines yet',
-  todayNothingSimple: 'Ask your helper to add your medicines. They will appear here as soon as they do.',
-  todayNothingSupporter: 'Add a medicine to get started.',
-  // The elder's very first screen after signing in. Until a supporter has
-  // added something there is nothing to show, so the empty state carries the
-  // next step instead of describing the emptiness.
-  coldStartTitle: 'Almost ready',
-  // coldStartBody: 'Show this code to whoever is helping you. Once they enter it on their phone, your medicines will appear here on their own.',
-  // A second paragraph, not appended to coldStartBody above -- text: sets
-  // textContent, which cannot carry a line break, so this has to be its own
-  // element to land on its own line. See js/views/today.js.
-  coldStartCodeHint: "Click on the code to copy it or tap the WhatsApp icon to send it to whoever's helping you. They will add your medicines to their app and you will be able to see them here.",
-  coldStartCodeLabel: 'Your code',
-  coldStartWaiting: 'Nothing to do until then.',
+  // ---- elder Today (E1) -------------------------------------------------
+  todayFlag: 'Today',
+  welcomeElder: name => (name ? `Welcome, ${name}!` : 'Welcome!'),
+  offlineBanner: 'No internet — your taps are saved here.',
+  loadingToday: 'Getting today ready…',
+  emptyTitle: 'No medicines here yet',
+  emptyBody: 'Your helper adds your medicines from their own phone. Give them the code below and they can start.',
+  emptyCheckButton: 'Check if my medicines have been added',
+  emptyCheckChecking: 'Checking…',
+  emptyCheckNoneYet: 'Nothing yet — ask your helper to check they saved it.',
+  yourCode: 'Your code',
+  copyCode: 'Copy',
+  sendCode: 'Send it',
+  noneDueTitle: 'Nothing to take today',
+  noneDueBody: 'There are no medicines set for today. Your next one is on the next day something is due.',
+
+  // ---- elder's "See yesterday" (a read-only peek, not the helper's Calendar)
+  yesterdayButton: 'See yesterday',
+  yesterdayEyebrow: 'Yesterday',
+  yesterdayEmpty: 'Nothing was due yesterday.',
+
+  takeThese: 'You have not taken these yet',
+  takeThis: 'You have not taken it yet',
+  undoThese: 'You have already taken these',
+  undoThis: 'You have already taken it',
+  seeThePills: 'See the pills',
+
+  statusAllTaken: 'All taken',
+  statusAllDealtWith: n => `All dealt with · ${n} not taken`,
+  statusPartial: (done, total) => `${done} of ${total} dealt with`,
+  statusNotTakenYet: 'Not taken yet',
+  statusStillToCome: 'Still to come',
+  statusNotMarked: 'Not marked',
+
+  /* Medicine names collapse to one line. Two join with "and"; three or more
+   * become "{first} and N more". Never wraps, never clips mid-word.
+   *
+   * The length guard is the third rule, and it is not optional: two names can
+   * be long on their own -- "Atorvastatin and Latanoprost drops" is 33
+   * characters -- and joining them overflows the card at 21px on any phone,
+   * where the CSS ellipsis then cuts a word in half. Past the budget the pair
+   * takes the "and 1 more" form instead, which is exactly the handoff's own
+   * worked example. A character count rather than a measurement because this
+   * runs in a selector with no layout to ask, and 30 characters is the width
+   * of the narrowest card this app supports. */
+  medNamesSummary: names => {
+    if (!names.length) return '';
+    if (names.length === 1) return names[0];
+    if (names.length === 2) {
+      const pair = `${names[0]} and ${names[1]}`;
+      if (pair.length <= 30) return pair;
+    }
+    return `${names[0]} and ${names.length - 1} more`;
+  },
+
+  // ---- elder slot detail (E2) -------------------------------------------
+  backToToday: 'Today',
+  biggerPicture: 'Bigger picture and notes',
+  takeThisOne: 'You have not taken this yet',
+  undoNotTaken: 'You have already taken this',
+  leaveOutToday: 'Leave this one out today',
+  putBackOnList: 'Put it back on the list',
+  markAllOfSlot: (takeLabel, slot) => `${takeLabel} — all of ${slot}`,
+  undoAllOfSlot: (undoLabel, slot) => `${undoLabel} — all of ${slot}`,
+  stateTakenLabel: 'Taken',
+  stateSkippedLabel: 'Not taking today',
+  stateUnmarkedLabel: 'Not marked yet',
+  pillPhoto: 'The pill',
+  packetPhoto: 'The packet',
+  noPacketPhotoYet: 'No packet photo yet',
+  makeItBigger: 'Make it bigger',
+  whatItIsFor: 'What it is for',
+  notesLabel: 'Notes',
+  whenLabel: 'When',
+  formLabel: 'Form',
+  notTakingToday: 'Not taking this today',
+  undoNotTakenLong: 'You have already taken it',
+  putThisBack: 'Put this back on the list',
+
+  // ---- elder settings (E4) ----------------------------------------------
+  settingsTitle: 'Settings',
+  settingsYourAccount: 'Your account',
+  settingsCodeForHelper: 'Code for your helper',
+  settingsMakeNewCode: 'Make a new code…',
+  settingsRemindersSection: 'Reminders',
+  remindersOn: 'Reminders are on',
+  remindersOff: 'Reminders are off',
+  remindersBlocked: 'Reminders are not available',
+  remindersOnNote: 'Your phone will show a reminder at each medicine time.',
+  remindersOffNote: 'Turn them on and your phone will remind you at each medicine time.',
+  remindersBlockedNote: 'This phone has blocked notifications for CarePair. Allow them in your phone settings, then come back.',
+  remindersTurnOn: 'Turn reminders on',
+  remindersTurnOff: 'Turn reminders off',
+  remindersTest: 'Send me a test reminder',
+  remindersTestSent: 'Test reminder sent to this phone',
+  remindersTestFailed: 'Could not send the test reminder — check your internet',
+  remindersAllowTitle: 'Allow reminders?',
+  remindersAllowBody: 'Your phone will ask permission to show CarePair reminders. Choose Allow on the next message.',
+  remindersAllowConfirm: 'Ask my phone',
+  remindersNotNow: 'Not now',
+
+  settingsHowItLooks: 'How it looks',
+  themeSystem: 'Match system',
+  themeLight: 'Light',
+  themeDark: 'Dark',
+
+  settingsAboutSection: 'About',
+  aboutDisclaimer: 'CarePair helps you remember and recognise your medicines. It does not give medical advice. Ask your doctor or pharmacist about your medicines.',
+  aboutDisclaimerSupporter: 'CarePair records what you and the person you help tell it. It does not check doses, interactions or give medical advice.',
+  aboutBuild: version => `CarePair ${version}`,
+
+  settingsSignOutAction: 'Sign out…',
+  signOutTitle: 'Sign out of CarePair?',
+  signOutBody: 'Your medicines stay safe. You will need to sign in with Google again to see your day, and reminders will stop until you do.',
+  signOutConfirm: 'Sign out',
+  signOutCancel: 'Stay signed in',
+
+  rotateTitle: 'Make a new code?',
+  rotateBody: code => `Your current code ${code} stops working straight away. Anyone helping you now will be disconnected and will need the new code.`,
+  rotateConfirm: 'Make a new code',
+  rotateCancel: 'Keep this code',
+
+  // ---- share sheet ------------------------------------------------------
+  shareSheetTitle: 'Send your code to your helper',
+  shareWhatsapp: 'WhatsApp',
+  shareTextMessage: 'Text message',
+  shareCopyCode: 'Copy the code',
+
+  // ---- fill the box -----------------------------------------------------
+  fillTitle: 'Fill the box',
+  fillSubtitle: "Putting next week's pills into the plastic box.",
+  fillNotDoses: 'This only fills the plastic box. It does not mean you have taken anything.',
+  fillWeekLabel: 'Week',
+  fillChange: 'Change',
+  fillCompartmentsLabel: 'Compartments in the box',
+  fillCompartmentsNone: 'None chosen',
+  fillNoSlotsTitle: 'No compartments chosen yet',
+  fillNoSlotsBody: 'Choose at least one time of day that lives in the physical box — usually morning and bedtime.',
+  fillChooseCompartments: 'Choose compartments',
+  fillNothingTitle: 'Nothing to put in the box this week',
+  fillNothingBody: 'No medicine in the list falls on these days. Try another week, or ask the helper to check the medicine list.',
+  fillCount: n => `${n} ${n === 1 ? 'medicine goes' : 'medicines go'} in the box`,
+  fillCountNote: 'We will show them one at a time, with the pill photo.',
+  fillResumeTitle: 'You stopped part way',
+  fillResumeBody: (done, total) => `${done} of ${total} medicines were already put in the box.`,
+  fillCarryOn: 'Carry on',
+  fillStartAgain: 'Start again',
+  fillStart: 'Start filling the box',
+  fillOutsideButton: n => `${n} ${n === 1 ? 'medicine stays' : 'medicines stay'} outside the box — see them`,
+  fillOutsideTitle: 'These stay out of the box',
+  fillOutByForm: 'Taken from the packet, not the box',
+  fillOutBySlot: labels => `${labels.join(' and ')} — not in the box`,
+
+  fillProgress: (i, n) => `Medicine ${i} of ${n}`,
+  fillDoneCount: (done, total) => `${done} of ${total} put in the box`,
+  fillProgressNote: 'This is how far through the job you are, nothing else.',
+  fillWeekQty: text => `${text} for the whole week`,
+  fillHowManyEachDay: 'How many go in each day',
+  fillTapToEnlarge: 'Tap to enlarge',
+  fillInTheBox: 'It is in the box',
+  fillIsInTheBox: 'In the box',
+  fillUndo: 'Undo',
+  fillBack: 'Back',
+  fillNextMedicine: 'Next medicine',
+  fillCheckTheBox: 'Check the box',
+  fillPutIn: name => `${name} put in the box`,
+  fillUnmarked: name => `${name} unmarked`,
+  fillNoPhotos: 'No photos yet. Ask whoever adds the medicines to take one.',
+
+  fillCheckTitle: 'Check the box',
+  fillCheckBackToMedicines: 'Back to the medicines',
+  fillCheckIntro: 'Compare each compartment with the tray in front of you. We cannot see the tray, so the last word is yours.',
+  fillCheckTapHint: 'Tap a box to see which pills go in it. “–” means leave it empty.',
+  fillCheckDone: 'I have finished filling the box',
+  fillCheckToast: 'Box marked as prepared for this week',
+  fillCompartmentNote: 'This is what belongs in that compartment. Putting it there does not mark anything as taken.',
+  fillCompartmentEmpty: 'Nothing goes in this one.',
+
+  boxTimesTitle: 'Which compartments does the box have?',
+  boxTimesBody: 'Tick the times of day that exist as compartments in the plastic box.',
+  boxTimesKeepOne: 'Keep at least one time in the box',
   done: 'Done',
-  undo: 'Undo',
-  allTaken: 'All taken',
-  noPhoto: 'No photo',
-  // Passive marker on the slot whose time has most recently passed. It never
-  // reorders, hides or dims anything -- see docs/ui.md.
-  nowLabel: 'Now',
-  // Today only. Resets at midnight, never stored, and has no historical
-  // counterpart anywhere: orientation, not a score.
-  doneOfSlots: (done, total) => `${done} of ${total} done today`,
-  medicineCount: n => `${n} ${n === 1 ? 'medicine' : 'medicines'}`,
-  showMedicines: 'Show the medicines',
-  hideMedicines: 'Hide the medicines',
 
-  // Skipped is a recorded outcome, not a failure: amber, never red, and the
-  // word is never "Missed". See docs/ui.md.
-  skipped: 'Skipped',
-  allMarked: 'All marked',
-  skippedToast: name => `${name} marked as skipped`,
-  // The dose target cycles, so its label has to say what the NEXT tap does.
-  doseNotYet: name => `${name}: not marked. Tap to mark taken.`,
-  doseTaken: name => `${name}: taken. Tap to mark skipped.`,
-  doseSkipped: name => `${name}: skipped. Tap to clear.`,
-  // Read-only equivalents: the supporter's Today and the elder's frozen days.
-  stateTaken: name => `${name}: taken`,
-  stateSkipped: name => `${name}: skipped`,
-  stateUnmarked: name => `${name}: not marked`,
-
-  // Supporter's Today. Their copy is polled, not live -- saying so is the
-  // difference between "nothing new" and "we stopped being able to check".
-  updatedJustNow: 'Updated just now',
-  updatedAgo: mins => `Updated ${mins} minute${mins === 1 ? '' : 's'} ago`,
-  /* Shown on the supporter's Today only when their phone's date differs from
-   * the household's. The screen is deliberately showing a date that is not
-   * theirs, and a date that silently disagrees with the phone it is on is the
-   * kind of thing someone only questions at the worst moment. */
-  theirDay: place => `Their day in ${place}, which is not the same date as yours.`,
-  updatedNever: 'Could not check for updates',
-
-  // Marking a dose for the person you are helping. Asked once per session,
-  // and every row it writes records that the supporter wrote it.
-  markOnBehalfTitle: 'Mark for them?',
-  markOnBehalfBody: 'This records the dose on their phone too, and their screen will show that you marked it rather than them. You will not be asked again while the app is open.',
-  markOnBehalfConfirm: 'Yes, mark for them',
-  markedByHelper: 'Marked by your helper',
-
-  // The supporter's nudge. Replaces phoning to ask "have you taken them?".
+  // ---- supporter Today --------------------------------------------------
+  helpingWhom: name => (name ? `Helping ${name}` : 'Helping'),
   nudge: 'Send a reminder',
-  nudgeHint: 'Their phone will buzz. It does not say which medicine.',
-  nudgeSent: 'Reminder sent',
+  nudgeSent: 'Reminder sent to their phone',
   nudgeWait: mins => `Already sent. You can send another in ${mins} minute${mins === 1 ? '' : 's'}.`,
   nudgeNoSubscription: 'They have not turned reminders on yet, so nothing was sent.',
-  /* Distinct from "sent". The edge function reports a delivery that reached
-   * nobody, and reporting that as success is exactly the failure this button
-   * exists to remove -- the supporter would sit waiting on a buzz that never
-   * happened. */
   nudgeFailed: 'The reminder could not be delivered. Their phone may be switched off.',
-  // Shown once at the top of the day rather than on every card: with six
-  // medicines in a slot, six copies of the same hint is noise. Only rendered
-  // once there is at least one medicine -- see js/views/today.js.
-  tapForPhoto: 'Tap a medicine to see its photo.',
-  tapDoseHint: 'Tap the circle to mark a dose. Tap again to change it.',
-  todayAllMarked: 'Everything for today is marked.',
-  syncPending: 'Saved on this phone. It will sync when you are back online.',
-  closePhoto: 'Close',
-  seePhotoFull: 'Tap the photo to see it full screen',
+
+  checkNow: 'Check now',
+  updatedJustNow: 'Updated just now',
+  updatedAgo: mins => `Updated ${mins} minute${mins === 1 ? '' : 's'} ago`,
+  updatedNever: 'Not checked yet',
+  dateDiffNotice: (yours, theirs) =>
+    `Your phone says ${yours}, but their day is still ${theirs}. You are looking at their day.`,
+  syncFailTitle: 'Could not get the latest',
+  syncFailBody: 'You are seeing what was saved earlier. Marks you make now are saved and sent when the connection is back.',
+  syncFailBodyAged: when => `You are seeing what was saved ${when}. Marks you make now are saved and sent when the connection is back.`,
+  onBehalfChip: name => `Marking on ${name ? `${name}'s` : 'their'} behalf this session`,
+
+  slotOpen: 'Open',
+  slotHide: 'Hide',
+  slotCount: n => `${n} ${n === 1 ? 'medicine' : 'medicines'}`,
+  markTaken: 'Mark taken',
+  clearMark: 'Clear',
+  markWholeSlot: 'Mark the whole slot',
+  undoWholeSlot: 'Undo the whole slot',
+
+  markOnBehalfTitle: name => `Mark this for ${name || 'them'}?`,
+  markOnBehalfBody: 'You are recording this on their behalf. It will show on their phone as already dealt with. We will not ask again while you are in the app.',
+  markOnBehalfConfirm: 'Yes, mark on their behalf',
+  markOnBehalfCancel: 'Not now',
+  markAllOnBehalfTitle: (slot, name) => `Mark all of ${slot.toLowerCase()} for ${name || 'them'}?`,
+  markAllOnBehalfBody: n => `You are recording ${n} ${n === 1 ? 'medicine' : 'medicines'} on their behalf. We will not ask again while you are in the app.`,
+  markedByHelper: 'Marked by your helper',
 
   // ---- calendar ---------------------------------------------------------
-  calendarTitle: 'Calendar',
-  monthPickerTitle: 'Go to month',
+  monthPickerTitle: 'Jump to a month',
+  calLoading: 'Loading the record…',
+  calErrorTitle: 'The record could not be loaded',
+  calErrorBody: 'Nothing was lost. This is a reading problem, not a saving problem.',
+  calEmptyTitle: 'Nothing recorded yet',
+  calEmptyBody: 'Once medicines are added and the first day is marked, it will appear here. Days stay readable forever; recent days can still be corrected.',
+  calAddFirst: 'Add the first medicine',
+  calLegendTitle: 'What the marks mean',
+  calLegendLine1: '✓ every medicine dealt with · ○ something still unmarked · — something not taken · · nothing was due',
+  calLegendLine2: '▣ before the mark = a read-only record, no longer editable · plain with no mark = a future day, not markable',
+  calLegendLine3: 'No scores, no streaks — just what happened.',
   today: 'Today',
-  notYet: 'Not yet',
-  notYetBody: 'This day has not arrived. You can mark medicines on the day itself.',
-  lockedBody: 'This day is from before your last update, so it is kept as a record and cannot be changed.',
-  dayNothing: 'No medicines were due on this day.',
+  lockedBody: 'Kept as a record. Older days cannot be changed — you can still read everything and open the medicines.',
+  futureBody: 'This day has not happened yet. You can see what is planned, but nothing can be marked.',
+  editableBody: 'You can still correct this day.',
+  dayNothing: 'No medicines were due',
+  dayNothingBody: 'Nothing was scheduled on this day, so there is nothing to mark.',
+  dayChange: 'Change',
   ofDoses: (taken, expected) => `${taken} of ${expected} taken`,
   ofSkipped: n => `${n} skipped`,
-  someSkipped: 'Some skipped',
-  nothingMarked: 'Nothing marked',
   weekdayShort: ['S', 'M', 'T', 'W', 'T', 'F', 'S'],
+  weekdayShort3: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
   monthNames: ['January', 'February', 'March', 'April', 'May', 'June', 'July',
     'August', 'September', 'October', 'November', 'December'],
 
   // ---- medicines (supporter) -------------------------------------------
   medicinesTitle: 'Medicines',
-  addMedicine: 'Add a medicine',
+  addMedicine: 'Add medicine',
+  addFirstMedicine: 'Add the first medicine',
   editMedicine: 'Edit medicine',
-  newMedicine: 'New medicine',
+  newMedicine: 'Add medicine',
+  medsLoading: 'Loading medicines…',
+  medicinesEmpty: 'No medicines yet',
+  medicinesEmptyBody: 'Add the first medicine with a photo of the pill and the packet. Their Today screen stays empty until then, and it tells them you are setting things up.',
   showArchived: 'Show archived',
   hideArchived: 'Hide archived',
   archived: 'Archived',
   archive: 'Archive',
+  archiveEllipsis: 'Archive this medicine…',
   unarchive: 'Restore',
-  archiveConfirm: name =>
-    `Archive ${name}? It stops appearing on the Today screen. The record of doses already taken is kept.`,
-  medicinesEmpty: 'No medicines yet.',
+  archiveTitle: name => `Archive ${name}?`,
+  archiveBody: 'It disappears from Today and from the pill box, but the past record stays in the calendar. You can restore it at any time.',
+  archiveKeep: 'Keep it',
+  archivedToast: name => `${name} archived`,
+  restoredToast: name => `${name} restored`,
+  archivedNote: 'Archived medicines stay out of Today and out of the pill box, but their past record is kept.',
+  photoStateBoth: 'Pill + packet photo',
+  photoStatePill: 'Pill photo only',
+  photoStatePacket: 'Packet photo only',
+  photoStateNone: 'No photos yet',
 
   // ---- medicine form ---------------------------------------------------
+  formSectionWhat: 'What it is',
+  formSectionPhotos: 'Photos',
+  formSectionWhen: 'When they take it',
   fieldName: 'Name',
-  fieldNamePlaceholder: 'e.g. Augmentin 625',
+  fieldNamePlaceholder: 'As written on the packet',
   fieldStrength: 'Strength',
-  fieldStrengthPlaceholder: 'e.g. 625 mg',
-  fieldDosage: 'How much to take',
+  fieldStrengthPlaceholder: 'e.g. 500 mg',
+  fieldDosage: 'How many',
   fieldDosageHint: 'A number. The unit comes from the form below.',
-  fieldPurpose: 'What it is for',
-  fieldPurposePlaceholder: 'e.g. for blood pressure',
-  /* Short on purpose, and the hint says why. This line is read by whoever is
-   * filling the weekly organiser, holding a box they did not buy. It is not
-   * somewhere to write instructions -- those go in Notes -- and it is
-   * certainly not somewhere to write advice. */
+  fieldPurpose: 'What it is for (they see this)',
+  fieldPurposePlaceholder: 'e.g. Blood pressure',
   purposeHint: 'One short line, for whoever fills the pill box.',
   fieldForm: 'Form',
   fieldNotes: 'Notes',
   fieldNotesPlaceholder: 'e.g. take with food',
-  fieldPhoto: 'Photo of the pill',
-  fieldPacketPhoto: 'Photo of the packet',
+  notesHint: 'Write only what helps them take it. CarePair does not check doses or interactions.',
+  fieldPhoto: 'Pill photo',
+  fieldPacketPhoto: 'Packet photo',
   takePhoto: 'Add a photo',
+  addPacketPhoto: 'Add packet photo',
   photoGuidance: 'Use a close, well-lit photo of the actual pill.',
-  retakePhoto: 'Change photo',
   removePhoto: 'Remove photo',
-  photoOptional: 'A clear photo of the actual pill makes it much easier to identify when filling the pill box.',
-  packetPhotoOptional: 'Optional. Helps whoever is filling the pill box find the right box.',
-  noPacketPhoto: 'No packet photo',
+  noPacketPhoto: 'No packet photo yet',
+  photoUploading: 'Uploading…',
+  photoFailedTitle: 'Photo failed',
+  formErrorsTitle: n => `${n === 1 ? 'One thing needs' : `${n} things need`} fixing before this can be saved`,
   forms: {
     tablet: 'Tablet', capsule: 'Capsule', liquid: 'Liquid', drops: 'Drops',
     injection: 'Injection', inhaler: 'Inhaler', other: 'Other',
   },
 
-  /* The unit a dose is counted in, per form. "How much to take" is a number
-   * now (migration 0011), and the noun comes from here rather than from what
-   * someone typed -- which is what makes it translatable and countable at the
-   * same time. Singular first, plural second. */
   doseUnits: {
     tablet: ['tablet', 'tablets'],
     capsule: ['capsule', 'capsules'],
@@ -216,225 +438,132 @@ export const S = {
     inhaler: ['puff', 'puffs'],
     other: ['dose', 'doses'],
   },
-  /* Quarters and halves are real -- plenty of tablets are scored -- and "0.5
-   * tablets" is not how anyone says it. Anything else falls back to the
-   * decimal, which is honest rather than pretty. */
-  doseFractions: { 0.25: '\u00bc', 0.5: '\u00bd', 0.75: '\u00be' },
+  doseFractions: { 0.25: '¼', 0.5: '½', 0.75: '¾' },
 
-  schedulesHeading: 'When to take it',
-  addSchedule: 'Add a time',
+  addSchedule: 'Add another time',
   removeSchedule: 'Remove',
   scheduleSlot: 'Time of day',
-  scheduleTime: 'At',
-  scheduleTimeDefault: slotTime => `Slot default (${slotTime})`,
-  /* Shown when a medicine is given its own time inside a slot. Marking is
-   * keyed on the slot, so it is still marked together with everything else in
-   * it -- that is a real constraint, and the form has to say so rather than
-   * let someone discover it on the Today screen. */
+  scheduleTime: 'Exact time (optional)',
+  scheduleTimeDefault: slotTime => `Uses the slot time (${slotTime})`,
   scheduleTimeOverride: (label, slotTime) =>
     `Due at its own time, but still marked together with the rest of ${label} (${slotTime}).`,
-  scheduleTimeAddSlot: 'For a very different time, add a time of day',
+  scheduleTimeAddSlot: 'The time of day I need is not in the list',
   scheduleFrequency: 'How often',
   freqDaily: 'Every day',
   freqEveryNDays: 'Every few days',
-  freqWeekly: 'Certain days of the week',
+  freqWeekly: 'Certain weekdays',
   freqInterval: 'Every',
   freqIntervalUnit: 'days',
-  freqAnchor: 'Starting from',
+  freqAnchor: 'Starting date',
   freqDaysOfWeek: 'On these days',
   weekdayNames: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
 
   save: 'Save',
-  saving: 'Saving',
+  saving: 'Saving…',
   saved: 'Saved',
+  savedMedicineToast: name => `${name} saved`,
 
-  /* Saving a medicine is the slowest thing in the app -- the medicine, its
-   * schedule, a photo upload and a cache refresh, one after the other. The
-   * step is named rather than a bare spinner, because the photo is usually
-   * the long part and a screen that has said nothing for six seconds looks
-   * stuck rather than busy. */
   busyAddingMedicine: 'Adding the medicine',
   busySavingChanges: 'Saving the changes',
   busyUploadingPhoto: 'Uploading the photo',
-  busyRemovingPhoto: 'Removing the old photo in community library',
+  busyRemovingPhoto: 'Removing the old photo',
   busyFinishing: 'Nearly done',
   busyHint: 'This can take a moment on a slow connection.',
   cancel: 'Cancel',
   back: 'Back',
   close: 'Close',
   confirm: 'Confirm',
+  keepIt: 'Keep it',
 
-  errNameRequired: 'Give the medicine a name.',
-  errDosageRequired: 'Say how much to take, as a number.',
-  errNoSchedule: 'Add at least one time. A medicine with no time set would never appear on the Today screen.',
-  errAnchorRequired: 'Choose the date to count from.',
-  errDaysRequired: 'Pick at least one day of the week.',
+  errNameRequired: 'A name is needed — this is what they will read.',
+  errDosageRequired: 'The dose must be a number above zero.',
+  errNoSchedule: 'At least one time is needed. A medicine with no time set would never appear on the Today screen.',
+  errAnchorRequired: 'Choose the day it starts from, otherwise we cannot work out which days it falls on.',
+  errDaysRequired: 'Pick at least one weekday.',
   errPhotoFailed: 'That photo could not be read. Try taking it again.',
   savedMedicine: 'Saved',
-  // Shown instead of the generic error when the medicine and its schedule
-  // saved fine but the photo step itself failed -- see js/views/medicine-form.js.
-  savedMedicineNoPhoto: 'Saved, but the photo could not be uploaded. Try adding it again from the medicine\u2019s page.',
+  savedMedicineNoPhoto: 'Saved, but the photo could not be uploaded. Try adding it again from the medicine’s page.',
 
-  // ---- pill box --------------------------------------------------------
-  settingsPillBox: 'Pill box',
-  /* Says what the choice is FOR. Someone opening this section has a plastic
-   * tray in front of them, not a data model. */
-  pillBoxIntro: 'Which times of day go in the weekly box. Anything else is taken from its packet on the day.',
-  /* Ties the setting back to the object on the table: two ticked is the 7 x 2
-   * tray most people own, and seeing "7 x 2" is how you know you got it
-   * right without counting the chips. */
-  pillBoxShape: n => `That is a 7 \u00d7 ${n} box \u2014 seven days, ${n} ${n === 1 ? 'compartment' : 'compartments'} a day.`,
-  pillBoxNone: 'Nothing goes in a box, so filling one is not offered.',
-  pillBoxNoSlots: 'No times of day are set up yet.',
-
-  // ---- organiser -------------------------------------------------------
-  organiserTitle: 'Fill the pill box',
-  organiserOpen: 'Fill the pill box',
-  /* The entry card on Today. Says what the job is, not what the screen is
-   * called -- someone looking at Today is not looking for a feature. */
-  organiserCardBody: 'One medicine at a time, so each box is only opened once.',
-  organiserResume: n => `Carry on \u2014 ${n} left`,
-  organiserSettingsHint: 'Work through the week one medicine at a time.',
-  organiserWeekLabel: 'Week beginning',
-  organiserWeekHint: 'Seven days from this date.',
-  organiserCount: n => `${n} ${n === 1 ? 'medicine goes' : 'medicines go'} in the box.`,
-  organiserStart: 'Start',
-  organiserStartOver: 'Start a different week',
-  organiserStep: (i, n) => `${i} of ${n}`,
-  organiserTakeOut: 'Take out',
-  organiserNext: 'Next',
-  organiserBack: 'Back',
-  organiserFinish: 'Finish',
-  organiserDone: 'The box is filled.',
-  organiserFilled: 'Filled',
-  organiserMarkFilled: 'Mark as filled',
-  organiserUnfill: 'Not filled yet',
-  /* Two reasons, two sentences. A syrup cannot go in a tray at all; a tablet
-   * in an unticked time of day is out because of how this box is shaped, and
-   * that is a setting the person can go and change. */
-  organiserOutHeading: 'These stay out of the box',
-  organiserOutByForm: 'Taken from the packet',
-  organiserOutBySlot: labels => `${labels.join(' and ')} \u2014 not in the box`,
-  organiserNoBoxSlots: 'No times of day go in the pill box yet.',
-  organiserNoBoxSlotsHint: 'Choose them in Settings, under Pill box for this function to work properly..',
-  organiserNothing: 'Nothing goes in the box this week.',
-  organiserNothingHint: 'Everything due is taken from its packet.',
-  /* Said once, on the start screen. Filling a tray is not taking a medicine,
-   * and someone who thinks this screen marks doses would stop marking them. */
-  organiserNotDoses: 'This does not mark anything as taken. It is only for filling the box.',
-  /* Captions under the two photos on a step. Both are shown when both exist,
-   * because they answer different questions -- which tablet, and which box --
-   * and someone filling a tray asks both within a few seconds of each other. */
-  organiserPhotoPill: 'The pill',
-  organiserPhotoPacket: 'The packet',
-  organiserNoPhotos: 'No photos yet. Ask whoever adds the medicines to take one.',
-
-  // ---- the check screen ------------------------------------------------
-  organiserCheckTitle: 'Check the box',
-  /* The app cannot see the tray, so it must not claim the tray is right. It
-   * shows what should be in each compartment; the person compares. */
-  organiserCheckIntro: 'What should now be in each compartment. Count them against the tray.',
-  organiserCheckTap: 'Tap a compartment to see what belongs in it.',
-  organiserCheckDone: 'Done',
-  organiserCompartment: (label, date) => `${label}, ${date}`,
-  organiserCompartmentEmpty: 'Nothing goes in this one.',
-  organiserTotalForWeek: 'Whole week',
-
-  // ---- slots -----------------------------------------------------------
+  // ---- times of day (supporter) ----------------------------------------
   slotsTitle: 'Times of day',
-  slotsIntro: 'These are the default times. A single medicine can be given its own time.',
+  slotsIntro: 'These are the words they see on their Today screen, and the compartments in the pill box. Keep them few and obvious.',
   slotLabel: 'Name',
   slotTime: 'Time',
   addSlot: 'Add a time of day',
   removeSlot: 'Remove',
-  slotRemoveConfirm: (label, n) => n === 0
-    ? `Remove ${label}?`
-    : `Remove ${label}? ${n} medicine ${n === 1 ? 'time' : 'times'} using it will stop appearing. The record of doses already taken is kept.`,
+  slotKeepOne: 'At least one time of day must stay.',
+  slotUses: n => (n === 0
+    ? 'Not used by any medicine'
+    : `${n} ${n === 1 ? 'medicine uses' : 'medicines use'} this`),
+  slotRemoveTitle: label => `Remove ${label}?`,
+  slotRemoveBody: (label, n) => (n
+    ? `${n} medicine ${n === 1 ? 'schedule uses' : 'schedules use'} ${label}. They will need a new time of day before they appear on Today again.`
+    : `No medicines use ${label}, so nothing else changes.`),
+  slotRemoveConfirm: label => `Remove ${label}`,
+  slotRemovedToast: label => `${label} removed`,
+  slotAddedToast: 'Time of day added',
+  slotsSavedToast: 'Times of day saved',
   errSlotLabel: 'Give this time of day a name.',
 
-  // ---- settings --------------------------------------------------------
-  settingsTitle: 'Settings',
-  settingsSlots: 'Times of day',
-  settingsVersion: 'App version',
-  settingsAppearance: 'Appearance',
-  settingsAppearanceHint: 'Dark colours are easier at night, when the last medicines are usually due.',
-  themeSystem: 'Match my phone',
-  themeLight: 'Light',
-  themeDark: 'Dark',
-  settingsAbout: 'About',
-  settingsStorage: 'Storage',
-  storagePersisted: 'This phone has been asked to keep your data safely.',
-  storageNotPersisted: 'Keep a saved copy of your information, just in case.',
-
-  settingsAccount: 'Account',
-  settingsSignedInAs: 'Signed in as',
-  settingsShareCode: 'Your code',
-  settingsShareCodeHint: "Tap to copy, or tap the WhatsApp icon to send it to whoever's helping you.",
-  codeCopied: 'Code copied',
-  shareCodeWhatsapp: 'Send your code on WhatsApp',
-  shareCodeMessage: code => `Here's my CarePair code: ${code}. Enter it in the app to help me with my medicines.`,
-  settingsRotateCode: 'Get a new code',
-  settingsRotateCodeHint: 'Anyone using the old code loses access.',
-  settingsRotateCodeConfirm: 'Anyone using your current code will no longer be able to update your medicines. Continue?',
-  settingsRotateCodeDone: 'New code ready',
-  settingsSignOut: 'Sign out',
-  settingsSignOutConfirm: 'You can sign back in with the same Google account any time.',
-
+  // ---- supporter settings ----------------------------------------------
   settingsConnection: 'Connection',
-  settingsConnectedTo: 'Connected to',
-  settingsDisconnect: 'Disconnect this device',
-  settingsDisconnectHint: 'You can reconnect any time with the code.',
-  settingsDisconnectConfirm: 'This device will stop being able to update this household’s medicines until reconnected with a code.',
+  settingsConnectedTo: name => (name ? `${name}\u2019s household` : 'Their household'),
+  settingsConnectedWith: code => `Connected with code ${code}.`,
+  settingsDisconnect: 'Disconnect…',
+  settingsDisconnectTitle: name => `Disconnect from ${name ? `${name}'s` : 'this'} household?`,
+  settingsDisconnectBody: 'You will stop seeing their medicines and stop getting alerts. Their medicines and history are not deleted. You would need their code again to reconnect.',
+  settingsDisconnectConfirm: 'Disconnect',
+  settingsDisconnectCancel: 'Stay connected',
 
-  settingsNotifications: 'Reminders',
-  notificationsHint: 'A gentle reminder when it is time for medicines that have not been marked done.',
-  notificationsTestLabel: 'Test a reminder',
-  notificationsTestHint: 'Send a quiet test notification to this phone now.',
-  notificationsTestButton: 'Send test',
-  notificationsTesting: 'Sending',
-  notificationsTestSent: 'Test reminder sent. Check your notifications.',
-  notificationsOffLabel: 'Reminders are off',
-  notificationsOnLabel: 'Reminders are on',
-  notificationsTurnOn: 'Turn on',
-  notificationsTurnOff: 'Turn off',
-  /* Third state, not a second. Reporting "off" when the check itself failed is
-   * how a household ran for weeks believing reminders were on -- a switch that
-   * cannot be wrong is worse than one that admits it does not know. */
-  notificationsUnknownLabel: 'Reminders could not be checked',
-  notificationsUnknownHint: 'This usually means the app has not finished starting up. Turning them on again is safe.',
+  settingsYourAlerts: 'Your alerts',
+  settingsHousehold: 'Household',
+  settingsAppearance: 'Appearance',
+  supporterNotificationsLabel: 'Tell me if a medicine is not marked',
+  supporterNotificationsHint: 'Only for medicines that were due — never a summary or a score.',
+  supporterNotificationsChange: 'Change',
+  supporterNotificationsOn: 'On',
+  supporterNotificationsOff: 'Off',
+  supporterNotificationsUnknown: 'Could not check',
+  escalationDelayLabel: 'How long to wait first',
+  escalationDelay30m: '30 minutes',
+  escalationDelay1h: '1 hour',
+  escalationDelay2h: '2 hours',
+  escalationDelay3h: '3 hours',
 
-  // ---- supporter notifications -------------------------------------------
-  settingsSupporterNotifications: 'Check-in alerts',
-  supporterNotificationsHint: "We'll nudge you if something's still unmarked a while after it was due.",
-  supporterNotificationsOffLabel: 'Check-in alerts are off',
-  supporterNotificationsOnLabel: 'Check-in alerts are on',
-  supporterNotificationsUnknownLabel: 'Notifications could not be checked',
-  supporterNotificationsUnknownHint: 'This usually means the app has not finished starting up. Turning them on again is safe.',
-  supporterNotificationsTurnOn: 'Turn on',
-  supporterNotificationsTurnOff: 'Turn off',
-  escalationDelayLabel: "Nudge me if it's still unmarked...",
-  escalationDelay30m: "30 minutes after it's due",
-  escalationDelay1h: "1 hour after it's due",
-  escalationDelay2h: "2 hours after it's due",
-  escalationDelay3h: "3 hours after it's due",
-
-  communityUsing: 'Using a community reference. Check it matches the packet you have.',
-  communityNoPhotos: 'No reference photos yet.',
-  communitySearchHint: 'Community references',
-  communitySearchPhotos: count => count === 2 ? '2 reference photos' : count === 1 ? '1 reference photo' : 'No reference photos',
-  communitySearchFailed: 'Community references are unavailable right now.',
-  communitySuggestPhoto: 'Suggest this as a better community photo',
-  communitySuggestConfirm: 'This photo will be reviewed. Everyone keeps seeing the current community photo unless it is approved.',
-  communitySuggestSent: 'Photo suggestion sent for review.',
-  communityAdded: 'Added to community references.',
+  // ---- community -------------------------------------------------------
+  communityTitle: 'Shared medicine list',
+  communityLookUp: 'Look it up in the shared list',
+  communityLookUpHint: 'Optional. It only ever fills in the name, strength and photos — you can ignore it and type everything yourself.',
+  communityUse: 'Use',
+  communityNoThanks: 'No thanks, I will type it myself',
+  communityExplain: 'Using an entry only fills in the name, strength and photos. You still choose the dose, the purpose and the times — and you can change anything afterwards.',
+  communityUsing: 'Using a shared reference. Check it matches the packet you have.',
+  communitySearchPhotos: count => (count === 2 ? 'pill and packet photo' : count === 1 ? 'pill photo only' : 'no photos'),
+  communitySearchFailed: 'The shared list is unavailable right now.',
+  communitySuggestPhoto: 'Share with others',
+  communitySuggestTitle: 'Suggest this photo to others?',
+  communitySuggestBody: 'Your photo replaces the shared one for everyone who uses it. No other information is shared.',
+  communitySuggestConfirm: 'Suggest photo',
+  communitySuggestCancel: 'Keep it private',
+  communitySuggestSent: 'Photo suggested — thank you',
+  communityAdded: 'Added to the shared list.',
   communityDuplicate: 'A matching reference already exists. Choose it from the suggestions above.',
-  communityPhotosAdded: count => count === 1 ? '1 missing community photo added.' : count > 1 ? count + ' missing community photos added.' : '',
-  communityReviewNeeded: 'The existing community photo was sent for review; your photo remains private.',
-  communityShareLabel: 'Share missing photos and photo improvements with the community',
-  communityShareHint: 'Name and strength are shared with the photo. Your schedule, notes and personal details are never shared.',
+  communityPhotosAdded: count => (count === 1 ? '1 missing shared photo added.' : count > 1 ? `${count} missing shared photos added.` : ''),
+  communityReviewNeeded: 'The existing shared photo was sent for review; your photo remains private.',
+  communityShareLabel: 'Share missing photos with the shared list',
+  communityShareHint: 'Name and strength are shared with the photo. The schedule, notes and personal details are never shared.',
+  communityFilled: 'Name, strength and photos filled in',
+
+  // ---- share code ------------------------------------------------------
+  codeCopied: 'Code copied',
+  shareCodeMessage: code => `Here's my CarePair code: ${code}. Enter it in the app to help me with my medicines.`,
 
   // ---- misc ------------------------------------------------------------
   loading: 'Loading',
+  noPhoto: 'No photo',
+  closePhoto: 'Close',
   errGeneric: 'Something went wrong.',
   errRetry: 'Close the app and open it again. Nothing you have recorded is lost.',
+  settingsAbout: 'About',
+  settingsSignOut: 'Sign out',
 };

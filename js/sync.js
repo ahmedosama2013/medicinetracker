@@ -87,14 +87,30 @@ async function cachedRoutineSignature() {
  * at this data volume (a handful of medicines per household).
  *
  * Returns whether the cache actually changed, so the caller can decide about
- * redrawing. */
-async function refetchRoutine(householdId) {
+ * redrawing.
+ *
+ * Exported for js/views/today.js's cold-start screen: Realtime is supposed to
+ * make this unnecessary, but a household's first medicine can land while the
+ * elder's phone was asleep or its socket had dropped, and the empty screen
+ * gave them no way to ask again except leaving the app and coming back. One
+ * button calling this directly is simpler than debugging why a given phone's
+ * subscription missed an event. */
+export async function refetchRoutine(householdId) {
   const client = supabase();
   const [medsRes, schedRes, slotsRes] = await Promise.all([
     client.from('medicines').select('*, community_medicine_references(name, strength, pill_photo_path, packet_photo_path)').eq('household_id', householdId),
     client.from('schedules').select('*').eq('household_id', householdId).eq('active', true),
     client.from('slots').select('*').eq('household_id', householdId).eq('archived', false),
   ]);
+
+  /* supabase-js resolves rather than throws on a failed request -- a 401 from
+   * an expired session, a 500, an RLS mismatch -- so `.data` comes back `null`
+   * exactly like a genuinely empty table would. Falling through to the `|| []`
+   * below on an error would replace the cache with nothing, and to the person
+   * holding the phone that reads as every medicine, schedule and slot having
+   * just been deleted. Bail out and leave the cache as it was; the next good
+   * sync (Realtime reconnect, visibility change, boot) repairs it. */
+  if (medsRes.error || schedRes.error || slotsRes.error) return false;
 
   const previous = await store.getMedicines();
   const previousPaths = new Map(previous.map(m => [m.id, m]));
@@ -174,6 +190,18 @@ async function pullHistoryRange(householdId, from, to) {
     client.from('day_snapshots').select('*').eq('household_id', householdId)
       .gte('local_date', from).lte('local_date', to),
   ]);
+  /* This only merges rows in, it never replaces the cache -- so unlike
+   * refetchRoutine a failed request here cannot delete anything. But `.data`
+   * on an error is `null` same as a genuinely empty range, and treating the
+   * two alike would still misreport: refetchHistory diffs the returned rows
+   * against the cache to decide whether to redraw, so an error read as "zero
+   * rows" would announce a real backfill as "nothing changed"; and
+   * ensureHistoryRange marks a range as fetched right after this returns, so
+   * an error read as success would leave a month's dose history permanently
+   * unfetched for the rest of the session. Throwing instead lets both callers
+   * use their existing failure handling (ensureHistoryRange's caller already
+   * catches; refetchHistory's callers already `.catch(() => false)`). */
+  if (doseRes.error || snapRes.error) throw doseRes.error || snapRes.error;
   const rows = (doseRes.data || []).map(mapDose);
   await store.putDoseLogRows(rows);
   await store.putSnapshots((snapRes.data || []).map(mapSnapshot));
@@ -217,15 +245,17 @@ async function refetchHistory(householdId) {
 }
 
 async function refetchHouseholdMeta(householdId) {
-  const { data } = await supabase().from('households').select('locked_through, timezone').eq('id', householdId).single();
+  const { data } = await supabase().from('households').select('locked_through, timezone, uses_organizer').eq('id', householdId).single();
   if (!data) return false;
   const before = await store.getSettings();
-  await store.saveSettings({ lockedThrough: data.locked_through, timezone: data.timezone });
+  await store.saveSettings({ lockedThrough: data.locked_through, timezone: data.timezone, usesOrganizer: data.uses_organizer });
   setTimezone(data.timezone);
   // The lock line moves once a night, and moving it changes which past days
   // the calendar will still accept a correction on -- so it is worth a redraw,
-  // and only then.
-  return before.lockedThrough !== data.locked_through;
+  // and only then. usesOrganizer changing is worth one too: it decides whether
+  // the "Fill the Organizer" tab is even there, and the supporter may have
+  // just flipped it from their own phone.
+  return before.lockedThrough !== data.locked_through || before.usesOrganizer !== data.uses_organizer;
 }
 
 /* Reads straight out of storage, whichever bucket the photo lives in.
@@ -389,7 +419,12 @@ export function startRealtime(householdId) {
     .on('postgres_changes', { event: '*', schema: 'public', table: 'day_snapshots', filter: `household_id=eq.${householdId}` },
       payload => handleSnapshotChange(payload).then(scheduleRefresh))
     .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'households', filter: `id=eq.${householdId}` },
-      () => refetchHouseholdMeta(householdId).then(scheduleRefresh))
+      /* Same echo rule as the routine tables just above: the elder's own
+       * Settings can now write to this row (uses_organizer), and without the
+       * isLocalEcho check the write's own Realtime echo re-ran Settings from
+       * a blank loadingState() a moment after the person tapped it -- the
+       * screen had already updated itself, so the redraw was pure loss. */
+      () => refetchHouseholdMeta(householdId).then(changed => { if (changed && !isLocalEcho(householdId)) scheduleRefresh(); }))
     .subscribe(status => {
       if (status !== 'SUBSCRIBED') return;
       if (!subscribedBefore) { subscribedBefore = true; return; }
@@ -472,19 +507,6 @@ const doseKey = (date, slotId, medicineId) => `dose:${date}:${slotId}:${medicine
 let flushing = null;
 let flushDirty = false;
 
-/* Dose taps are local-first. This tiny event lets Today say so honestly without
- * redrawing the day or making the person wait for a network round trip. */
-async function emitOutboxStatus() {
-  const pending = (await store.getOutbox()).length;
-  window.dispatchEvent(new CustomEvent('medtrack-outbox-change', {
-    detail: { pending, online: navigator.onLine },
-  }));
-}
-
-export async function outboxStatus() {
-  return { pending: (await store.getOutbox()).length, online: navigator.onLine };
-}
-
 function flushOutbox() {
   if (flushing) {
     // Something was queued after this flush read the outbox. Go round again
@@ -530,7 +552,6 @@ async function drainOutbox() {
           .eq('slot_id', item.payload.slot_id);
       }
       await store.deleteOutboxItem(item.id);
-      await emitOutboxStatus();
     } catch {
       // Stays queued. A real rejection (e.g. writing into a locked day) looks
       // the same as "offline" here -- both just retry on the next flush.
@@ -538,8 +559,7 @@ async function drainOutbox() {
   }
 }
 
-window.addEventListener('online', () => { emitOutboxStatus(); flushOutbox(); });
-window.addEventListener('offline', emitOutboxStatus);
+window.addEventListener('online', flushOutbox);
 
 /** Writes locally first (identical feel to today), then queues the push to
  * Supabase so a lost connection never drops a logged dose. */
@@ -556,7 +576,6 @@ export async function logSlot(householdId, date, slotId, medicineIds) {
       },
     });
   }
-  await emitOutboxStatus();
   flushOutbox();
   return rows;
 }
@@ -573,7 +592,6 @@ export async function setDose(householdId, date, slotId, medicineId, status) {
         slot_id: slotId, medicine_id: medicineId,
       },
     });
-    await emitOutboxStatus();
     flushOutbox();
     return null;
   }
@@ -587,7 +605,6 @@ export async function setDose(householdId, date, slotId, medicineId, status) {
       slot_id: slotId, local_date: date, taken_at: row.takenAt, status,
     },
   });
-  await emitOutboxStatus();
   flushOutbox();
   return row;
 }
@@ -610,7 +627,6 @@ export async function undoSlot(householdId, date, slotId) {
     id: `undo:${date}:${slotId}`, op: 'undo',
     payload: { household_id: householdId, local_date: date, slot_id: slotId },
   });
-  await emitOutboxStatus();
   flushOutbox();
   return removed.length;
 }

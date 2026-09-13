@@ -207,3 +207,15 @@ export function formatLong(str, monthNames, weekdayNames) {
   const { m, d } = parse(str);
   return `${weekdayNames[dayOfWeek(str)]} ${d} ${monthNames[m - 1]}`;
 }
+
+/** "2026-08-30" -> "Sun 30 Aug".
+ *
+ * The helper's header carries a date AND a "Nudge their phone" button on one
+ * 375px row, and the long form does not fit beside it at 23px -- it wrapped to
+ * two lines and squeezed the button. Abbreviating is the right give here: the
+ * helper's dialect is already the denser one, and this is the only place in
+ * the app that shortens a date. */
+export function formatShort(str, monthNames, weekdayNames) {
+  const { m, d } = parse(str);
+  return `${weekdayNames[dayOfWeek(str)].slice(0, 3)} ${d} ${monthNames[m - 1].slice(0, 3)}`;
+}

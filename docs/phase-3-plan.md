@@ -4,6 +4,13 @@
 > slot went to the bottom bar. Each section below carries a "done" note
 > recording what the plan got wrong and what use turned up afterwards —
 > that is the part worth reading.
+>
+> **The screens have since been redrawn** by the v4 elder-first redesign. The
+> flow, the rules and the data are unchanged — it still never writes to the
+> dose log, the plan is still frozen for a sitting, the step still lives in the
+> hash — but the day × time-of-day grid became seven quantity chips, and the
+> entry point moved from Settings → Pill box to a tab on both phones. See
+> [ui.md](ui.md), "E3 — Fill the box".
 
 The screen the photos have always been for. A supporter or an elder sits down
 with a week's worth of boxes and a plastic tray and fills it, and the app walks

@@ -56,6 +56,11 @@ export async function getSettings() {
     key: SETTINGS_KEY,
     role: null,
     slots: DEFAULT_SLOTS.map(s => ({ ...s })),
+    // Whether this household uses a physical pill organizer box. Asked at
+    // sign-in (js/views/auth.js) and mirrored from `households.uses_organizer`
+    // once a household exists; true until then, matching every household's
+    // behaviour before this setting existed.
+    usesOrganizer: true,
     storagePersisted: false,
     createdAt: nowIso(),
   };

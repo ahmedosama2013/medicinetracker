@@ -4,14 +4,14 @@ No dependencies, no build output, nothing generated except the icons — for the
 
 ```
 CarePair/
-├── index.html                 app shell: one <main>, an overlay host, a nav
+├── index.html                 app shell: one <main>, an overlay host, a nav, a toast host
 ├── manifest.webmanifest       PWA manifest, all paths relative
 ├── sw.js                      service worker, plus Web Push handlers
 ├── README.md
 ├── .env.example                local dev / Supabase CLI variables (never real secrets)
 │
 ├── css/
-│   └── app.css                everything, two densities switched by a body class
+│   └── app.css                everything, two dialects switched by a body class
 │
 ├── js/
 │   ├── main.js                boot, route registration, navigation, auth resolution
@@ -29,21 +29,25 @@ CarePair/
 │   ├── date.js                local YYYY-MM-DD maths
 │   ├── schedule.js            what is due on a date; snapshots; calendar counts
 │   ├── organiser.js           pure: what goes in each pill-box compartment for a week
+│   ├── day-model.js           pure-ish: one day described once — tone, status, summary
+│   ├── marking.js             writing a dose: optimistic, queued, labelled, undoable
 │   ├── photos.js              capture, compression, object-URL lifetime
 │   ├── strings.js             every user-visible string, and APP_VERSION
-│   ├── ui.js                  DOM helper, dialog, sheet, toast, photo viewer
+│   ├── ui.js                  DOM helper, the screen scaffold, dialog/sheet/toast/viewer
 │   └── views/
-│       ├── onboarding.js      "Who uses this phone?" — routes into auth.js or pairing.js
-│       ├── auth.js            simple-only: "Sign in with Google"
-│       ├── pairing.js         supporter-only: enter the household's share code
-│       ├── today.js           the Today screen
-│       ├── day.js             one day's slots — shared by Today and Calendar
-│       ├── calendar.js        month grid, rings, day sheet
+│       ├── onboarding.js      "Who uses this phone?" + the How-it-works carousel
+│       ├── auth.js            simple-only: "Continue with Google", 3 states
+│       ├── pairing.js         supporter-only: the share code, 5 states
+│       ├── today.js           elder Today (E1); dispatches to today-supporter.js
+│       ├── today-supporter.js supporter Today: collapsible slots, sync line, on-behalf
+│       ├── slot.js            elder E2 — one time of day, photo first
+│       ├── day.js             supporter: one calendar day, editable / locked / future
+│       ├── calendar.js        month grid of day tiles
 │       ├── organiser.js       filling the weekly pill box: start, step, check
 │       ├── medicine-sheet.js  one medicine, everything known about it
 │       ├── medicines.js       supporter: the medicine list, fetched live via the share code
 │       ├── medicine-form.js   supporter: medicine + schedules in one form
-│       └── settings.js        both modes, plus the slot-times screen
+│       └── settings.js        both roles, plus the times-of-day screen
 │
 ├── supabase/
 │   ├── README.md               one-time backend setup steps
@@ -74,12 +78,16 @@ CarePair/
 │   ├── favicon.svg            the tab icon, hand-written to match the PNGs
 │   └── make-icons.py          regenerates the four PNGs, stdlib only
 │
+├── design_handoff_carepair_elder_ui/   the v4 redesign source: a handoff README
+│                                       and a navigable HTML prototype. Read as a
+│                                       spec; nothing is ported from it
+│
 └── docs/
     ├── architecture.md
     ├── repo-structure.md
     ├── ui.md
     ├── flow.md
-    ├── v3-plan.md                     the v3 overhaul: phases, decisions, what is left
+    ├── v3-plan.md                     the v3 overhaul: phases, decisions — historical
     ├── medicine-tracker-plan-v3.md    the original local-only build spec, superseded
     └── next-steps.md                  everything deferred
 ```
@@ -98,10 +106,12 @@ CarePair/
 | `js/date.js` | `todayStr`, `addDays`, `daysBetween`, `dayOfWeek`, `monthGrid`, `formatTime`, `formatLong`, `msUntilTomorrow`. No UTC anywhere |
 | `js/schedule.js` | `isDueOn`, `buildDay`, `dueOn`, `expectedFor`, `completionForDates`. The pure functions take plain arrays and can be called from the console; `isDueOn` is also ported into Postgres as `app.is_due` |
 | `js/organiser.js` | `planWeek(startDate, {medicines, schedules, slots})` → `{ dates, boxSlots, steps, compartments, outOfBox }`. Pure, console-callable. `steps` and `compartments` are the same numbers pivoted for the two screens, computed together so they cannot disagree. `BOX_FORMS` is what may physically go in a tray |
-| `js/views/organiser.js` | `#/organiser` — start screen, one step per medicine (`?step=N`), then the check screen (`?step=check`). Owns the wake lock |
+| `js/views/organiser.js` | `#/organiser` — start screen, one step per medicine (`?step=N`), then the check screen (`?step=check`). Owns the wake lock, and the three sheets that belong to the flow (box compartments, out-of-the-box, one compartment) |
+| `js/day-model.js` | `loadDay(date)` → `{ groups, states, loggedBy }`, then `describeSlot` / `describeDay` turn that into what every day screen renders: the medicines due, how many are marked, whether it is past due, the state tone, the status string, the collapsed medicine-name summary and the take-button label. **Four screens need exactly that set** — the elder's Today and slot detail, the helper's Today and day detail — and deriving it once is what stops two of them disagreeing while the same household looks at both |
+| `js/marking.js` | The write side of the same thing: `mayMark`/`mayMarkSlot` (the helper's once-per-session confirmation, plus `onBehalfActive()` for their persistent chip), the per-dose write queue (`queueWrite`, `settled`), and `toastWithUndo`. It re-exports `doses` so a view imports one module to mark a dose |
 | `js/photos.js` | `compress`, `objectUrl`/`release`, `blobToDataUrl`/`dataUrlToBlob` |
-| `js/ui.js` | `el()` for DOM building, plus `confirmDialog`, `alertDialog`, `openSheet`, `openPhotoViewer`, `busyOverlay`, `toast`, `pickFile`, `pillTile`, `loadingState`, `applyTheme`, and `doseText`/`doseAmount` (a `doseQty` plus a `form` rendered as "2 tablets" or just "½") |
-| `js/views/day.js` | The shared day renderer, so a past day is corrected with the same controls as today |
+| `js/ui.js` | `el()` for DOM building and `screen()`/`mount()` for the shell, plus `confirmDialog`, `alertDialog`, `openSheet`, `openShareSheet`, `openPhotoViewer`, `busyOverlay`, `toast`, `closeOverlays`, `pickFile`, `pillTile`, `codeCard`, `loadingState`, `progressBar`, `applyTheme`, the state tones (`TONE`, `doseTone`, `paintTone`, `stateRing`), and `doseText`/`doseAmount` (a `doseQty` plus a `form` rendered as "2 tablets" or just "½") |
+| `js/views/day.js` | One calendar day for the supporter: says which of editable / locked / future applies before showing anything, then a card per slot. Corrections open the same medicine sheet the rest of the app uses, so there is no second vocabulary for fixing yesterday |
 
 ## Conventions
 
@@ -110,7 +120,12 @@ CarePair/
 - **Writes go through `js/doses.js`, not `js/sync.js`.** A view that calls `sync.*` directly works on the elder's device and silently does nothing useful on the supporter's.
 - **A view must check `isCurrent()` after every await, before touching the DOM.** The router passes it in and uses it to drop superseded renders. Skipping it reintroduces the two-copies-of-the-screen bug — see [architecture.md](architecture.md), "Rendering: one screen at a time".
 - **Read the node you are replacing before you build its replacement,** and read `document.activeElement` before the swap, not after. Both mistakes fake success: the builder registers what it creates so a later lookup hands back the new detached node, and removing a focused element resets `activeElement` to `<body>` immediately. Each has cost a day once already.
-- **No text outside `strings.js`.** Views reference `S.something`. This is what makes an Urdu translation a data change rather than a refactor.
+- **No text outside `strings.js`.** Views reference `S.something`. This is what
+  makes an Urdu translation a data change rather than a refactor. The one
+  exception is the state *glyphs* — `✓ ○ ! — · ▣ ‹` — which are typographic
+  marks rather than words and live with their tone in `ui.js`'s `TONE`; they do
+  not translate, and keeping them beside the colour is what makes "colour is
+  never alone" checkable in one place.
 - **No HTML strings with data in them.** Everything goes through `el()` and `textContent`, so a medicine named `<img onerror=…>` is just a medicine with a silly name.
 - **Views return their cleanup.** A view that creates photo object URLs returns a function; the router calls it before rendering the next screen.
 - **Update in place, do not re-render.** After a write, replace the one node that changed. Rebuilding a whole screen re-reads the database, reloads photos and resets the scroll, which looks like the page refreshing.
@@ -123,10 +138,18 @@ CarePair/
   silently: the migration, `public.get_routine`, `public.upsert_medicine`,
   `app.compute_day`, `mapMedicine` in `js/sync.js`, the medicine form, and —
   if `supporter-photo` writes it — the column-level `service_role` grant.
-- **`--nav-h` must be the bar's exact height**, applied as `height` and not
-  `min-height`. The organiser's fit layout subtracts it to size itself, so a
-  declared height the content then exceeds makes that subtraction wrong — it
-  did, by 10px, and the buttons sat under the bar.
+- **A view renders exactly one `screen()`, and only `.screen-scroll` scrolls.**
+  The shell is a fixed viewport column — `body` is `100dvh` with
+  `overflow: hidden`, `#app` is a flex column, and the nav sits below it. A view
+  that appends two roots, or puts its content outside the scroll region, breaks
+  the whole thing quietly: the nav goes off-screen on a small phone instead of
+  the content scrolling. This replaced a `--nav-h` token that every fit layout
+  had to subtract by hand and that was wrong by 10px for a while.
+- **The elder's type and touch floors are load-bearing**, not a style
+  preference: 17px for anything you must read to act, 44px for anything you can
+  tap, 54–64px for a primary action. Where a floor and a tidy single line
+  conflict, the floor wins and the text wraps. The responsive rules in
+  `css/app.css` §15 give up padding and gaps, never type.
 - **Form controls need `min-width: 0`.** Their `min-width` defaults to `auto`,
   which is the control's intrinsic minimum — the width of a native date or time
   input's shadow content. WebKit enforces it and `width: 100%` loses, taking

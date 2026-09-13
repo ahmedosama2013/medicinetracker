@@ -50,6 +50,12 @@ export const saveSlots = (code, slots) =>
 export const setSlotInBox = (code, slotId, inBox) =>
   call('set_slot_in_box', { p_code: code, p_slot_id: slotId, p_in_box: inBox });
 
+/* Called from BOTH roles' Settings, same reasoning as setSlotInBox above: the
+ * elder's device holds the share code too, so it reaches this without a
+ * session, and a supporter has nothing else to reach it with. */
+export const setUsesOrganizer = (code, usesOrganizer) =>
+  call('set_uses_organizer', { p_code: code, p_uses_organizer: usesOrganizer });
+
 // ---- history (see supabase/migrations/0006_supporter_parity.sql) -----------
 
 export const loadDoseLog = (code, from, to) =>
