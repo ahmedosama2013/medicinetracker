@@ -25,7 +25,7 @@
   <div style="display: flex; flex-direction: column; gap: 8px; max-width: 78ch">
     <span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; color: #7C766A">CarePair · mobile product design · navigable mock</span>
     <h1 style="margin: 0; font-size: 38px; font-weight: 800; letter-spacing: -0.02em">Two apps, one household</h1>
-    <p style="margin: 0; font-size: 17px; line-height: 1.5; color: #55514A; text-wrap: pretty">The person taking the medicines gets one calm question a day: <em>what do I take now?</em> The helper gets everything else. Tap through the phone below — every screen, sheet, dialog, empty, loading and error state is live.</p>
+    <p style="margin: 0; font-size: 17px; line-height: 1.5; color: #55514A; text-wrap: pretty">The person taking the medicines gets one calm question a day: <em>what do I take now?</em> The helper gets everything else. Tap through the phone below - every screen, sheet, dialog, empty, loading and error state is live.</p>
   </div>
 
   <div style="display: flex; gap: 36px; flex-wrap: wrap; align-items: flex-start">
@@ -42,7 +42,7 @@
             <div style="display: flex; flex-direction: column; gap: 10px">
               <span style="width: 52px; height: 52px; border-radius: 16px; background: #1F5340; display: flex; align-items: center; justify-content: center; color: #FBF9F5; font-size: 24px; font-weight: 800">C</span>
               <h2 style="margin: 8px 0 0; font-size: 34px; font-weight: 800; letter-spacing: -0.02em; line-height: 1.1">CarePair</h2>
-              <p style="margin: 0; font-size: 20px; line-height: 1.4; color: #55514A">Medicines, kept simple — for the person taking them and the person helping.</p>
+              <p style="margin: 0; font-size: 20px; line-height: 1.4; color: #55514A">Medicines, kept simple - for the person taking them and the person helping.</p>
             </div>
             <div style="display: flex; flex-direction: column; gap: 14px">
               <button type="button" onClick="{{ nav.signin }}" style="min-height: 76px; padding: 14px 22px; border: none; border-radius: 18px; background: #1F5340; color: #FBF9F5; font-size: 22px; font-weight: 700; text-align: left; cursor: pointer" style-hover="background: #17412f">I take the medicines</button>
@@ -124,7 +124,7 @@
               <sc-if value="{{ pairInvalid }}">
                 <div style="display: flex; gap: 12px; padding: 16px; border-radius: 14px; background: #FDECE8; border: 1px solid #B14A34">
                   <span style="font-size: 18px; font-weight: 800; color: #8E2F1E">✕</span>
-                  <span style="display: flex; flex-direction: column; gap: 4px"><span style="font-size: 16px; font-weight: 700; color: #8E2F1E">That code was not found</span><span style="font-size: 15px; line-height: 1.45; color: #45423C">Codes are six characters, letters and numbers. Check it with them and try again — or ask them to make a new code in Settings.</span></span>
+                  <span style="display: flex; flex-direction: column; gap: 4px"><span style="font-size: 16px; font-weight: 700; color: #8E2F1E">That code was not found</span><span style="font-size: 15px; line-height: 1.45; color: #45423C">Codes are six characters, letters and numbers. Check it with them and try again - or ask them to make a new code in Settings.</span></span>
                 </div>
               </sc-if>
               <sc-if value="{{ pairFailed }}">
@@ -166,7 +166,7 @@
             <sc-if value="{{ eOffline }}">
               <div style="flex: none; margin: 0 14px 10px; padding: 10px 14px; border-radius: 12px; background: #FFF4E0; border: 2px solid #A6741C; display: flex; gap: 10px; align-items: center">
                 <span style="font-size: 18px; font-weight: 800; color: #7A5410">!</span>
-                <span style="font-size: 17px; font-weight: 700; line-height: 1.25; color: #45423C">No internet — your taps are saved here.</span>
+                <span style="font-size: 17px; font-weight: 700; line-height: 1.25; color: #45423C">No internet - your taps are saved here.</span>
               </div>
             </sc-if>
             <sc-if value="{{ eLoading }}">
@@ -261,7 +261,7 @@
                     <button type="button" onClick="{{ m.onTake }}" style="flex: none; min-height: 60px; border: none; border-radius: 14px; background: #1F5340; color: #FBF9F5; font-size: 20px; font-weight: 800; cursor: pointer">I have taken this</button>
                   </sc-if>
                   <sc-if value="{{ m.taken }}">
-                    <button type="button" onClick="{{ m.onClear }}" style="flex: none; min-height: 60px; border: 3px solid #7C766A; border-radius: 14px; background: #FFFFFF; font-size: 19px; font-weight: 800; color: #45423C; cursor: pointer">Undo — not taken</button>
+                    <button type="button" onClick="{{ m.onClear }}" style="flex: none; min-height: 60px; border: 3px solid #7C766A; border-radius: 14px; background: #FFFFFF; font-size: 19px; font-weight: 800; color: #45423C; cursor: pointer">Undo - not taken</button>
                   </sc-if>
                   <sc-if value="{{ m.unmarked }}">
                     <button type="button" onClick="{{ m.onSkip }}" style="flex: none; min-height: 46px; border: none; background: none; color: #45423C; font-size: 17px; font-weight: 700; text-decoration: underline; cursor: pointer">Leave this one out today</button>
@@ -274,7 +274,7 @@
             </div>
             <div style="flex: none; padding: 0 14px 10px">
               <sc-if value="{{ pageNotAllDone }}">
-                <button type="button" onClick="{{ onPageMarkAll }}" style="width: 100%; min-height: 62px; border: 3px solid #1F5340; border-radius: 16px; background: #FFFFFF; color: #1F5340; font-size: 19px; font-weight: 800; cursor: pointer">{{ pageTakeLabel }} — all of {{ pageName }}</button>
+                <button type="button" onClick="{{ onPageMarkAll }}" style="width: 100%; min-height: 62px; border: 3px solid #1F5340; border-radius: 16px; background: #FFFFFF; color: #1F5340; font-size: 19px; font-weight: 800; cursor: pointer">{{ pageTakeLabel }} - all of {{ pageName }}</button>
               </sc-if>
               <sc-if value="{{ pageAllDone }}">
                 <button type="button" onClick="{{ onPageUndoAll }}" style="width: 100%; min-height: 62px; border: 3px solid #7C766A; border-radius: 16px; background: #FFFFFF; color: #45423C; font-size: 19px; font-weight: 800; cursor: pointer">Undo all of {{ pageName }}</button>
@@ -378,7 +378,7 @@
               <sc-if value="{{ fillNoSlots }}">
                 <div style="padding: 18px; border-radius: 16px; background: #FFF4E0; border: 2px solid #A6741C; display: flex; flex-direction: column; gap: 10px">
                   <span style="font-size: 19px; font-weight: 800; color: #7A5410">No compartments chosen yet</span>
-                  <span style="font-size: 16px; line-height: 1.45; color: #45423C">Choose at least one time of day that lives in the physical box — usually morning and bedtime.</span>
+                  <span style="font-size: 16px; line-height: 1.45; color: #45423C">Choose at least one time of day that lives in the physical box - usually morning and bedtime.</span>
                   <button type="button" onClick="{{ onEditBoxTimes }}" style="min-height: 52px; border: none; border-radius: 12px; background: #7A5410; color: #fff; font-size: 16px; font-weight: 700; cursor: pointer; align-self: flex-start; padding: 0 18px">Choose compartments</button>
                 </div>
               </sc-if>
@@ -404,7 +404,7 @@
                   </div>
                 </div>
               </sc-if>
-              <button type="button" onClick="{{ onOutside }}" style="min-height: 62px; border: 3px solid #211F1B; border-radius: 14px; background: #FFFFFF; font-size: 18px; font-weight: 800; cursor: pointer; text-align: left; padding: 10px 16px">2 medicines stay outside the box — see them</button>
+              <button type="button" onClick="{{ onOutside }}" style="min-height: 62px; border: 3px solid #211F1B; border-radius: 14px; background: #FFFFFF; font-size: 18px; font-weight: 800; cursor: pointer; text-align: left; padding: 10px 16px">2 medicines stay outside the box - see them</button>
             </div>
             <sc-if value="{{ fillHasWork }}">
               <div style="flex: none; padding: 12px 16px; border-top: 1px solid #E4DFD4; background: #FBF9F5">
@@ -436,7 +436,7 @@
                 <span style="margin-left: auto; font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: #7C766A">{{ fillProgress }}</span>
               </div>
               <span style="height: 8px; border-radius: 999px; background: #E4DFD4; display: block; overflow: hidden"><span style="display: block; height: 100%; background: #1F5340; width: {{ fillBarWidth }}"></span></span>
-              <span style="font-size: 14px; color: #7C766A">{{ fillDoneCount }} — this is how far through the job you are, nothing else.</span>
+              <span style="font-size: 14px; color: #7C766A">{{ fillDoneCount }} - this is how far through the job you are, nothing else.</span>
             </div>
             <div style="flex: 1; min-height: 0; overflow: hidden; padding: 4px 16px 12px; display: flex; flex-direction: column; gap: 14px">
               <div style="display: flex; flex-direction: column; gap: 2px">
@@ -658,9 +658,9 @@
                 </sc-for>
                 <div style="margin-top: 4px; padding: 12px 14px; border-radius: 10px; background: #FFFFFF; border: 1px solid #E1E4EA; display: flex; flex-direction: column; gap: 7px">
                   <span style="font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; color: #6B7280">What the marks mean</span>
-                  <span style="font-size: 13px; color: #374151"><strong>✓</strong> every medicine dealt with · <strong>○</strong> something still unmarked · <strong>—</strong> something not taken · <strong>·</strong> nothing was due</span>
+                  <span style="font-size: 13px; color: #374151"><strong>✓</strong> every medicine dealt with · <strong>○</strong> something still unmarked · <strong>-</strong> something not taken · <strong>·</strong> nothing was due</span>
                   <span style="font-size: 13px; color: #374151"><strong>▣</strong> before the mark = a read-only record, older than a week and no longer editable · plain white with no mark = a future day, not markable</span>
-                  <span style="font-size: 13px; color: #6B7280">No scores, no streaks — just what happened.</span>
+                  <span style="font-size: 13px; color: #6B7280">No scores, no streaks - just what happened.</span>
                 </div>
               </div>
             </sc-if>
@@ -682,7 +682,7 @@
               <sc-if value="{{ dayLocked }}">
                 <div style="padding: 12px 14px; border-radius: 10px; background: #ECEBEE; border: 1px solid #BEC0C7; display: flex; gap: 10px">
                   <span style="font-size: 14px; font-weight: 800; color: #3F4048">▣</span>
-                  <span style="font-size: 14px; line-height: 1.45; color: #3F4048">Kept as a record. Days older than a week cannot be changed — you can still read everything and open the medicines.</span>
+                  <span style="font-size: 14px; line-height: 1.45; color: #3F4048">Kept as a record. Days older than a week cannot be changed - you can still read everything and open the medicines.</span>
                 </div>
               </sc-if>
               <sc-if value="{{ dayFuture }}">
@@ -812,7 +812,7 @@
                 </sc-if>
                 <sc-if value="{{ formErrors }}">
                   <div id="mname" style="min-height: 48px; border-radius: 10px; border: 2px solid #B14A34; background: #fff; padding: 12px 14px; font-size: 16px; color: #9CA3AF">Type the name as it is written on the packet</div>
-                  <span style="font-size: 13px; font-weight: 700; color: #8E2F1E">A name is needed — this is what Margaret will read.</span>
+                  <span style="font-size: 13px; font-weight: 700; color: #8E2F1E">A name is needed - this is what Margaret will read.</span>
                 </sc-if>
                 <div style="display: flex; gap: 8px">
                   <span style="flex: 1; display: flex; flex-direction: column; gap: 6px"><span style="font-size: 13px; font-weight: 700; color: #374151">Strength</span><span style="min-height: 48px; border-radius: 10px; border: 1px solid #C7CCD6; background: #fff; padding: 12px 14px; font-size: 16px">500 mg</span></span>
@@ -853,7 +853,7 @@
                   </div>
                 </div>
                 <button type="button" onClick="{{ onCommunity }}" style="min-height: 46px; border: 1px solid #2A3B5E; border-radius: 10px; background: #fff; color: #2A3B5E; font-size: 14px; font-weight: 700; cursor: pointer">Look it up in the shared list</button>
-                <span style="font-size: 12px; color: #6B7280; line-height: 1.45">Optional. It only ever fills in the name, strength and photos — you can ignore it and type everything yourself.</span>
+                <span style="font-size: 12px; color: #6B7280; line-height: 1.45">Optional. It only ever fills in the name, strength and photos - you can ignore it and type everything yourself.</span>
               </div>
               <div style="display: flex; flex-direction: column; gap: 10px">
                 <span style="font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; color: #6B7280">When she takes it</span>
@@ -936,7 +936,7 @@
                 <span style="font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; color: #6B7280">Your alerts</span>
                 <div style="border-radius: 12px; background: #fff; border: 1px solid #E1E4EA; padding: 14px; display: flex; flex-direction: column; gap: 12px">
                   <div style="display: flex; align-items: center; gap: 10px">
-                    <span style="display: flex; flex-direction: column; gap: 2px; flex: 1"><span style="font-size: 15px; font-weight: 700">Tell me if a medicine is not marked</span><span style="font-size: 13px; color: #4B5563">Only for medicines that were due — never a summary or a score.</span></span>
+                    <span style="display: flex; flex-direction: column; gap: 2px; flex: 1"><span style="font-size: 15px; font-weight: 700">Tell me if a medicine is not marked</span><span style="font-size: 13px; color: #4B5563">Only for medicines that were due - never a summary or a score.</span></span>
                     <button type="button" onClick="{{ onSupNotif }}" style="flex: none; min-height: 40px; padding: 8px 14px; border: 1px solid #2A3B5E; border-radius: 999px; background: #fff; color: #2A3B5E; font-size: 13px; font-weight: 700; cursor: pointer">Change</button>
                   </div>
                   <span style="font-size: 13px; font-weight: 700; color: #374151">How long to wait first</span>
@@ -1016,7 +1016,7 @@
                   <button type="button" onClick="{{ onMsTake }}" style="min-height: 64px; border: none; border-radius: 16px; background: #1F5340; color: #FBF9F5; font-size: 20px; font-weight: 800; cursor: pointer">I have taken this</button>
                 </sc-if>
                 <sc-if value="{{ msTaken }}">
-                  <button type="button" onClick="{{ onMsClear }}" style="min-height: 60px; border: 2px solid #B9B2A3; border-radius: 16px; background: #FFFFFF; font-size: 18px; font-weight: 700; cursor: pointer">Undo — I have not taken it</button>
+                  <button type="button" onClick="{{ onMsClear }}" style="min-height: 60px; border: 2px solid #B9B2A3; border-radius: 16px; background: #FFFFFF; font-size: 18px; font-weight: 700; cursor: pointer">Undo - I have not taken it</button>
                 </sc-if>
                 <sc-if value="{{ msUnmarked }}">
                   <button type="button" onClick="{{ onMsSkip }}" style="min-height: 56px; border: 2px solid #B9B2A3; border-radius: 16px; background: #FFFFFF; font-size: 17px; font-weight: 700; color: #45423C; cursor: pointer">Not taking this today</button>
@@ -1070,7 +1070,7 @@
                   <span style="margin-left: auto; font-size: 13px; font-weight: 700; color: #2A3B5E">Use</span>
                 </button>
                 <div style="padding: 12px; border-radius: 12px; background: #EEF1F6; border: 1px solid #C4CCDD; display: flex; flex-direction: column; gap: 6px">
-                  <span style="font-size: 13px; line-height: 1.5; color: #1F2937">Using an entry only fills in the name, strength and photos. You still choose the dose, the purpose and the times — and you can change anything afterwards.</span>
+                  <span style="font-size: 13px; line-height: 1.5; color: #1F2937">Using an entry only fills in the name, strength and photos. You still choose the dose, the purpose and the times - and you can change anything afterwards.</span>
                   <button type="button" onClick="{{ onCloseSheet }}" style="align-self: flex-start; min-height: 40px; border: none; background: none; padding: 0; color: #2A3B5E; font-size: 13px; font-weight: 700; text-decoration: underline; cursor: pointer">No thanks, I will type it myself</button>
                 </div>
               </div>
@@ -1186,7 +1186,7 @@
         </sc-if>
 
       </div>
-      <p style="margin: 0; font-size: 14px; line-height: 1.5; color: #55514A"><strong style="font-weight: 700">{{ screenName }}</strong> — {{ purpose }}</p>
+      <p style="margin: 0; font-size: 14px; line-height: 1.5; color: #55514A"><strong style="font-weight: 700">{{ screenName }}</strong> - {{ purpose }}</p>
       <div style="display: flex; gap: 8px; flex-wrap: wrap">
         <sc-for list="{{ variants }}" as="v" hint-placeholder-count="0">
           <button type="button" onClick="{{ v.onPick }}" style="min-height: 34px; padding: 5px 12px; border-radius: 999px; font-size: 13px; font-weight: 600; cursor: pointer; border: 1px solid #B9B2A3; background: {{ v.bg }}; color: {{ v.fg }}">{{ v.label }}</button>
@@ -1227,7 +1227,7 @@
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px">
               <div style="padding: 14px; border-radius: 12px; background: #FBF9F5; border: 2px solid #DDD7CB; display: flex; flex-direction: column; gap: 6px">
                 <span style="font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; color: #7C766A">Taking medicines</span>
-                <span style="font-size: 14px; line-height: 1.5; color: #45423C">Warm paper #FBF9F5 · body 19–21px · titles 28–30px · every target ≥ 56px · 3px borders on every card · 3 nav items · <strong>no scrolling anywhere except Settings</strong> — cards divide the screen with flex instead, so content always fits the first view</span>
+                <span style="font-size: 14px; line-height: 1.5; color: #45423C">Warm paper #FBF9F5 · body 19–21px · titles 28–30px · every target ≥ 56px · 3px borders on every card · 3 nav items · <strong>no scrolling anywhere except Settings</strong> - cards divide the screen with flex instead, so content always fits the first view</span>
               </div>
               <div style="padding: 14px; border-radius: 12px; background: #E5E9F0; border: 1px solid #C7CCD6; display: flex; flex-direction: column; gap: 6px">
                 <span style="font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; color: #6B7280">Helping</span>
@@ -1241,7 +1241,7 @@
               <span style="padding: 10px 14px; border-radius: 10px; background: #E7F1EA; border: 2px solid #1F5340; color: #1F5340; font-size: 14px; font-weight: 700">✓ Taken</span>
               <span style="padding: 10px 14px; border-radius: 10px; background: #F2EEE6; border: 2px solid #55514A; color: #55514A; font-size: 14px; font-weight: 700">○ Not marked yet</span>
               <span style="padding: 10px 14px; border-radius: 10px; background: #FBEAE5; border: 2px solid #8E2F1E; color: #8E2F1E; font-size: 14px; font-weight: 700">! Not taken yet</span>
-              <span style="padding: 10px 14px; border-radius: 10px; background: #ECEBEE; border: 2px solid #3F4048; color: #3F4048; font-size: 14px; font-weight: 700">— Not taking today</span>
+              <span style="padding: 10px 14px; border-radius: 10px; background: #ECEBEE; border: 2px solid #3F4048; color: #3F4048; font-size: 14px; font-weight: 700">- Not taking today</span>
               <span style="padding: 10px 14px; border-radius: 10px; background: #FBF9F5; border: 2px dashed #C5BEAE; color: #7C766A; font-size: 14px; font-weight: 700">future / not markable</span>
               <span style="padding: 10px 14px; border-radius: 10px; background: #ECEBEE; border: 2px solid #BEC0C7; color: #3F4048; font-size: 14px; font-weight: 700">▣ read-only record</span>
             </div>
@@ -1252,7 +1252,7 @@
             <ul style="margin: 0; padding-left: 20px; font-size: 15px; line-height: 1.6; color: #45423C">
               <li>Full screens for places you live in; bottom sheets for things you look at (medicine, compartment, shared list); centre dialogs only for consequences.</li>
               <li>Every state-changing tap produces a toast; anything reversible carries <strong>Undo</strong> in the toast itself.</li>
-              <li>Destructive actions are outlined in red, never filled — the filled green button is always the safe one.</li>
+              <li>Destructive actions are outlined in red, never filled - the filled green button is always the safe one.</li>
               <li>No icon carries meaning alone; the glyphs above are typographic so they scale with text size.</li>
             </ul>
           </div>
@@ -1267,7 +1267,7 @@
           </div>
           <div style="display: flex; flex-direction: column; gap: 6px">
             <h3 style="margin: 0; font-size: 20px; font-weight: 800">2 · Marking is written in the first person</h3>
-            <p style="margin: 0; font-size: 15px; line-height: 1.6; color: #45423C">“I have taken this” instead of “Mark as taken”, “Not taking this today” instead of “Skip”. It removes the sense of reporting to a system, and it makes the difference from the pill box obvious — that button says “It is in the box”.</p>
+            <p style="margin: 0; font-size: 15px; line-height: 1.6; color: #45423C">“I have taken this” instead of “Mark as taken”, “Not taking this today” instead of “Skip”. It removes the sense of reporting to a system, and it makes the difference from the pill box obvious - that button says “It is in the box”.</p>
           </div>
           <div style="display: flex; flex-direction: column; gap: 6px">
             <h3 style="margin: 0; font-size: 20px; font-weight: 800">3 · The box flow can never mark a dose</h3>
@@ -1275,33 +1275,33 @@
           </div>
           <div style="display: flex; flex-direction: column; gap: 6px">
             <h3 style="margin: 0; font-size: 20px; font-weight: 800">4 · The helper’s honesty layer</h3>
-            <p style="margin: 0; font-size: 15px; line-height: 1.6; color: #45423C">The helper is always looking at a copy of someone else’s day, so the top of their Today states how old the data is and offers a manual check. The first mark of a session asks for confirmation and then never asks again — replaced by a quiet persistent chip that reminds them they are acting on her behalf.</p>
+            <p style="margin: 0; font-size: 15px; line-height: 1.6; color: #45423C">The helper is always looking at a copy of someone else’s day, so the top of their Today states how old the data is and offers a manual check. The first mark of a session asks for confirmation and then never asks again - replaced by a quiet persistent chip that reminds them they are acting on her behalf.</p>
           </div>
           <div style="display: flex; flex-direction: column; gap: 6px">
             <h3 style="margin: 0; font-size: 20px; font-weight: 800">5 · No numbers about the person</h3>
-            <p style="margin: 0; font-size: 15px; line-height: 1.6; color: #45423C">The only counts in the product are quantities of pills and “2 of 4 in the box”. Days read “all dealt with” or “something still unmarked”; nothing is ever a percentage, a streak or a score, and a skipped medicine is styled neutral grey — not red.</p>
+            <p style="margin: 0; font-size: 15px; line-height: 1.6; color: #45423C">The only counts in the product are quantities of pills and “2 of 4 in the box”. Days read “all dealt with” or “something still unmarked”; nothing is ever a percentage, a streak or a score, and a skipped medicine is styled neutral grey - not red.</p>
           </div>
           <div style="display: flex; flex-direction: column; gap: 6px">
             <h3 style="margin: 0; font-size: 20px; font-weight: 800">6 · Undo instead of “are you sure”</h3>
-            <p style="margin: 0; font-size: 15px; line-height: 1.6; color: #45423C">Dose marking is instant with Undo in the toast — confirmation dialogs are spent only where a tap has consequences outside the phone: rotating the code, signing out, disconnecting, archiving, removing a time of day, and sharing a photo with strangers.</p>
+            <p style="margin: 0; font-size: 15px; line-height: 1.6; color: #45423C">Dose marking is instant with Undo in the toast - confirmation dialogs are spent only where a tap has consequences outside the phone: rotating the code, signing out, disconnecting, archiving, removing a time of day, and sharing a photo with strangers.</p>
           </div>
         </div>
       </sc-if>
 
       <sc-if value="{{ tabReview }}">
         <div style="display: flex; flex-direction: column; gap: 16px; max-width: 70ch">
-          <p style="margin: 0; font-size: 15px; line-height: 1.6; color: #45423C">Requirements I would change, combine or drop — none of these remove a capability from the brief:</p>
+          <p style="margin: 0; font-size: 15px; line-height: 1.6; color: #45423C">Requirements I would change, combine or drop - none of these remove a capability from the brief:</p>
           <div style="display: flex; flex-direction: column; gap: 12px">
             <div style="padding: 14px; border-radius: 12px; background: #FBF9F5; border: 1px solid #DDD7CB; display: flex; flex-direction: column; gap: 5px">
               <span style="font-size: 15px; font-weight: 800">Combine “role can be changed in Settings” into one visible escape hatch</span>
-              <span style="font-size: 14px; line-height: 1.55; color: #45423C">A role switcher is a trap for the person taking medicines — one wrong tap and they are in an admin app. Kept as a small underlined “Change role” at the very bottom of Settings, below sign-out, rather than a setting row.</span>
+              <span style="font-size: 14px; line-height: 1.55; color: #45423C">A role switcher is a trap for the person taking medicines - one wrong tap and they are in an admin app. Kept as a small underlined “Change role” at the very bottom of Settings, below sign-out, rather than a setting row.</span>
             </div>
             <div style="padding: 14px; border-radius: 12px; background: #FBF9F5; border: 1px solid #DDD7CB; display: flex; flex-direction: column; gap: 5px">
               <span style="font-size: 15px; font-weight: 800">“Mark a whole slot” should not be the primary elder action</span>
               <span style="font-size: 14px; line-height: 1.55; color: #45423C">It is real and reversible, but it lives at the bottom of an opened time card as an outlined button. Making it primary invites marking everything at 8am before anything is swallowed.</span>
             </div>
             <div style="padding: 14px; border-radius: 12px; background: #FBF9F5; border: 1px solid #DDD7CB; display: flex; flex-direction: column; gap: 5px">
-              <span style="font-size: 15px; font-weight: 800">Appearance: drop “Dark” from the elder settings? No — but default to Match system</span>
+              <span style="font-size: 15px; font-weight: 800">Appearance: drop “Dark” from the elder settings? No - but default to Match system</span>
               <span style="font-size: 14px; line-height: 1.55; color: #45423C">Kept all three, worded as “How it looks”. Low-vision users often need the dark option; the risk is accidental selection, which the ✓-marked list makes visible and one tap to revert.</span>
             </div>
             <div style="padding: 14px; border-radius: 12px; background: #FBF9F5; border: 1px solid #DDD7CB; display: flex; flex-direction: column; gap: 5px">
@@ -1310,11 +1310,11 @@
             </div>
             <div style="padding: 14px; border-radius: 12px; background: #FBF9F5; border: 1px solid #DDD7CB; display: flex; flex-direction: column; gap: 5px">
               <span style="font-size: 15px; font-weight: 800">Supporter escalation delay needs a floor, and a name</span>
-              <span style="font-size: 14px; line-height: 1.55; color: #45423C">“Escalation delay” is jargon. Worded as “How long to wait first”, framed as alerting the helper — never as a warning aimed at the person taking medicines, who never sees it.</span>
+              <span style="font-size: 14px; line-height: 1.55; color: #45423C">“Escalation delay” is jargon. Worded as “How long to wait first”, framed as alerting the helper - never as a warning aimed at the person taking medicines, who never sees it.</span>
             </div>
             <div style="padding: 14px; border-radius: 12px; background: #FFF4E0; border: 1px solid #A6741C; display: flex; flex-direction: column; gap: 5px">
               <span style="font-size: 15px; font-weight: 800">Open question worth your decision</span>
-              <span style="font-size: 14px; line-height: 1.55; color: #45423C">Locked history is set at 7 days here, and the pill-box week starts on Monday. Both are product policy rather than design — tell me the real values and I will change the copy and the calendar rules.</span>
+              <span style="font-size: 14px; line-height: 1.55; color: #45423C">Locked history is set at 7 days here, and the pill-box week starts on Monday. Both are product policy rather than design - tell me the real values and I will change the copy and the calendar rules.</span>
             </div>
           </div>
         </div>
@@ -1323,7 +1323,7 @@
       <sc-if value="{{ tabCheck }}">
         <div style="display: flex; flex-direction: column; gap: 16px; max-width: 70ch">
           <h3 style="margin: 0; font-size: 20px; font-weight: 800">Could an 80-year-old do the daily task unaided?</h3>
-          <p style="margin: 0; font-size: 15px; line-height: 1.6; color: #45423C">The daily task is: <em>see what is due now and say I took it.</em> On the built flow that is <strong>one tap</strong> — “I have taken these” sits on the time card itself, on the first screen, with no scrolling and no navigation. “See the pills” is the second, optional path for when she wants to check the pill against the photo. Delivered as a PWA, so it is the same one-tap screen whether she opens it from the home-screen icon or the browser.</p>
+          <p style="margin: 0; font-size: 15px; line-height: 1.6; color: #45423C">The daily task is: <em>see what is due now and say I took it.</em> On the built flow that is <strong>one tap</strong> - “I have taken these” sits on the time card itself, on the first screen, with no scrolling and no navigation. “See the pills” is the second, optional path for when she wants to check the pill against the photo. Delivered as a PWA, so it is the same one-tap screen whether she opens it from the home-screen icon or the browser.</p>
           <div style="display: flex; flex-direction: column; gap: 10px">
             <div style="padding: 14px; border-radius: 12px; background: #E7F1EA; border: 1px solid #1F5340; display: flex; flex-direction: column; gap: 5px">
               <span style="font-size: 15px; font-weight: 800; color: #14362a">Passes</span>
@@ -1331,10 +1331,10 @@
             </div>
             <div style="padding: 14px; border-radius: 12px; background: #FFF4E0; border: 1px solid #A6741C; display: flex; flex-direction: column; gap: 5px">
               <span style="font-size: 15px; font-weight: 800; color: #7A5410">Residual risks to test with real users</span>
-              <span style="font-size: 14px; line-height: 1.6; color: #45423C">1 · “Not taking this today” could be read as “I am not taking any of these” — worth testing against “Leave this one out today”. 2 · The opened time card scrolls when three or more medicines are in it; scrolling is the only learned behaviour the flow requires. 3 · Undo lives in the toast for four seconds; a slow reader will instead have to re-open the medicine and tap “Undo — I have not taken it”, which works but is a longer path. 4 · If the helper marks a dose remotely while she is looking at the card, the status changes under her; a gentler arrival animation with “your helper marked this” would be the next thing I build.</span>
+              <span style="font-size: 14px; line-height: 1.6; color: #45423C">1 · “Not taking this today” could be read as “I am not taking any of these” - worth testing against “Leave this one out today”. 2 · The opened time card scrolls when three or more medicines are in it; scrolling is the only learned behaviour the flow requires. 3 · Undo lives in the toast for four seconds; a slow reader will instead have to re-open the medicine and tap “Undo - I have not taken it”, which works but is a longer path. 4 · If the helper marks a dose remotely while she is looking at the card, the status changes under her; a gentler arrival animation with “your helper marked this” would be the next thing I build.</span>
             </div>
           </div>
-          <p style="margin: 0; font-size: 15px; line-height: 1.6; color: #45423C">The pill-box flow is deliberately not part of the daily task. It is a weekly job, it is longer, and it is written for whoever is doing it at the kitchen table — most often the helper, on either phone.</p>
+          <p style="margin: 0; font-size: 15px; line-height: 1.6; color: #45423C">The pill-box flow is deliberately not part of the daily task. It is a weekly job, it is longer, and it is written for whoever is doing it at the kitchen table - most often the helper, on either phone.</p>
         </div>
       </sc-if>
     </div>
@@ -1354,7 +1354,7 @@ class Component extends DCLogic {
     { id: 'amlo', name: 'Amlodipine', strength: '5 mg', dose: '1 tablet', form: 'Tablet', purpose: 'Blood pressure', notes: 'Take with a glass of water. Sit up for a few minutes afterwards.', repeat: 'Every day', slots: ['morning'], due: true, box: true, photos: 'both', week: 7, per: { morning: 1 }, days: 'Every day, morning' },
     { id: 'metf', name: 'Metformin', strength: '500 mg', dose: '1 tablet', form: 'Tablet', purpose: 'Blood sugar', notes: 'Take with food.', repeat: 'Every day', slots: ['morning', 'evening'], due: true, box: true, photos: 'both', week: 14, per: { morning: 1, evening: 1 }, days: 'Every day, morning and evening' },
     { id: 'ator', name: 'Atorvastatin', strength: '20 mg', dose: '1 tablet', form: 'Tablet', purpose: 'Cholesterol', notes: '', repeat: 'Every day', slots: ['night'], due: true, box: true, photos: 'pill', week: 7, per: { night: 1 }, days: 'Every day, bedtime' },
-    { id: 'cole', name: 'Colecalciferol', strength: '800 IU', dose: '1 capsule', form: 'Capsule', purpose: 'Vitamin D', notes: '', repeat: 'Every 3 days, from 14 September', slots: ['morning'], due: false, box: true, photos: 'both', week: 3, per: { morning: 1 }, days: 'Mon 14, Thu 17, Sun 20 — morning' },
+    { id: 'cole', name: 'Colecalciferol', strength: '800 IU', dose: '1 capsule', form: 'Capsule', purpose: 'Vitamin D', notes: '', repeat: 'Every 3 days, from 14 September', slots: ['morning'], due: false, box: true, photos: 'both', week: 3, per: { morning: 1 }, days: 'Mon 14, Thu 17, Sun 20 - morning' },
     { id: 'salb', name: 'Salbutamol inhaler', strength: '100 mcg', dose: '2 puffs', form: 'Inhaler', purpose: 'Breathing', notes: 'Shake before use. Rinse your mouth after.', repeat: 'Mondays and Thursdays', slots: ['evening'], due: false, box: false, out: 'Inhalers do not fit the box', photos: 'packet' },
     { id: 'lata', name: 'Latanoprost drops', strength: '0.005%', dose: '1 drop in each eye', form: 'Drops', purpose: 'Eye pressure', notes: 'Keep the bottle in the fridge.', repeat: 'Every day', slots: ['night'], due: true, box: false, out: 'Drops stay in the fridge', photos: 'packet' }
   ];
@@ -1452,7 +1452,7 @@ class Component extends DCLogic {
         meds: ms.map(m => {
           const st2 = this.doseOf(sl.id, m.id);
           const tone2 = st2 === 'taken' ? { bg: '#E7F1EA', fg: '#1F5340', g: '✓', label: 'Taken' }
-            : st2 === 'skipped' ? { bg: '#ECEBEE', fg: '#3F4048', g: '—', label: 'Not taking today' }
+            : st2 === 'skipped' ? { bg: '#ECEBEE', fg: '#3F4048', g: '-', label: 'Not taking today' }
             : { bg: '#FFFFFF', fg: '#55514A', g: '○', label: 'Not marked yet' };
           return {
             key: sl.id + m.id, name: m.name, strength: m.strength, dose: m.dose, purpose: m.purpose,
@@ -1499,18 +1499,18 @@ class Component extends DCLogic {
       bg: s.screen === screen ? '#211F1B' : 'transparent', fg: s.screen === screen ? '#FBF9F5' : '#1C1A17'
     });
     const names = {
-      welcome: 'Welcome / choose role', how: 'How it works', signin: 'Sign in — person taking medicines', pair: 'Helper pairing',
-      e_today: 'Today — person taking medicines', e_slot: 'One time of day — person taking medicines', e_settings: 'Settings — person taking medicines',
-      fill_start: 'Fill the box — start', fill_step: 'Fill the box — one medicine', fill_check: 'Fill the box — check the box',
-      s_today: 'Today — helper', s_cal: 'Calendar — helper', s_cal_day: 'One day — helper',
-      s_meds: 'Medicines — helper', s_medform: 'Add / edit medicine', s_times: 'Times of day', s_settings: 'Settings — helper'
+      welcome: 'Welcome / choose role', how: 'How it works', signin: 'Sign in - person taking medicines', pair: 'Helper pairing',
+      e_today: 'Today - person taking medicines', e_slot: 'One time of day - person taking medicines', e_settings: 'Settings - person taking medicines',
+      fill_start: 'Fill the box - start', fill_step: 'Fill the box - one medicine', fill_check: 'Fill the box - check the box',
+      s_today: 'Today - helper', s_cal: 'Calendar - helper', s_cal_day: 'One day - helper',
+      s_meds: 'Medicines - helper', s_medform: 'Add / edit medicine', s_times: 'Times of day', s_settings: 'Settings - helper'
     };
     const purposes = {
       welcome: 'Splits the two products at the first tap. Two role buttons, nothing competing.',
       how: 'Four read-only cards. Creates no data, so it is safe to open from anywhere.',
       signin: 'Google-only sign-in; on success it creates or resumes the household and its share code.',
-      pair: 'The helper joins with a six-character code — no account, no password.',
-      e_today: 'One screen, no scrolling. Each time of day shows its name, its time and the medicine names — and can be marked as taken straight from this screen.',
+      pair: 'The helper joins with a six-character code - no account, no password.',
+      e_today: 'One screen, no scrolling. Each time of day shows its name, its time and the medicine names - and can be marked as taken straight from this screen.',
       e_slot: 'Opened only when she wants to see the pills. One medicine per block, photo first, each with its own button. No scrolling.',
       e_settings: 'Only four things: account and code, reminders, appearance, about. No medicine administration.',
       fill_start: 'Shared by both roles. Sets the week and which times of day live in the physical box, and states plainly that nothing here is marked as taken.',
@@ -1529,18 +1529,18 @@ class Component extends DCLogic {
       roleTaker: s.role === 'taker', roleSupporter: s.role === 'supporter',
       tabMap: s.tab === 'map', tabSystem: s.tab === 'system', tabWhy: s.tab === 'why', tabReview: s.tab === 'review', tabCheck: s.tab === 'check',
       mapGroups: [
-        { title: 'Getting started — shared', items: [
+        { title: 'Getting started - shared', items: [
           mk('Welcome / choose role', 'welcome', 'Two roles + How it works'),
           mk('How it works', 'how', '4 read-only cards'),
           mk('Sign in (taker)', 'signin', 'Google · loading · failure'),
           mk('Helper pairing', 'pair', 'Code · invalid · offline · success')
         ] },
         { title: 'Person taking medicines', items: [
-          mk('Today', 'e_today', '5 states — use the chips under the phone', { role: 'taker' }),
+          mk('Today', 'e_today', '5 states - use the chips under the phone', { role: 'taker' }),
           mk('One time of day', 'e_slot', 'The pills in that slot', { role: 'taker', openSlot: 'night' }),
           mk('Settings', 'e_settings', 'Code · reminders · appearance', { role: 'taker' })
         ] },
-        { title: 'Fill the box — either role', items: [
+        { title: 'Fill the box - either role', items: [
           mk('Start', 'fill_start', '4 states'),
           mk('One medicine', 'fill_step', 'Photos · weekly total · days'),
           mk('Check the box', 'fill_check', '7 days × chosen compartments')
@@ -1585,7 +1585,7 @@ class Component extends DCLogic {
       const st = this.dayStatus(n);
       const tone = st === 'done' ? { bg: '#E7F1EA', fg: '#1F5340', g: '✓', b: '#9CC0AC' }
         : st === 'part' ? { bg: '#FFF4E0', fg: '#7A5410', g: '○', b: '#C89A3C' }
-        : st === 'skipped' ? { bg: '#ECEBEE', fg: '#3F4048', g: '—', b: '#BEC0C7' }
+        : st === 'skipped' ? { bg: '#ECEBEE', fg: '#3F4048', g: '-', b: '#BEC0C7' }
         : st === 'nodue' ? { bg: '#FBF9F5', fg: '#9A958A', g: '·', b: '#E4DFD4' }
         : { bg: '#FFFFFF', fg: '#6B7280', g: '', b: '#DDE1E8' };
       const locked = n < 14 - this.lockDays();
@@ -1604,7 +1604,7 @@ class Component extends DCLogic {
     const daySlots = (dst === 'nodue') ? [] : this.slots.filter(sl => sl.id !== 'midday').map((sl, i) => {
       const stt = seq[i] || 'unmarked';
       const tone = stt === 'taken' ? { bg: '#E7F1EA', fg: '#1F5340', g: '✓', l: 'Taken' }
-        : stt === 'skipped' ? { bg: '#ECEBEE', fg: '#3F4048', g: '—', l: 'Not taken' }
+        : stt === 'skipped' ? { bg: '#ECEBEE', fg: '#3F4048', g: '-', l: 'Not taken' }
         : stt === 'future' ? { bg: '#FFFFFF', fg: '#6B7280', g: '', l: 'Not yet' }
         : { bg: '#FFF4E0', fg: '#7A5410', g: '○', l: 'Not marked' };
       const ms = this.meds.filter(m => m.due && m.slots.indexOf(sl.id) >= 0);
@@ -1674,13 +1674,13 @@ class Component extends DCLogic {
         title: 'Suggest this photo to others?',
         body: 'Your pill photo replaces the shared one for Metformin 500 mg for everyone who uses it. No other information is shared.',
         confirm: 'Suggest photo', cancel: 'Keep it private',
-        onConfirm: () => { this.setState({ dialog: null }); this.toast('Photo suggested — thank you'); }
+        onConfirm: () => { this.setState({ dialog: null }); this.toast('Photo suggested - thank you'); }
       } }),
       schedules: [
         { kind: 'Every day', slot: 'Morning', time: '8:00 am', detail: '', onRemove: () => this.toast('Schedule removed') },
         { kind: 'Every day', slot: 'Evening', time: '6:00 pm', detail: '', onRemove: () => this.toast('Schedule removed') }
       ],
-      onAddSchedule: () => this.toast('Schedule added — choose its days'),
+      onAddSchedule: () => this.toast('Schedule added - choose its days'),
       timeRows: s.timeSlots.map((sl, i) => ({
         name: sl.name, t: sl.t, uses: sl.uses === 0 ? 'Not used by any medicine' : sl.uses + (sl.uses === 1 ? ' medicine uses this' : ' medicines use this'),
         onRemove: () => {
@@ -1698,7 +1698,7 @@ class Component extends DCLogic {
       supNotifOn: s.supNotif,
       onSupNotif: () => { this.setState({ supNotif: !s.supNotif }); this.toast(s.supNotif ? 'Your alerts turned off' : 'Your alerts turned on'); },
       escOptions: ['30 minutes', '1 hour', '2 hours', '3 hours'].map(k => ({
-        label: k, onPick: () => { this.setState({ esc: k }); this.toast('Saved — you will hear after ' + k); },
+        label: k, onPick: () => { this.setState({ esc: k }); this.toast('Saved - you will hear after ' + k); },
         bg: s.esc === k ? '#2A3B5E' : '#FFFFFF', fg: s.esc === k ? '#FFFFFF' : '#1F2937'
       })),
       onDisconnect: () => this.setState({ dialog: {
@@ -1724,10 +1724,10 @@ class Component extends DCLogic {
       fillReady: s.fillVar === 'ready', fillResume: s.fillVar === 'resume',
       fillNoSlots: s.fillVar === 'noslots', fillNothing: s.fillVar === 'nothing',
       fillHasWork: s.fillVar === 'ready' || s.fillVar === 'resume',
-      weekLabel: 'Mon 14 — Sun 20 September',
+      weekLabel: 'Mon 14 - Sun 20 September',
       boxTimesLabel: activeSlots.map(sl => sl.name).join(', ') || 'None chosen',
       boxCountLabel: boxMeds.length + ' medicines go in the box',
-      onPickWeek: () => this.toast('Week changed to Mon 21 — Sun 27 September'),
+      onPickWeek: () => this.toast('Week changed to Mon 21 - Sun 27 September'),
       onEditBoxTimes: () => this.setState({ sheet: 'boxtimes' }),
       boxTimeOptions: this.slots.map(sl => ({
         name: sl.name, t: sl.t, on: !!s.boxTimes[sl.id],
@@ -1759,8 +1759,8 @@ class Component extends DCLogic {
         return { day: dn, qty: q ? String(q) : '–', bg: q ? '#E7F1EA' : '#F2EEE6', fg: q ? '#14362a' : '#9A958A', line: q ? '#1F5340' : '#DDD7CB' };
       }) : [],
       curFilled: isFilled, curNotFilled: !isFilled,
-      onCurPill: () => this.openPhoto((cur ? cur.name : '') + ' — the pill', 'Check the pill in your hand matches this.'),
-      onCurPacket: () => this.openPhoto((cur ? cur.name : '') + ' — the packet', 'The box it comes in.'),
+      onCurPill: () => this.openPhoto((cur ? cur.name : '') + ' - the pill', 'Check the pill in your hand matches this.'),
+      onCurPacket: () => this.openPhoto((cur ? cur.name : '') + ' - the packet', 'The box it comes in.'),
       onFill: () => { const f = Object.assign({}, s.filled); f[cur.id] = true; this.setState({ filled: f, fillIdx: Math.min(s.fillIdx + 1, boxMeds.length - 1) }); this.toast(cur.name + ' put in the box'); },
       onUndoFill: () => { const f = Object.assign({}, s.filled); delete f[cur.id]; this.setState({ filled: f }); this.toast(cur.name + ' unmarked'); },
       onFillNext: () => this.setState({ fillIdx: Math.min(s.fillIdx + 1, boxMeds.length - 1) }),
@@ -1849,7 +1849,7 @@ class Component extends DCLogic {
         } });
       },
       onTestReminder: () => this.toast('Test reminder sent to this phone'),
-      onTestFail: () => this.toast('Could not send the test reminder — check your internet'),
+      onTestFail: () => this.toast('Could not send the test reminder - check your internet'),
       themes: ['Match system', 'Light', 'Dark'].map(k => ({
         label: k, onPick: () => { this.setState({ theme: k }); this.toast('Appearance saved'); },
         bg: s.theme === k ? '#211F1B' : '#FFFFFF', fg: s.theme === k ? '#FBF9F5' : '#1C1A17',
@@ -1865,7 +1865,7 @@ class Component extends DCLogic {
     const m = sm ? sm.med : null;
     const st = sm ? this.doseOf(sm.slot, m.id) : 'unmarked';
     const tone = st === 'taken' ? { bg: '#E7F1EA', fg: '#1F5340', label: '✓ Taken' }
-      : st === 'skipped' ? { bg: '#ECEBEE', fg: '#3F4048', label: '— Not taking today' }
+      : st === 'skipped' ? { bg: '#ECEBEE', fg: '#3F4048', label: '- Not taking today' }
       : { bg: '#F2EEE6', fg: '#55514A', label: '○ Not marked yet' };
     return {
       showDialog: !!s.dialog, dlgTitle: d.title, dlgBody: d.body,
@@ -1888,8 +1888,8 @@ class Component extends DCLogic {
       msTaken: st === 'taken', msSkipped: st === 'skipped', msUnmarked: st === 'unmarked',
       msNotTaken: st !== 'taken',
       msHasPacket: !!(m && m.photos !== 'pill'), msNoPacket: !!(m && m.photos === 'pill'),
-      onMsPill: () => this.openPhoto((m ? m.name : '') + ' — the pill', 'One ' + (m ? m.dose : '') + '. This is what it looks like.'),
-      onMsPacket: () => this.openPhoto((m ? m.name : '') + ' — the packet', 'The box it comes in.'),
+      onMsPill: () => this.openPhoto((m ? m.name : '') + ' - the pill', 'One ' + (m ? m.dose : '') + '. This is what it looks like.'),
+      onMsPacket: () => this.openPhoto((m ? m.name : '') + ' - the packet', 'The box it comes in.'),
       onMsTake: () => { this.setDose(sm.slot, m.id, 'taken', m.name + ' marked as taken'); this.setState({ sheet: null }); },
       onMsClear: () => { this.setDose(sm.slot, m.id, 'unmarked', m.name + ' mark cleared'); this.setState({ sheet: null }); },
       onMsSkip: () => { this.setDose(sm.slot, m.id, 'skipped', m.name + ' marked as not taking today'); this.setState({ sheet: null }); },
@@ -1961,7 +1961,7 @@ class Component extends DCLogic {
       welcome: 'Splits the two products at the first tap. Nothing else on the screen competes with the two role buttons.',
       how: 'Four informational cards. Read-only: creates no data, so it is safe to open from anywhere.',
       signin: 'Google-only sign-in for the person taking medicines; on success it creates or resumes the household and its share code.',
-      pair: 'The helper joins with a six-character code — no account, no password. Includes invalid code, connection failure, loading and success.'
+      pair: 'The helper joins with a six-character code - no account, no password. Includes invalid code, connection failure, loading and success.'
     };
 
     const base = {

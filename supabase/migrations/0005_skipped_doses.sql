@@ -7,14 +7,14 @@
 -- WHY AN UPDATE POLICY, WHEN 0001 DELIBERATELY OMITTED ONE
 --
 -- 0001 says: "no update grant/policy: a mistake is corrected with Undo, then
--- re-logged." That was right when logging was binary — the only edit was
+-- re-logged." That was right when logging was binary - the only edit was
 -- undoing one, and a delete says that precisely.
 --
 -- Three states changes the shape. Moving a dose from taken to skipped is not
 -- a correction of a mistake, it is a state change on a row that should keep
 -- its identity. Expressing it as delete-then-insert would mean two entries in
 -- the client's offline outbox (js/sync.js), which flushes in IndexedDB key
--- order rather than insertion order — so a queued delete can land after the
+-- order rather than insertion order - so a queued delete can land after the
 -- insert it was meant to precede and silently erase a dose the person
 -- recorded. One idempotent upsert per state change is order-independent and
 -- cannot lose a row.

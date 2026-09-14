@@ -1,4 +1,4 @@
-/* Filling the weekly pill box, one medicine at a time. Shared by both roles —
+/* Filling the weekly pill box, one medicine at a time. Shared by both roles -
  * whoever is holding the tray fills it.
  *
  * THIS FLOW CAN NEVER MARK A DOSE. Filling a tray is not taking a medicine,
@@ -6,7 +6,7 @@
  * vocabulary ("It is in the box", never "taken"), its own progress bar
  * explicitly labelled as job progress, a blue information band that says so on
  * entry, and no "taken" affordance anywhere. The check screen shows quantities
- * to compare with the tray and explicitly refuses to certify it — the app
+ * to compare with the tray and explicitly refuses to certify it - the app
  * cannot see the tray, so the last word is the person's.
  *
  * Three things about the sitting shape this file:
@@ -342,7 +342,7 @@ function qtyStrip(step, dates) {
   }));
 }
 
-/** "Every day, morning and evening" / "Mon, Thu, Sun — morning". */
+/** "Every day, morning and evening" / "Mon, Thu, Sun - morning". */
 function daysSentence(step, dates) {
   const dueDays = dates.filter((_, i) =>
     step.grid.some(row => row.days[i]?.due));
@@ -355,7 +355,7 @@ function daysSentence(step, dates) {
   const dayText = dueDays.length === dates.length
     ? S.freqDaily.toLowerCase()
     : dueDays.map(d => S.weekdayShort3[dayOfWeek(d)]).join(', ');
-  return [dayText, slotText].filter(Boolean).join(' — ');
+  return [dayText, slotText].filter(Boolean).join(' - ');
 }
 
 function stepScreen({ app, plan, step, index, done, photoUrls, onToggle, doneCount }) {
@@ -393,7 +393,7 @@ function stepScreen({ app, plan, step, index, done, photoUrls, onToggle, doneCou
       el('span.progress.fillstep-progress', { 'aria-hidden': 'true' },
         el('span', { style: `width: ${Math.round(((index + 1) / plan.steps.length) * 100)}%` })),
       el('span.fillstep-note', {
-        text: `${S.fillDoneCount(doneCount, plan.steps.length)} — ${S.fillProgressNote}`,
+        text: `${S.fillDoneCount(doneCount, plan.steps.length)} - ${S.fillProgressNote}`,
       }),
     ]),
     scroll: el('div.fillstep-body', [

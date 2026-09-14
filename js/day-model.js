@@ -4,8 +4,8 @@
  * view: "the medicines due in it today, how many are marked, whether it is
  * past due, the resulting state tone, the status string, the medicine-name
  * summary string, and the take-button label". Four screens need exactly that
- * set — the elder's Today, the elder's slot detail, the helper's Today and the
- * helper's day detail — and they must never disagree about it, because the
+ * set - the elder's Today, the elder's slot detail, the helper's Today and the
+ * helper's day detail - and they must never disagree about it, because the
  * same household is looking at two of them at once.
  *
  * Pure apart from loadDay(), which is the one read from the store.
@@ -65,7 +65,7 @@ export function describeSlot(group, states, date) {
 
   /* "Resolved" means every medicine was dealt with one way or the other, which
    * is what drives the done tone and the Undo label. "All taken" is the
-   * narrower claim, and only it gets the plain "All taken" wording — a slot
+   * narrower claim, and only it gets the plain "All taken" wording - a slot
    * with something left out has been handled, but saying "All taken" there
    * would be a lie. */
   const resolved = total > 0 && marked === total;

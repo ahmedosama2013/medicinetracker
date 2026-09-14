@@ -1,4 +1,4 @@
-# Community medicine reference library — implementation plan
+# Community medicine reference library - implementation plan
 
 ## Status and decision
 

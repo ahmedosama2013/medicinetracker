@@ -26,7 +26,7 @@
  * Deno and never reach the browser.
  */
 
-export const APP_VERSION = '2.0.0';
+export const APP_VERSION = '1.0.1';
 
 /** "Umer Butt" -> "Umer". The stored household name is first + last; every
  * screen that greets someone by name shows only the first. */
@@ -36,7 +36,7 @@ export function firstNameOf(fullName) {
 
 export const S = {
   appName: 'CarePair',
-  tagline: 'Medicines, kept simple — for the person taking them and the person helping.',
+  tagline: 'Medicines, kept simple - for the person taking them and the person helping.',
 
   // ---- welcome / role picker --------------------------------------------
   roleSimple: 'I take the medicines',
@@ -46,12 +46,17 @@ export const S = {
   // ---- how it works (4-panel carousel) ----------------------------------
   howItWorks: 'How it works',
   howCount: (current, total) => `${current} of ${total}`,
-  howNote: 'Reading this changes nothing in the app. No medicines are added.',
+  howNote: '',
   howClose: 'Close',
   howBack: 'Back',
   howNext: 'Next',
   howDone: 'Done',
   howPages: [
+    {
+      title: 'Missed doses and mixed-up pills, sorted',
+      body: 'Medicines get skipped, doubled up, or hard to tell apart - especially when more than one person is keeping track. CarePair gives everyone the same photo-clear picture of what is due and what is done.',
+      art: 'problem',
+    },
     {
       title: 'Pick who you are',
       body: 'One phone belongs to the person taking the medicines. The other belongs to whoever helps them. Each phone shows only what that person needs.',
@@ -108,7 +113,7 @@ export const S = {
   pairPasteFormatError: 'That doesn’t look like a 6-character code.',
   pairPasteReadError: 'Could not read the clipboard.',
   pairInvalidTitle: 'That code was not found',
-  pairInvalidBody: 'Codes are six characters, letters and numbers. Check it with them and try again — or ask them to make a new code in Settings.',
+  pairInvalidBody: 'Codes are six characters, letters and numbers. Check it with them and try again - or ask them to make a new code in Settings.',
   pairFailedTitle: 'Could not connect',
   pairFailedBody: 'The code looks right but we could not reach the household. Check your internet and retry.',
   pairConnecting: 'Connecting…',
@@ -133,13 +138,13 @@ export const S = {
   // ---- elder Today (E1) -------------------------------------------------
   todayFlag: 'Today',
   welcomeElder: name => (name ? `Welcome, ${name}!` : 'Welcome!'),
-  offlineBanner: 'No internet — your taps are saved here.',
+  offlineBanner: 'No internet - your taps are saved here.',
   loadingToday: 'Getting today ready…',
   emptyTitle: 'No medicines here yet',
   emptyBody: 'Your helper adds your medicines from their own phone. Give them the code below and they can start.',
   emptyCheckButton: 'Check if my medicines have been added',
   emptyCheckChecking: 'Checking…',
-  emptyCheckNoneYet: 'Nothing yet — ask your helper to check they saved it.',
+  emptyCheckNoneYet: 'Nothing yet - ask your helper to check they saved it.',
   yourCode: 'Your code',
   copyCode: 'Copy',
   sendCode: 'Send it',
@@ -192,8 +197,8 @@ export const S = {
   undoNotTaken: 'You have already taken this',
   leaveOutToday: 'Leave this one out today',
   putBackOnList: 'Put it back on the list',
-  markAllOfSlot: (takeLabel, slot) => `${takeLabel} — all of ${slot}`,
-  undoAllOfSlot: (undoLabel, slot) => `${undoLabel} — all of ${slot}`,
+  markAllOfSlot: (takeLabel, slot) => `${takeLabel} - all of ${slot}`,
+  undoAllOfSlot: (undoLabel, slot) => `${undoLabel} - all of ${slot}`,
   stateTakenLabel: 'Taken',
   stateSkippedLabel: 'Not taking today',
   stateUnmarkedLabel: 'Not marked yet',
@@ -225,7 +230,7 @@ export const S = {
   remindersTurnOff: 'Turn reminders off',
   remindersTest: 'Send me a test reminder',
   remindersTestSent: 'Test reminder sent to this phone',
-  remindersTestFailed: 'Could not send the test reminder — check your internet',
+  remindersTestFailed: 'Could not send the test reminder - check your internet',
   remindersAllowTitle: 'Allow reminders?',
   remindersAllowBody: 'Your phone will ask permission to show CarePair reminders. Choose Allow on the next message.',
   remindersAllowConfirm: 'Ask my phone',
@@ -237,8 +242,8 @@ export const S = {
   themeDark: 'Dark',
 
   settingsAboutSection: 'About',
-  aboutDisclaimer: 'CarePair helps you remember and recognise your medicines. It does not give medical advice. Ask your doctor or pharmacist about your medicines.',
-  aboutDisclaimerSupporter: 'CarePair records what you and the person you help tell it. It does not check doses, interactions or give medical advice.',
+  aboutDisclaimer: 'CarePair helps you remember and recognise your medicines.',
+  aboutDisclaimerSupporter: 'CarePair records what you and the person you help tell it. ',
   aboutBuild: version => `CarePair ${version}`,
 
   settingsSignOutAction: 'Sign out…',
@@ -267,7 +272,7 @@ export const S = {
   fillCompartmentsLabel: 'Compartments in the box',
   fillCompartmentsNone: 'None chosen',
   fillNoSlotsTitle: 'No compartments chosen yet',
-  fillNoSlotsBody: 'Choose at least one time of day that lives in the physical box — usually morning and bedtime.',
+  fillNoSlotsBody: 'Choose at least one time of day that lives in the physical box - usually morning and bedtime.',
   fillChooseCompartments: 'Choose compartments',
   fillNothingTitle: 'Nothing to put in the box this week',
   fillNothingBody: 'No medicine in the list falls on these days. Try another week, or ask the helper to check the medicine list.',
@@ -278,10 +283,10 @@ export const S = {
   fillCarryOn: 'Carry on',
   fillStartAgain: 'Start again',
   fillStart: 'Start filling the box',
-  fillOutsideButton: n => `${n} ${n === 1 ? 'medicine stays' : 'medicines stay'} outside the box — see them`,
+  fillOutsideButton: n => `${n} ${n === 1 ? 'medicine stays' : 'medicines stay'} outside the box - see them`,
   fillOutsideTitle: 'These stay out of the box',
   fillOutByForm: 'Taken from the packet, not the box',
-  fillOutBySlot: labels => `${labels.join(' and ')} — not in the box`,
+  fillOutBySlot: labels => `${labels.join(' and ')} - not in the box`,
 
   fillProgress: (i, n) => `Medicine ${i} of ${n}`,
   fillDoneCount: (done, total) => `${done} of ${total} put in the box`,
@@ -357,11 +362,11 @@ export const S = {
   calEmptyBody: 'Once medicines are added and the first day is marked, it will appear here. Days stay readable forever; recent days can still be corrected.',
   calAddFirst: 'Add the first medicine',
   calLegendTitle: 'What the marks mean',
-  calLegendLine1: '✓ every medicine dealt with · ○ something still unmarked · — something not taken · · nothing was due',
+  calLegendLine1: '✓ every medicine dealt with · ○ something still unmarked · - something not taken · · nothing was due',
   calLegendLine2: '▣ before the mark = a read-only record, no longer editable · plain with no mark = a future day, not markable',
-  calLegendLine3: 'No scores, no streaks — just what happened.',
+  calLegendLine3: 'No scores, no streaks - just what happened.',
   today: 'Today',
-  lockedBody: 'Kept as a record. Older days cannot be changed — you can still read everything and open the medicines.',
+  lockedBody: 'Kept as a record. Older days cannot be changed - you can still read everything and open the medicines.',
   futureBody: 'This day has not happened yet. You can see what is planned, but nothing can be marked.',
   editableBody: 'You can still correct this day.',
   dayNothing: 'No medicines were due',
@@ -479,7 +484,7 @@ export const S = {
   confirm: 'Confirm',
   keepIt: 'Keep it',
 
-  errNameRequired: 'A name is needed — this is what they will read.',
+  errNameRequired: 'A name is needed - this is what they will read.',
   errDosageRequired: 'The dose must be a number above zero.',
   errNoSchedule: 'At least one time is needed. A medicine with no time set would never appear on the Today screen.',
   errAnchorRequired: 'Choose the day it starts from, otherwise we cannot work out which days it falls on.',
@@ -523,7 +528,7 @@ export const S = {
   settingsHousehold: 'Household',
   settingsAppearance: 'Appearance',
   supporterNotificationsLabel: 'Tell me if a medicine is not marked',
-  supporterNotificationsHint: 'Only for medicines that were due — never a summary or a score.',
+  supporterNotificationsHint: 'Only for medicines that were due - never a summary or a score.',
   supporterNotificationsChange: 'Change',
   supporterNotificationsOn: 'On',
   supporterNotificationsOff: 'Off',
@@ -537,10 +542,10 @@ export const S = {
   // ---- community -------------------------------------------------------
   communityTitle: 'Shared medicine list',
   communityLookUp: 'Look it up in the shared list',
-  communityLookUpHint: 'Optional. It only ever fills in the name, strength and photos — you can ignore it and type everything yourself.',
+  communityLookUpHint: 'Optional. It only ever fills in the name, strength and photos - you can ignore it and type everything yourself.',
   communityUse: 'Use',
   communityNoThanks: 'No thanks, I will type it myself',
-  communityExplain: 'Using an entry only fills in the name, strength and photos. You still choose the dose, the purpose and the times — and you can change anything afterwards.',
+  communityExplain: 'Using an entry only fills in the name, strength and photos. You still choose the dose, the purpose and the times - and you can change anything afterwards.',
   communityUsing: 'Using a shared reference. Check it matches the packet you have.',
   communitySearchPhotos: count => (count === 2 ? 'pill and packet photo' : count === 1 ? 'pill photo only' : 'no photos'),
   communitySearchFailed: 'The shared list is unavailable right now.',
@@ -549,7 +554,7 @@ export const S = {
   communitySuggestBody: 'Your photo replaces the shared one for everyone who uses it. No other information is shared.',
   communitySuggestConfirm: 'Suggest photo',
   communitySuggestCancel: 'Keep it private',
-  communitySuggestSent: 'Photo suggested — thank you',
+  communitySuggestSent: 'Photo suggested - thank you',
   communityAdded: 'Added to the shared list.',
   communityDuplicate: 'A matching reference already exists. Choose it from the suggestions above.',
   communityPhotosAdded: count => (count === 1 ? '1 missing shared photo added.' : count > 1 ? `${count} missing shared photos added.` : ''),

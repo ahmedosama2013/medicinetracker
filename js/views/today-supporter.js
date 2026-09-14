@@ -10,7 +10,7 @@
  *    out loud when the copy is stale or the refresh failed. "They haven't
  *    marked anything" is exactly the wrong thing to be wrong about.
  * 2. THEIR PHONE MAY BE ON A DIFFERENT DATE. todayStr() answers with the
- *    household's day, which is the only correct answer — and it means this
+ *    household's day, which is the only correct answer - and it means this
  *    screen can say Sunday while the phone it runs on says Monday. Said out
  *    loud, and only when the two actually differ.
  * 3. ACTING ON SOMEONE'S BEHALF IS ALWAYS LABELLED. Once per session in a
@@ -18,7 +18,7 @@
  *
  * The slot list is collapsible: a row per time of day, expanding to
  * per-medicine rows plus a "Mark the whole slot" action. Marking the whole
- * slot is real and reversible but it is never the primary action — making it
+ * slot is real and reversible but it is never the primary action - making it
  * primary invites marking everything at 8am before anything is swallowed.
  */
 
@@ -60,7 +60,7 @@ export async function supporterTodayView({ app, isCurrent, settings }) {
   if (!isCurrent()) return cleanup;
 
   // Photos come from the local cache js/supporter-sync.js fills, not a signed
-  // URL per row — that would be two round trips per medicine, every visit.
+  // URL per row - that would be two round trips per medicine, every visit.
   const medicineIds = [...new Set(day.groups.flatMap(g => g.medicines.map(m => m.medicineId)))];
   const photoRows = await Promise.all(medicineIds.map(id => store.getPhoto(id).catch(() => null)));
   if (!isCurrent()) return cleanup;

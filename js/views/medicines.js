@@ -1,10 +1,10 @@
-/* Helper: the medicine list. The inventory — what exists, what state its
+/* Helper: the medicine list. The inventory - what exists, what state its
  * photos are in, and what has been retired.
  *
  * Reads live from Supabase via the share code on every visit: helper writes
  * already require connectivity, so there is no local cache to keep in sync
  * here. The PHOTOS, though, come from the local cache js/supporter-sync.js
- * fills rather than a signed URL per row — that would be two round trips per
+ * fills rather than a signed URL per row - that would be two round trips per
  * medicine, every time this screen is opened.
  *
  * A medicine with no photo shows the hatch placeholder rather than a generic
@@ -103,7 +103,7 @@ export async function medicinesView({ app, isCurrent = () => true }) {
 
   /* Two rows for the same medicine at the same strength is almost always one
    * medicine entered twice, so they are folded into a single row whose link
-   * carries every id — the form then edits all of their schedules together. */
+   * carries every id - the form then edits all of their schedules together. */
   const groups = [];
   const groupByKey = new Map();
   const sorted = [...active].sort((a, b) => {
@@ -148,7 +148,7 @@ export async function medicinesView({ app, isCurrent = () => true }) {
       }),
       el('a.s-med-open', { href }, [
         el('span.s-med-name', { text: title }),
-        el('span.s-med-sched', { text: scheduleSummary(group.schedules, slots) || '—' }),
+        el('span.s-med-sched', { text: scheduleSummary(group.schedules, slots) || '-' }),
         el('span.s-med-photo', {
           text: photoStateLabel(!!medicine.photoPath, !!medicine.packetPhotoPath),
         }),
@@ -207,8 +207,8 @@ export async function medicinesView({ app, isCurrent = () => true }) {
 /**
  * Archive, from the list or from inside the form.
  *
- * Names the consequence — it leaves Today and the pill box, the past record
- * stays, and it can be restored — and names both actions: "Archive" / "Keep
+ * Names the consequence - it leaves Today and the pill box, the past record
+ * stays, and it can be restored - and names both actions: "Archive" / "Keep
  * it". Never "OK / Cancel".
  */
 export async function archiveMedicine(code, medicine) {

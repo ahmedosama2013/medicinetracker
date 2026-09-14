@@ -246,7 +246,7 @@ export const TONE = {
   wait: { cls: 'state-wait', fg: 'var(--ink-3)', bg: 'var(--e-sunk)', glyph: '○' },
   late: { cls: 'state-late', fg: 'var(--red)', bg: 'var(--red-tint)', glyph: '!' },
   done: { cls: 'state-done', fg: 'var(--green)', bg: 'var(--green-tint)', glyph: '✓' },
-  skip: { cls: 'state-skip', fg: 'var(--neutral)', bg: 'var(--neutral-tint)', glyph: '—' },
+  skip: { cls: 'state-skip', fg: 'var(--neutral)', bg: 'var(--neutral-tint)', glyph: '-' },
   none: { cls: 'state-none', fg: 'var(--s-muted)', bg: 'var(--card)', glyph: '' },
 };
 

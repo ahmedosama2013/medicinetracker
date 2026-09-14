@@ -1,12 +1,12 @@
 /* One medicine, everything known about it, as a bottom sheet.
  *
- * A sheet rather than a screen because this is something you LOOK AT — you
+ * A sheet rather than a screen because this is something you LOOK AT - you
  * come back out of it to the same place. The full-screen photo viewer is one
  * tap deeper: matching a tablet against a blister strip needs the photo as
  * large as the screen allows, and that is the whole reason the photos exist.
  *
  * The marking buttons live in a fixed foot below the scrolling body, so they
- * are reachable without scrolling past the notes — and they are the same
+ * are reachable without scrolling past the notes - and they are the same
  * actions, in the same words, as the slot detail behind it. A person must
  * never have to learn two vocabularies for the same tap.
  */
@@ -53,7 +53,7 @@ function fact(label, value) {
 
 /**
  * A 140px photo slab. With a photo it opens the full-screen viewer; without
- * one it is a plain dashed block, not a button — a control that opens a
+ * one it is a plain dashed block, not a button - a control that opens a
  * full-screen view of nothing is a dead end.
  */
 function photoSlab({ url, caption, emptyText, name, strength, altText, packet = false }) {

@@ -1,4 +1,4 @@
-/* CarePair — visual layer, v4 (elder-first redesign).
+/* CarePair - visual layer, v4 (elder-first redesign).
  *
  * Built from design_handoff_carepair_elder_ui/README.md. Two dialects of one
  * system, switched by a body class:
@@ -18,13 +18,13 @@
  *   4. NO MOTION in the elder view beyond press feedback and progress bars.
  *   5. The bottom nav is always visible in the elder view.
  *
- * Layout is a fixed viewport column — header, one scrolling region, fixed nav
- * — so it works identically on a 320px phone and a 430px one. Never introduce
+ * Layout is a fixed viewport column - header, one scrolling region, fixed nav
+ * - so it works identically on a 320px phone and a 430px one. Never introduce
  * a second column.
  */
 
 /* ---------------------------------------------------------------------
-   1. Tokens — shared, light
+   1. Tokens - shared, light
    --------------------------------------------------------------------- */
 
 :root {
@@ -56,7 +56,7 @@
   --amber-tint: #FFF4E0;
 
   /* "Not taking today" is a recorded outcome, never a failure. Neutral grey,
-     never red — see the handoff's colour rules. */
+     never red - see the handoff's colour rules. */
   --neutral: #3F4048;
   --neutral-tint: #ECEBEE;
   --neutral-line: #BEC0C7;
@@ -142,7 +142,7 @@
 }
 
 /* ---------------------------------------------------------------------
-   2. Tokens — dark
+   2. Tokens - dark
    ---------------------------------------------------------------------
    The design source only specifies light, but "How it looks" offers Dark and
    low-vision users often need it. Every semantic name is redefined here, never
@@ -337,7 +337,7 @@ body.mode-supporter {
   --nav-line: var(--s-divider);
 }
 
-/* A supporter-flavoured screen reached before a role exists — the pairing
+/* A supporter-flavoured screen reached before a role exists - the pairing
    flow. The helper should land in their own product from the first tap. */
 .screen-sup {
   --canvas: var(--s-canvas);
@@ -356,7 +356,7 @@ body.mode-supporter {
    ---------------------------------------------------------------------
    One fixed viewport column: a header that does not move, exactly one
    scrolling region, and a bottom nav that is always on screen. This is what
-   makes the layout identical on every phone size — a taller screen simply
+   makes the layout identical on every phone size - a taller screen simply
    gives the scroll region more room, which is the handoff's responsive rule. */
 
 *, *::before, *::after { box-sizing: border-box; }
@@ -416,7 +416,7 @@ img { max-width: 100%; display: block; }
 
 /* ---- the screen primitive ------------------------------------------------
    Every view renders exactly one .screen. Wider than a phone, it centres in a
-   single column — never two. */
+   single column - never two. */
 
 .screen {
   flex: 1 1 auto;
@@ -446,7 +446,7 @@ img { max-width: 100%; display: block; }
   overscroll-behavior: contain;
 }
 
-/* A fixed region above the nav — "Start filling the box", "Mark all of …". */
+/* A fixed region above the nav - "Start filling the box", "Mark all of …". */
 .screen-foot { flex: none; }
 
 /* A screen with no scrolling region, vertically centred: welcome, sign in. */
@@ -470,7 +470,7 @@ img { max-width: 100%; display: block; }
    ---------------------------------------------------------------------
    Sizes are declared per use site because the type and touch floors differ
    between the two roles. These are the shapes; the heights come from the
-   modifiers. Destructive actions are outlined in red, never filled — the
+   modifiers. Destructive actions are outlined in red, never filled - the
    filled primary is always the safe one. */
 
 .btn {
@@ -827,13 +827,6 @@ body.mode-supporter .navlink[aria-current="page"] {
   color: var(--ink-2);
 }
 
-.how-note {
-  margin: 0;
-  font-size: 15px;
-  line-height: 1.45;
-  color: var(--muted);
-}
-
 .how-nav {
   display: flex;
   gap: 12px;
@@ -1058,7 +1051,7 @@ input.pair-code-input.is-invalid { border-color: var(--red-line); }
 .pair-foot .btn { flex: 1; min-height: 58px; font-size: 17px; border-radius: var(--r-btn); }
 
 /* ---------------------------------------------------------------------
-   8. Elder — Today (E1)
+   8. Elder - Today (E1)
    --------------------------------------------------------------------- */
 
 .day-welcome {
@@ -1095,7 +1088,7 @@ input.pair-code-input.is-invalid { border-color: var(--red-line); }
 /* One sentence, never a paragraph.
    The gutters are tight on purpose: at the design's 390px this keeps the
    sentence on a single line, which is the point of it. Below ~380px it takes
-   a second line rather than shrinking — the 17px floor outranks the line
+   a second line rather than shrinking - the 17px floor outranks the line
    count, and two short lines still read as one sentence. */
 .offline-banner {
   flex: none;
@@ -1122,7 +1115,7 @@ input.pair-code-input.is-invalid { border-color: var(--red-line); }
   min-width: 0;
 }
 
-/* The flexible region. Cards are natural height and do NOT stretch to fill —
+/* The flexible region. Cards are natural height and do NOT stretch to fill -
    stretching made the screen read as blocks. Two slots fit a phone with margin
    above the first; a third scrolls. */
 .slot-list {
@@ -1370,7 +1363,7 @@ input.pair-code-input.is-invalid { border-color: var(--red-line); }
 .nothing-due-body { font-size: 19px; line-height: 1.45; color: var(--ink-2); }
 
 /* ---------------------------------------------------------------------
-   9. Elder — one time of day (E2)
+   9. Elder - one time of day (E2)
    --------------------------------------------------------------------- */
 
 .eslot-head {
@@ -1579,7 +1572,7 @@ input.pair-code-input.is-invalid { border-color: var(--red-line); }
 .ptile-badge .icon { width: 13px; height: 13px; background: #fff; }
 
 /* ---------------------------------------------------------------------
-   10. Elder — settings (E4). The only elder screen that scrolls by design.
+   10. Elder - settings (E4). The only elder screen that scrolls by design.
    --------------------------------------------------------------------- */
 
 .page-title {
@@ -2981,7 +2974,7 @@ body.mode-supporter .sheet-close {
   gap: 10px;
 }
 
-/* A sheet with no scroll region — box compartments, share, outside-the-box. */
+/* A sheet with no scroll region - box compartments, share, outside-the-box. */
 .sheet-pad {
   padding: 18px;
   display: flex;
@@ -3399,7 +3392,7 @@ body.mode-supporter .busy { background: var(--s-card); }
   .cal-day-num { font-size: 14px; }
 }
 
-/* Short screens — a landscape phone, or a small window. The elder card stack
+/* Short screens - a landscape phone, or a small window. The elder card stack
    simply scrolls; nothing is hidden and nothing shrinks below the floor. */
 @media (max-height: 620px) {
   .welcome, .signin { justify-content: flex-start; padding-top: 16px; }

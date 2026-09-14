@@ -4,7 +4,7 @@
 > revision of the original build spec, written before the app existed.
 > `v3-plan.md` is the current visual overhaul. They are unrelated.
 >
-> **Superseded.** The app moved from this file-based, backend-less design to a Supabase-backed online-sync model (accounts, live sync, Web Push reminders) — see [architecture.md](architecture.md) for what's actually running today. Kept here for the record of why v1–v3's decisions were made; §9 and §11 in particular describe the reminders and two-way-sync problems that the online-sync rewrite solved.
+> **Superseded.** The app moved from this file-based, backend-less design to a Supabase-backed online-sync model (accounts, live sync, Web Push reminders) - see [architecture.md](architecture.md) for what's actually running today. Kept here for the record of why v1–v3's decisions were made; §9 and §11 in particular describe the reminders and two-way-sync problems that the online-sync rewrite solved.
 
 Supersedes `medicine-tracker-spec.md` v1.0 and Build Plan v2. On approval this becomes the canonical spec in the repo; v1 and v2 are kept for reference.
 
@@ -380,7 +380,7 @@ Before anything is written, a confirmation dialog states the effect in plain lan
 
 Written in a single transaction so a half-merged database is impossible.
 
-The file picker uses `accept=".json,application/json"`. **The extension must be listed explicitly** — iOS Safari greys out `.json` files, leaving the elder staring at an unselectable filename, when only the MIME type is given.
+The file picker uses `accept=".json,application/json"`. **The extension must be listed explicitly** - iOS Safari greys out `.json` files, leaving the elder staring at an unselectable filename, when only the MIME type is given.
 
 `js/merge.js` is a pure function over plain arrays with no database access, so the table above can be reasoned about and exercised directly from the browser console.
 
@@ -400,7 +400,7 @@ The file picker uses `accept=".json,application/json"`. **The extension must be 
 
 ## 8. Setup and hand-off
 
-Remote, no in-person step required, and written out as a numbered guide the supporter can read aloud over the phone. **The guide itself lives in [flow.md](flow.md)** — this section is only the constraints it has to satisfy.
+Remote, no in-person step required, and written out as a numbered guide the supporter can read aloud over the phone. **The guide itself lives in [flow.md](flow.md)** - this section is only the constraints it has to satisfy.
 
 - **Say plainly, at the top:** v1 solves pill identification and record keeping. It does **not** remind anybody of anything. There are no notifications, and nothing happens on the phone unless someone opens the app. The person taking the medicines needs an existing habit, or an alarm in the phone's own Clock app.
 - **iOS has no install prompt**, so Add to Home Screen must be walked through explicitly, with the exact menu names, for both phones.

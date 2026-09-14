@@ -4,9 +4,9 @@ Everything deliberately deferred from v1. Ordered roughly by value. Nothing here
 
 > **Done: §1 (Reminders), §2 (Two-way sync), §3 (Skip and partial doses).**
 >
-> §1 and §2 shipped together as the online-sync rearchitecture — see
+> §1 and §2 shipped together as the online-sync rearchitecture - see
 > [architecture.md](architecture.md) and `supabase/migrations/0001_init.sql`.
-> §3 shipped in v3 — see below and [v3-plan.md](v3-plan.md).
+> §3 shipped in v3 - see below and [v3-plan.md](v3-plan.md).
 >
 > All three are left in place for the reasoning, not the plan: the
 > ntfy-can't-reach-a-phone diagnosis and the snapshot/doseLog asymmetry still
@@ -19,8 +19,8 @@ Everything deliberately deferred from v1. Ordered roughly by value. Nothing here
 > **Historical.** This section is the diagnosis, not the design. Reminders
 > shipped as Web Push (the second option in the table below), not ntfy, and
 > the ladder has since grown a follow-up and a nightly catch-all. For what the
-> app actually sends today — timings, wording, configuration, and how to debug
-> a reminder that never arrives — see **[notifications.md](notifications.md)**.
+> app actually sends today - timings, wording, configuration, and how to debug
+> a reminder that never arrives - see **[notifications.md](notifications.md)**.
 > Kept because the ntfy-can't-reach-a-phone finding is still why the shipped
 > design looks the way it does.
 
@@ -74,7 +74,7 @@ Depends on: restoring Today and Calendar to supporter mode, which were cut from 
 
 ---
 
-## 3. Skip and partial doses — DONE (v3)
+## 3. Skip and partial doses - DONE (v3)
 
 Shipped in migration `0005_skipped_doses.sql` and the v3 Today screen. How the
 open questions were answered:
@@ -82,7 +82,7 @@ open questions were answered:
 - Not a Skip toggle but a **cycling target**: unmarked → taken → skipped →
   unmarked. One tap for the common case.
 - **Done marks only what is unmarked**, so a deliberate skip survives it.
-- **Undo on a slot does clear skips** — it means "put this back to untouched",
+- **Undo on a slot does clear skips** - it means "put this back to untouched",
   and leaving amber behind would make the button depend on invisible history.
 - **A skip can be reversed on its own**, by cycling, and reaching `skipped`
   raises a toast offering the way straight back.
@@ -92,7 +92,7 @@ open questions were answered:
 
 ---
 
-## 4. Pakistani medicine autocomplete — planned for v3 Phase 4
+## 4. Pakistani medicine autocomplete - planned for v3 Phase 4
 
 The thing that would make the app meaningfully local rather than a generic tracker.
 
@@ -114,8 +114,8 @@ Consider: right-to-left layout, whether numerals should be Urdu or Latin, and wh
 
 - **PRN and as-needed medicines.** No fixed schedule, logged when taken. Needs a separate section on Today, since it does not belong to any slot.
 - ~~**Refill and stock tracking.**~~ **Decided against, in Phase 3.** It was
-  planned as item 22 — "I don't have enough" while filling the organiser,
-  adding to a shared buy-list — on the reasoning that filling the tray is the
+  planned as item 22 - "I don't have enough" while filling the organiser,
+  adding to a shared buy-list - on the reasoning that filling the tray is the
   one moment the information exists. That reasoning still holds. What does not
   is the assumption that knowing you are short tells anyone when to buy:
   households differ on how far ahead they stock up, some have a relative who
@@ -127,7 +127,7 @@ Consider: right-to-left layout, whether numerals should be Urdu or Latin, and wh
 - **Editing a logged dose's timestamp.** Currently `takenAt` is whenever the dose was marked, which is wrong if it was taken earlier. On a skipped row it means "when this was recorded", which the column name does not say.
 - **Unlocking older days.** v1 freezes everything on or before the last import, so an error more than one import old cannot be corrected. Consider a supporter-side override.
 - **Automated tests.** Browser-based, not Node, so the no-build-step and no-`package.json` constraint holds. Worth it if `js/schedule.js` grows beyond the three frequency types. Phase 2.5 raised the case for them: several of its bugs were invisible from reading the code and only showed up by counting DOM nodes, and a handful of those checks would make good regression tests.
-- **Teach the outbox the difference between "rejected" and "offline".** Both look identical to its catch, so a permanently rejected write — one aimed at a locked day — retries forever and the person sees a tick that never syncs. Phase 2.5 removed the main way to *generate* such a write (the date is re-checked at midnight now), but the retry loop itself is still there. Worth doing if one is ever actually observed.
+- **Teach the outbox the difference between "rejected" and "offline".** Both look identical to its catch, so a permanently rejected write - one aimed at a locked day - retries forever and the person sees a tick that never syncs. Phase 2.5 removed the main way to *generate* such a write (the date is re-checked at midnight now), but the retry loop itself is still there. Worth doing if one is ever actually observed.
 - **Detached-fragment rendering for all views.** Phase 2.5 numbered renders and made views check `isCurrent()` after each await, which guards the two-copies-of-a-screen bug. Building every view into a fragment the router swaps in would make it unrepresentable instead. Bigger change; revisit if a fourth screen wants it.
 - **Install prompt on Android.** If the user base ever extends past iOS, `beforeinstallprompt` gives a real install button instead of the manual Add to Home Screen walkthrough.
 
@@ -139,5 +139,5 @@ Recorded so these do not get reopened without a reason.
 
 - **Drug interaction checking or any clinical logic.** This is a memory aid. Anything that reads as medical advice changes the liability profile and the design entirely.
 - **Adherence scores, streaks, gamification.** The app must never read as judgement of an elderly person's behaviour.
-- ~~**Accounts, login, cloud database.**~~ Reversed: this shipped. The file-based hand-off turned out to be the limitation, not the architecture — see [architecture.md](architecture.md).
+- ~~**Accounts, login, cloud database.**~~ Reversed: this shipped. The file-based hand-off turned out to be the limitation, not the architecture - see [architecture.md](architecture.md).
 - **Adherence aggregates of any kind**, on either device. The supporter sees the same rings the elder does and nothing that sums them up. Parity makes this tempting to build; it is still a no.

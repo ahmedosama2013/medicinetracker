@@ -2,7 +2,7 @@
  * corrected.
  *
  * A screen rather than a sheet. The calendar is a place you navigate, and a
- * day opened from it is somewhere you stay for a while — reading what
+ * day opened from it is somewhere you stay for a while - reading what
  * happened, opening a medicine, correcting a mark. A sheet over a month grid
  * made all three feel like a peek.
  *
@@ -10,7 +10,7 @@
  * before showing anything:
  *   - editable: within the correction window. "You can still correct this day."
  *   - locked:   past the household's freeze line. Readable forever, not
- *               changeable — and it says so, rather than showing dead buttons.
+ *               changeable - and it says so, rather than showing dead buttons.
  *   - future:   not happened yet. You can see what is planned, nothing more.
  *
  * Correcting a mark opens the same medicine sheet the rest of the app uses,

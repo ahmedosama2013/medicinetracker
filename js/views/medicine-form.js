@@ -2,17 +2,17 @@
  *
  * The medicine and its times are deliberately not two screens. A medicine that
  * exists but is scheduled nowhere appears on no Today screen and in no
- * calendar, and the helper has no way to notice — it is a dead state that
+ * calendar, and the helper has no way to notice - it is a dead state that
  * looks exactly like success. So: no save without at least one time.
  *
  * Three sections, in the order someone holding a packet works through them:
  * what it is, its photos, when they take it. Choices that are a small closed
- * set (form, how often) are chips rather than dropdowns — a chip shows every
+ * set (form, how often) are chips rather than dropdowns - a chip shows every
  * option at once, which is what makes "Liquid" discoverable as the thing that
  * keeps a medicine out of the pill box.
  *
  * Every write here goes through supporter.js (code-gated Supabase calls, no
- * local cache) and requires connectivity — unlike the elder's device, this one
+ * local cache) and requires connectivity - unlike the elder's device, this one
  * is never used offline.
  */
 
@@ -29,7 +29,7 @@ import { todayStr, formatTime } from '../date.js';
 import { go } from '../router.js';
 import { archiveMedicine } from './medicines.js';
 
-/* A medicine has two photos — the pill and the packet — and everything about
+/* A medicine has two photos - the pill and the packet - and everything about
  * picking one is identical, so the state is keyed by kind rather than
  * duplicated. `pill` answers "which tablet is this?" on the slot screen;
  * `packet` answers "which box do I reach for?" while filling an organiser.
@@ -78,7 +78,7 @@ export async function medicineFormView({ app, query, isCurrent = () => true }) {
 
   /* Something on screen before the network is touched. This view costs a
    * routine fetch plus, for an existing medicine, a signed URL from an edge
-   * function that can cold-start — so tapping a row used to sit on the old
+   * function that can cold-start - so tapping a row used to sit on the old
    * screen for a second or more with no sign anything had happened. */
   mount(app, shell(loadingState()));
 
@@ -321,8 +321,8 @@ export async function medicineFormView({ app, query, isCurrent = () => true }) {
   function photoColumn(kind) {
     const state = photo[kind];
 
-    /* Only this kind's token is released. Releasing both — which a single
-     * shared token forced — would revoke the other picker's live preview the
+    /* Only this kind's token is released. Releasing both - which a single
+     * shared token forced - would revoke the other picker's live preview the
      * moment either one was redrawn. */
     if (previewTokens[kind] !== null) {
       photosLib.release(previewTokens[kind]);
@@ -734,7 +734,7 @@ export async function medicineFormView({ app, query, isCurrent = () => true }) {
 
   /* The DB's freq_shape constraint requires the columns not used by a given
    * frequency type to be null, and replace_schedules() keys its daysOfWeek
-   * handling off the JSON key's presence (not its value) — but the form keeps
+   * handling off the JSON key's presence (not its value) - but the form keeps
    * stale values around when the type is switched, so the fields not
    * applicable to the chosen type are dropped entirely here. */
   function normalizeFrequency(freq) {
@@ -765,8 +765,8 @@ export async function medicineFormView({ app, query, isCurrent = () => true }) {
     return !Object.keys(errors).length;
   }
 
-  /* Save does up to four round trips — the medicine, its schedules, a photo
-   * through an edge function that can cold start, and a cache refresh — and
+  /* Save does up to four round trips - the medicine, its schedules, a photo
+   * through an edge function that can cold start, and a cache refresh - and
    * the button used to look untouched for all of them. Two taps in that window
    * ran save() twice with draft.id still null on the second, which is two
    * medicines with the same name and no way to tell which to remove. */
@@ -807,7 +807,7 @@ export async function medicineFormView({ app, query, isCurrent = () => true }) {
     }
 
     /* From here on the medicine IS saved. A photo failure at this point used
-     * to be reported as "something went wrong" — which was true of the photo,
+     * to be reported as "something went wrong" - which was true of the photo,
      * not of the save, and left the person confused when the medicine showed
      * up on the list anyway. Reported separately so the toast matches what
      * actually happened. */
@@ -854,7 +854,7 @@ export async function medicineFormView({ app, query, isCurrent = () => true }) {
     }
 
     /* The helper's own Today and the photos on their medicine list read the
-     * local cache, not the live routine — so without this a medicine they had
+     * local cache, not the live routine - so without this a medicine they had
      * just added was missing from their own Today, and its freshly uploaded
      * photo showed the fallback tile, for up to a minute. */
     busy.setMessage(S.busyFinishing);

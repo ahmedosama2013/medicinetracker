@@ -1,8 +1,8 @@
-/* E2 — one time of day, for the person taking the medicines.
+/* E2 - one time of day, for the person taking the medicines.
  *
  * Reached only from "See the pills" on a Today card. Today already marks the
- * whole slot in one tap; this screen exists for the other question — "is this
- * the right tablet?" — so the photo comes first and every medicine gets its
+ * whole slot in one tap; this screen exists for the other question - "is this
+ * the right tablet?" - so the photo comes first and every medicine gets its
  * own button.
  *
  * One deliberate departure from the prototype: its medicine cards are
@@ -52,7 +52,7 @@ export async function slotView({ app, query, isCurrent = () => true }) {
 
   const group = day.groups.find(g => g.slotId === slotId) || day.groups[0];
   if (!group) {
-    // Nothing due in any slot — a stale link, or the routine changed. Back to
+    // Nothing due in any slot - a stale link, or the routine changed. Back to
     // Today rather than a blank screen with a back button.
     go('#/today', { replace: true });
     return cleanup;
@@ -189,7 +189,7 @@ export async function slotView({ app, query, isCurrent = () => true }) {
       }));
     }
 
-    /* "Leave this one out today", never "Skip" — and it is always reversible
+    /* "Leave this one out today", never "Skip" - and it is always reversible
      * with "Put it back on the list", in the same place. */
     if (!medicine.state) {
       node.appendChild(el('button.med-textaction', {

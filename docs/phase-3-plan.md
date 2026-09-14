@@ -1,23 +1,23 @@
-# Phase 3 — Organiser mode
+# Phase 3 - Organiser mode
 
 > **Done.** Items 18–21 and 23 shipped; item 22 was dropped (see below) and its
 > slot went to the bottom bar. Each section below carries a "done" note
-> recording what the plan got wrong and what use turned up afterwards —
+> recording what the plan got wrong and what use turned up afterwards -
 > that is the part worth reading.
 >
 > **The screens have since been redrawn** by the v4 elder-first redesign. The
-> flow, the rules and the data are unchanged — it still never writes to the
+> flow, the rules and the data are unchanged - it still never writes to the
 > dose log, the plan is still frozen for a sitting, the step still lives in the
-> hash — but the day × time-of-day grid became seven quantity chips, and the
+> hash - but the day × time-of-day grid became seven quantity chips, and the
 > entry point moved from Settings → Pill box to a tab on both phones. See
-> [ui.md](ui.md), "E3 — Fill the box".
+> [ui.md](ui.md), "E3 - Fill the box".
 
 The screen the photos have always been for. A supporter or an elder sits down
 with a week's worth of boxes and a plastic tray and fills it, and the app walks
 them through it one medicine at a time so each box is opened exactly once.
 
-Items keep the numbers they have in [v3-plan.md](v3-plan.md) — 18 to 22, plus
-23 pulled forward from Phase 4 — with letters where one item turned out to be
+Items keep the numbers they have in [v3-plan.md](v3-plan.md) - 18 to 22, plus
+23 pulled forward from Phase 4 - with letters where one item turned out to be
 two. Item 23 goes **first**, because v3-plan already names building the step
 screen before the packet photo exists as the phase's worst sequencing mistake.
 
@@ -29,7 +29,7 @@ the same screen twice.
 
 ## What this phase is modelling
 
-Not a feature list — one sitting, perhaps fifteen minutes, at a kitchen table.
+Not a feature list - one sitting, perhaps fifteen minutes, at a kitchen table.
 
 Everything the person needs is on the table: the tray, the boxes, and their
 phone propped against something. Their hands are full. They open one box, take
@@ -45,8 +45,8 @@ Three things follow from that and they are what shapes every screen below:
   must require typing.
 - **It is a task with an end, not a screen you check.** It starts, it can be
   interrupted and resumed, and it finishes with a check against the tray.
-  (A fourth thing was planned from this sitting — noticing you are short while
-  the box is open — and was dropped; see item 22.)
+  (A fourth thing was planned from this sitting - noticing you are short while
+  the box is open - and was dropped; see item 22.)
 
 ## Decisions taken before starting
 
@@ -59,7 +59,7 @@ plan is computed from the same cache both devices already have.
 
 **`dosage` becomes a number.** It is free text today (`'1 tablet'`), and the
 step and check screens both need to count. The column is *replaced*, not
-supplemented — "How much to take" is a quantity, and it was only ever text
+supplemented - "How much to take" is a quantity, and it was only ever text
 because v1 never had to add it up. The unit comes from `form` through
 `strings.js`, so "2" plus `tablet` renders "2 tablets" and stays translatable.
 Fractions are real (`numeric(4,2)`), so half and quarter tablets work and the
@@ -75,11 +75,11 @@ of day go in the box; tick two and you get a 7×2 grid, tick four and you get
 night.
 
 **Only tablets and capsules go in the box.** `form` already carries exactly the
-distinction — ui.md says the droplet glyph exists precisely because "liquids and
+distinction - ui.md says the droplet glyph exists precisely because "liquids and
 drops are the things that must *not* go in a weekly organiser". `other` goes in
 the box; it is still a discrete thing.
 
-**~~The buy list is shared, but nothing is pushed.~~ Dropped — see item 22.**
+**~~The buy list is shared, but nothing is pushed.~~ Dropped - see item 22.**
 
 **The plan is frozen for the sitting.** Computed once when the session starts
 and stored. A supporter editing a medicine while someone else is halfway through
@@ -93,22 +93,22 @@ calendar.
 **A step counter is not an adherence number.** "3 of 9 medicines" is orientation
 inside a task that has an end, like the progress rail on Today. It resets, it is
 never stored, and there is no historical counterpart. What must not appear is
-anything summing across sittings — "you filled the tray 3 weeks running" is a
+anything summing across sittings - "you filled the tray 3 weeks running" is a
 streak, and this app does not issue them.
 
 ---
 
-## 23 — Medicine details: purpose, packet photo, dose as a number
+## 23 - Medicine details: purpose, packet photo, dose as a number
 
 One migration, because these three changes share the same five threading points
-and threading them twice is exactly how a column gets silently dropped —
+and threading them twice is exactly how a column gets silently dropped -
 `mapMedicine` in [js/sync.js](../js/sync.js) enumerates columns explicitly, so a
 new server column that is not added there simply never arrives.
 
 The five: the migration, `public.get_routine`, `public.upsert_medicine`,
 `mapMedicine`, and [medicine-form.js](../js/views/medicine-form.js). Plus
 `app.compute_day`, which writes snapshots, and the `upsert_medicine` returning
-object, which already omits `photo_path` — v3-plan says fix that while we are in
+object, which already omits `photo_path` - v3-plan says fix that while we are in
 there.
 
 ### 23a. `0011_medicine_details.sql`
@@ -135,7 +135,7 @@ anything unparseable → 1.
 
 The one thing the conversion loses is a row where someone typed frequency into
 the dosage field (`'1 tablet twice a day'`). That data was already in the wrong
-place — frequency lives in `schedules` — so let it go, but note any such row
+place - frequency lives in `schedules` - so let it go, but note any such row
 during the pre-flight rather than discovering it afterwards.
 
 **Frozen snapshots keep the old shape.** `day_snapshots` rows written before
@@ -155,7 +155,7 @@ already does for name and strength. `mapMedicine` picks up the three new fields.
 
 Stored as a `packetBlob` field on the existing `{ medicineId, blob }` record in
 the `photos` store. IndexedDB records are schemaless and the keyPath does not
-change, so this costs nothing — which is the whole reason v3-plan chose it over
+change, so this costs nothing - which is the whole reason v3-plan chose it over
 a second store.
 
 `supporter-photo` gains a `kind: 'pill' | 'packet'` parameter selecting which
@@ -164,12 +164,12 @@ column it writes. Everything else about that function is unchanged.
 ### 23d. Where the two new fields show
 
 `purpose` goes under the name in the medicine detail sheet, and on the step
-screen — "what is this one for?" is the question a person filling a tray asks
+screen - "what is this one for?" is the question a person filling a tray asks
 about a box they did not buy. It is deliberately short (120 chars): a sentence,
 not a paragraph, and never clinical advice.
 
 The packet photo appears in the sheet and, full width, on the step screen. It is
-**not** a `pillTile` — the tile answers "which pill is this?" at 44px, and the
+**not** a `pillTile` - the tile answers "which pill is this?" at 44px, and the
 packet answers "which box do I reach for?" at whatever size the screen allows.
 Different question, different component.
 
@@ -179,7 +179,7 @@ Shipped as migration `0011_medicine_details.sql` plus the client threading.
 Three things the plan had not accounted for:
 
 **There are seven threading points, not six.** `0002_service_role_photo_grants.sql`
-grants the photo edge function `update (photo_path)` — a *column-level* grant,
+grants the photo edge function `update (photo_path)` - a *column-level* grant,
 deliberately, so that function can write nothing else on the table. That
 precision makes it a place every new column the function touches has to be
 added. `service_role` bypasses RLS but not column privileges, so the packet
@@ -210,15 +210,15 @@ on open, revoked on close and recreated fresh on reopen; and Save sends
 `doseQty` as a number with one upload per photo kind.
 
 **Not verified against a live database.** The migration has not been run. The
-conversion, the dropped column and the new grant are all unexercised — see the
+conversion, the dropped column and the new grant are all unexercised - see the
 pre-flight `select` in the migration header before running it.
 
 ---
 
-## 18a — Which times of day go in the box
+## 18a - Which times of day go in the box
 
 `alter table public.slots add column in_box boolean not null default false`,
-seeded true for the two built-in slots at `sort_order` 1 and 4 — Morning and
+seeded true for the two built-in slots at `sort_order` 1 and 4 - Morning and
 Night as `create_household` seeds them. Labels are editable so they cannot be
 matched on; sort order can, and anything wrong is one tap to correct.
 
@@ -226,8 +226,8 @@ Threaded through `get_routine`'s slot objects as `inBox`, and through
 `mapSlot` in `js/sync.js`.
 
 **One new function, `public.set_slot_in_box(p_code, p_slot_id, p_in_box)`,
-code-gated like the rest.** Both roles already hold the share code — the elder's
-device keeps it in `settings.shareCode` — so one function serves both without
+code-gated like the rest.** Both roles already hold the share code - the elder's
+device keeps it in `settings.shareCode` - so one function serves both without
 opening the full slot editor to the elder. `save_slots` can archive slots; this
 cannot do anything but flip one boolean, which is the right amount of power for
 a screen about the shape of a plastic tray.
@@ -237,7 +237,7 @@ kitchen. So it syncs, and both phones agree about it.
 
 The UI is a checklist of the household's slots in a new **Pill box** section in
 Settings, visible in both roles. Unticking everything is allowed and means "we
-do not use a pill box" — the organiser entry card disappears.
+do not use a pill box" - the organiser entry card disappears.
 
 ### 18a done
 
@@ -249,12 +249,12 @@ between each role's own sections and Appearance.
 Two things worth recording:
 
 **`save_slots` did not need changing, and that is load-bearing.** It upserts
-label, time, sort order and archived, and never mentions `in_box` — so editing
+label, time, sort order and archived, and never mentions `in_box` - so editing
 slot times leaves the box alone, and a newly added time of day starts outside
 it. Both are the behaviour we want, and both come free from not touching it.
 
 **The shape line is the point of the section.** The chips alone are an abstract
-choice; "That is a 7 × 2 box — seven days, 2 compartments a day" is the tray on
+choice; "That is a 7 × 2 box - seven days, 2 compartments a day" is the tray on
 the table. It updates on every tap and turns into "Nothing goes in a box, so
 filling one is not offered" at zero, which is how the organiser's absence gets
 explained where the decision was made rather than by the entry card silently
@@ -264,11 +264,11 @@ Verified against a seeded cache: ticking a slot fires exactly one RPC with the
 right arguments, persists, and moves the shape line; unticking everything
 reaches the no-box state; and a failing write rolls the chip back, says so,
 re-enables itself, and succeeds on retry. The chip moves on the tap rather than
-on the round trip — same reasoning as the dose target in Phase 2.5's S5.
+on the round trip - same reasoning as the dose target in Phase 2.5's S5.
 
 ---
 
-## 18b — The week plan
+## 18b - The week plan
 
 New module `js/organiser.js`, pure functions at the top like
 [js/schedule.js](../js/schedule.js), so it can be exercised from the console.
@@ -277,17 +277,17 @@ New module `js/organiser.js`, pure functions at the top like
 planWeek(startDate, { medicines, schedules, slots })
 ```
 
-Seven days forward from `startDate`, per medicine, from `schedule.isDueOn` —
+Seven days forward from `startDate`, per medicine, from `schedule.isDueOn` -
 **not** from snapshots, which only exist for past days and are the wrong source
 for a forward-looking screen.
 
 Returns three things:
 
-- `steps` — one per medicine that goes in the box: the medicine, its cells
+- `steps` - one per medicine that goes in the box: the medicine, its cells
   (`{ date, slotId, qty }`), and the week's total.
-- `compartments` — the same data pivoted: one per (date, in-box slot), holding
+- `compartments` - the same data pivoted: one per (date, in-box slot), holding
   what belongs in it and how much. The check screen reads this.
-- `outOfBox` — everything due this week that is not going in the tray, each with
+- `outOfBox` - everything due this week that is not going in the tray, each with
   **its own reason**, because there are two and they are not the same thing:
   a liquid or an inhaler is taken from the packet, whereas a tablet whose slot
   is unticked is out because of how this household's box is shaped. One strip,
@@ -310,14 +310,14 @@ happen to have time, not on a fixed weekday.
 one place.** Filling asks "where does this medicine go?"; checking asks "what
 should be in this compartment?" Deriving the second from the first in a view
 would let the two screens disagree, which on a check screen is worse than
-useless — it is a screen whose entire job is agreeing with the tray.
+useless - it is a screen whose entire job is agreeing with the tray.
 
 **A medicine can be in `steps` and `outOfBox` at once, and must be.** One due
 morning and afternoon with only morning ticked gets boxed for the morning and
 taken from the packet at lunchtime. Suppressing either half loses a dose. The
 two out-of-box reasons stay distinct for the same kind of reason: a syrup is
 out because of what it is, a tablet in an unticked slot is out because of how
-this household's box is shaped — and the second is a setting the person can go
+this household's box is shaped - and the second is a setting the person can go
 and change.
 
 Exercised with 31 assertions against a hand-built routine covering all three
@@ -328,7 +328,7 @@ boundary.
 
 One real fix came out of that: **totals were accumulating floats.** `dose_qty`
 is `numeric(4,2)`, so a tenth is a legal dose, and seven of them summed to
-`0.7000000000000001` — a total nobody can count out against a pile of tablets.
+`0.7000000000000001` - a total nobody can count out against a pile of tablets.
 Rounded to two places. Quarters and halves were always exact and unaffected,
 which is exactly why writing the case down found it and using the app would
 not have.
@@ -337,14 +337,14 @@ not have.
 > in this app that is both pure and genuinely intricate, and those 31 checks
 > live in a scratch file that is now gone. next-steps.md §6 says automated
 > tests would have to be browser-based to keep the no-build-step, no-
-> `package.json` constraint — that decision is still open, and inventing a
+> `package.json` constraint - that decision is still open, and inventing a
 > convention mid-phase is the wrong time to close it.
 
 ---
 
-## 19 — The step screen
+## 19 - The step screen
 
-Route `#/organiser`, with the step in the query string — `?step=3` — because
+Route `#/organiser`, with the step in the query string - `?step=3` - because
 `router.currentQuery()` already exists and putting it there gets the back button
 for free.
 
@@ -355,14 +355,14 @@ The step is in the hash and everything else is in the store, so a re-render
 rebuilds exactly where the person was.
 
 Step 0 is the start: which week, the wake lock, the out-of-box strip, and how
-many medicines this will be. Steps 1..N are one medicine each — packet photo,
+many medicines this will be. Steps 1..N are one medicine each - packet photo,
 name and strength, purpose line, the total to take out, and the day × slot grid.
 Step N+1 is the check screen.
 
 Each step also carries **"I don't have enough"** (item 22), next to the total,
 because that is the second the person discovers it.
 
-Session state — the frozen plan, the week start, and which steps are done —
+Session state - the frozen plan, the week start, and which steps are done -
 lives in a new IndexedDB store `organiser`, keyed by the week-start date.
 `DB_VERSION` goes 2 → 3; `upgrade()` is version-agnostic and only ever creates
 missing stores, which is fine for adding one and is why v3-plan called new
@@ -389,14 +389,14 @@ by hand.
 
 **The wake lock is module-level, not per-render.** Every step change is a full
 route render, so a per-render lock would be taken and dropped once per medicine
-and the screen would dim between them — the exact thing it exists to prevent.
+and the screen would dim between them - the exact thing it exists to prevent.
 The cleanup only releases when `currentPath()` is no longer `#/organiser`,
 which works because the router runs cleanup *after* the hash has changed, so a
 step change is distinguishable from a departure. Verified against a stub that
 grants: one request on entry, none across three step changes, one release on
 leaving, a fresh one on re-entry.
 
-The real API could not be exercised — it is denied outright in an unfocused
+The real API could not be exercised - it is denied outright in an unfocused
 browser pane, so what ran here was the failure path. That path is correct (it
 fails silently and the screen still works), but **the lock has never actually
 been held**. It needs a real phone, alongside item 29's push check.
@@ -407,7 +407,7 @@ Two smaller things:
 (`½`, `2`); not-due is a dash. A twice-weekly medicine's five blank days would
 otherwise read as five days of work outstanding.
 
-**The start screen says the quiet part out loud** — "This does not mark
+**The start screen says the quiet part out loud** - "This does not mark
 anything as taken." Once, there, and nowhere else. Repeating it every step
 would nag; omitting it risks someone believing this screen marks doses and
 quietly stopping marking them on Today, which is the worst outcome available.
@@ -416,7 +416,7 @@ quietly stopping marking them on Today, which is the worst outcome available.
 screen.** `outOfBoxStrip()` returns null when nothing is out of the box, and
 three call sites passed that straight to `appendChild`, which throws. Every
 routine I tested against had a syrup or an unticked slot in it, so `outOfBox`
-was never empty; the first real household was all tablets in ticked slots —
+was never empty; the first real household was all tablets in ticked slots -
 the *simplest* case, and the one my fixtures never covered. Fixed by using
 `append()` from `js/ui.js`, which drops null by design.
 
@@ -434,13 +434,13 @@ its 4:3 box.
 
 ---
 
-## 20 — The check screen
+## 20 - The check screen
 
 The same grid, **with counts instead of dots**. Counting is how a filled tray is
-actually verified, and pill colour is unknowable from a photo — ui.md already
+actually verified, and pill colour is unknowable from a photo - ui.md already
 says the fallback tile is a stable marker and not a guess at the real colour,
-and that "anywhere the real identity would matter — checking a filled organiser
-— the UI counts instead of colouring." This is that place.
+and that "anywhere the real identity would matter - checking a filled organiser
+- the UI counts instead of colouring." This is that place.
 
 Tapping a compartment lists what belongs in it at full tile size, so a
 discrepancy can be resolved rather than just noticed.
@@ -452,13 +452,13 @@ the tray is correct.
 ### 20 done, and four changes from use
 
 Item 20 arrived early, because the first thing asked for after using the step
-screen was "tell me how many tablets each slot should have at the end" — which
+screen was "tell me how many tablets each slot should have at the end" - which
 is the check screen. Four changes came out of that first real sitting:
 
 **Both photos on a step, not just the packet.** The screen loaded only
 `packet`, so a medicine with a perfectly good pill photo showed a fallback
 tile. They answer different questions and someone filling a tray asks both
-within seconds — the pill is "is this the right tablet?" held against what is
+within seconds - the pill is "is this the right tablet?" held against what is
 in their hand, the packet is "which box do I reach for?" scanning a shelf.
 Side by side rather than stacked, because stacking pushes the grid off screen
 and the grid is what they are about to act on. Each opens the full-screen
@@ -470,7 +470,7 @@ there is something everyone looks past every day.
 
 **The check screen has no verdict.** It shows compartment totals and the
 person compares. There is no tick and no "looks right", because the app cannot
-see the tray — and one that claimed the tray was correct would be claiming
+see the tray - and one that claimed the tray was correct would be claiming
 something it has no way to know. Tapping a compartment lists what belongs in
 it **with the real pill photos**, loaded on demand, because "the count is
 wrong" is only useful if you can then work out *which* one is missing, and you
@@ -478,7 +478,7 @@ answer that by looking at pills rather than reading names.
 
 **The type went up one step, then partly back down.** Everything on both
 screens moved up a size and the grid dot went 28px → 32px. That fits 375px
-with a couple of pixels spare — and overflows a 320px phone by 14px, clipping
+with a couple of pixels spare - and overflows a 320px phone by 14px, clipping
 Saturday off the right edge. Caught by measuring rather than looking, since
 the pane was 375px wide. Below 360px the grid returns to its old size; the
 rest of the screen keeps the larger type. A grid you have to scroll sideways
@@ -486,12 +486,12 @@ is worthless for checking against a tray you can see all of at once.
 
 ### Three more from use
 
-**The plan is frozen for the sitting — except when the tray changes shape.**
+**The plan is frozen for the sitting - except when the tray changes shape.**
 Ticking a new time of day did nothing to an organiser session already started:
 the plan was read back from the store, exactly as designed, and the grid kept
 showing the old two rows. The freeze exists so nobody's *edit* can move the
 grid under someone's hands, but changing which times of day go in the box is
-not an edit to the routine — it is a change to the physical tray being filled,
+not an edit to the routine - it is a change to the physical tray being filled,
 and a plan made for a 7×2 tray is meaningless once the box is 7×4. So that one
 change ends the sitting instead of being ignored by it.
 
@@ -506,37 +506,37 @@ caps it, including a household with custom times of day.
 
 **The elder's Settings was re-rendering itself on every chip tap.** The pill-box
 flags are the first thing the elder's own device writes to `slots`, and
-Postgres broadcasts that write straight back to the device that made it —
+Postgres broadcasts that write straight back to the device that made it -
 which re-rendered the whole screen underneath the finger that had just moved
 the chip. Exactly the class Phase 2.5's S2a fixed for doses, in a place that
 did not exist then. The routine tables now use the same `localWrites` map,
 keyed on row id: the cache still absorbs every event, only the redraw is
 skipped, and only for rows this device wrote.
 
-The burst coalescing needed care — `isLocalEcho` consumes, so `.every()`
+The burst coalescing needed care - `isLocalEcho` consumes, so `.every()`
 short-circuiting would have left the rest of a burst's ids sitting in the map
 to swallow somebody else's later change. Mapped first, then reduced.
 
 > Verified locally that a chip tap no longer rebuilds the section (same node,
-> marker intact). **The realtime half is not verified here** — it needs a live
+> marker intact). **The realtime half is not verified here** - it needs a live
 > database, since the whole bug is a server round trip coming back.
 
 ---
 
-## 21 — Wake lock
+## 21 - Wake lock
 
 `navigator.wakeLock.request('screen')` on entering the organiser, released in
 the view's cleanup. Re-requested on `visibilitychange` when the page becomes
 visible again, because the lock is dropped automatically when the tab hides.
 
 Feature-detected and wrapped: it rejects outright on low battery, and it is
-absent entirely on older browsers. A failure is silent — there is nothing useful
+absent entirely on older browsers. A failure is silent - there is nothing useful
 to say, and the screen still works, it just dims. iOS has it from 16.4, the same
 floor web push already requires, so the setup docs need no new caveat.
 
 ---
 
-## 22 — The buy list — not built
+## 22 - The buy list - not built
 
 Planned, then dropped before any of it was written. The reasoning that put it
 here still holds: filling the tray is the one moment the information exists,
@@ -547,7 +547,7 @@ anyone *when to buy*, and that turns out to be the actual question. Households
 differ on how far ahead they stock up. Some have a relative who visits monthly
 and buys everything in one go, so "running low" on a Tuesday is not a task, it
 is noise until the next visit. And an elder often cannot say when a refill is
-due either — which was the assumption underneath surfacing it to them rather
+due either - which was the assumption underneath surfacing it to them rather
 than to the supporter.
 
 So a "running low" card would be prompting a decision on information the app
@@ -566,21 +566,21 @@ notify anyone about.
 
 Each is a commit.
 
-1. **23 — medicine details.** Migration, the six threading points, the form
+1. **23 - medicine details.** Migration, the six threading points, the form
    field, the packet photo, `kind` on `supporter-photo`, the sheet. Nothing
    organiser-shaped exists yet; this is the foundation it needs.
-2. **18a — the box setting.** Column, `set_slot_in_box`, the Settings section in
+2. **18a - the box setting.** Column, `set_slot_in_box`, the Settings section in
    both roles.
-3. **18b — `js/organiser.js`.** Pure, no UI, testable from the console.
-4. **19 + 21 — the step screen and the wake lock.** Together because the wake
+3. **18b - `js/organiser.js`.** Pure, no UI, testable from the console.
+4. **19 + 21 - the step screen and the wake lock.** Together because the wake
    lock is six lines and belongs to the same view's lifecycle.
-5. **20 — the check screen.**
-6. ~~**22 — the buy list.**~~ Dropped; see item 22. The slot became **the
+5. **20 - the check screen.**
+6. ~~**22 - the buy list.**~~ Dropped; see item 22. The slot became **the
    bottom bar**: which tab you are on now differs in shape, not only in colour.
 7. **Docs.** Every file listed under [Docs to update](#docs-to-update) below,
    in one pass, plus this file's own record of what departed from the plan.
    *Done.* The prediction underneath was right: over half of what got written
-   was not knowable from the plan — the fixture blind spot, the 320px overflow,
+   was not knowable from the plan - the fixture blind spot, the 320px overflow,
    the routine echo, the elder's cold start and the stuck backfill flag were
    all found by using the thing.
 
@@ -588,14 +588,14 @@ Steps 1 and 2 are backend-and-plumbing with small visible surfaces; 3 to 6 are
 where the phase actually is.
 
 **Why the docs are their own commit and not folded into the six.** Half of
-what needs writing is not knowable until the screens exist — Flow 4 cannot be
+what needs writing is not knowable until the screens exist - Flow 4 cannot be
 rewritten from a plan, only from a tray that has actually been filled, and the
 interesting content of these files has always been what the work turned up
 rather than what was intended. Phases 0–2 are the evidence: every "found while
 building it" note in [v3-plan.md](v3-plan.md) would have been lost if the docs
 had been written commit by commit.
 
-The risk is the obvious one — a docs commit at the end is a docs commit that
+The risk is the obvious one - a docs commit at the end is a docs commit that
 gets skipped. Two things against that: it is a numbered item here rather than
 an intention, and each of the six commits leaves a note in this file as it
 lands, so the last commit is transcription rather than recall.
@@ -612,7 +612,7 @@ does, and with the buy list dropped there is no third migration in the phase.
 **`isCurrent()` applies here more than anywhere.** The organiser is a long-lived
 screen with awaits in it, on a device that is being refreshed by realtime, a
 poll, and a midnight timer. Every await in every organiser view checks it before
-touching the DOM — see architecture.md, "Rendering: one screen at a time".
+touching the DOM - see architecture.md, "Rendering: one screen at a time".
 
 **The check screen must not become a verdict.** The temptation to add a "looks
 right" tick will be strong the moment it is on a real phone. The app cannot see
@@ -621,21 +621,21 @@ the tray.
 **Nothing here may reach the dose log.** Worth grepping `js/doses.js` callers at
 the end of the phase to confirm the organiser is not among them.
 
-## The bottom bar — done
+## The bottom bar - done
 
 Not planned; it took the slot item 22 vacated, and it belongs to this phase
 because organiser mode added a third place an elder has to navigate to.
 
 The bar said which tab you were on three ways that all reduced to one: a blue
 label, a blue icon, and a pale blue tint behind the icon. For someone who
-cannot easily separate blue from grey — most of the reason an elder taps the
-wrong tab — that is no signal at all, and a 13px label beside a 13px glyph
+cannot easily separate blue from grey - most of the reason an elder taps the
+wrong tab - that is no signal at all, and a 13px label beside a 13px glyph
 gave them nothing else.
 
 The current tab now differs in **shape**: a filled lozenge behind the icon,
 solid rather than tinted, glyph knocked out of it. Present or absent survives
 greyscale, a glance, and arm's length; colour and a heavier label reinforce it
-rather than carry it. Verified by rendering the bar under `grayscale(1)` —
+rather than carry it. Verified by rendering the bar under `grayscale(1)` -
 which is the test that matters, and the one the old bar would have failed
 outright.
 
@@ -647,16 +647,16 @@ is findable by word.
 Measured at 320px and 375px, in both roles, light and dark: no wrapping, no
 overflow, and nothing hidden behind the taller bar.
 
-## The elder's cold start — fixed
+## The elder's cold start - fixed
 
-Reported from real use: sign in on a device whose cache had been wiped — a
-fresh install, or the sign-out that clears it — and Today showed the
+Reported from real use: sign in on a device whose cache had been wiped - a
+fresh install, or the sign-out that clears it - and Today showed the
 share-code cold-start screen even though the account already had medicines.
 Navigating away and back fixed it.
 
 The cause is a boot ordering that had been there since the sync rearchitecture.
 `js/main.js` renders first, then `startRealtime` fires `refetchRoutine` and
-`refetchHistory` — and **nothing re-rendered when they landed**. The medicines
+`refetchHistory` - and **nothing re-rendered when they landed**. The medicines
 were in the database a second later and nowhere in the DOM.
 
 The same file has always hydrated the *supporter* before its first render, with
@@ -667,8 +667,8 @@ Fixed by redrawing after the boot refetch rather than awaiting before it. That
 trade matters: the elder opens this app every day with a warm cache, and making
 them wait on the network for a screen that is already correct would be a daily
 cost paid to fix an occasional one. So both refetchers now report whether the
-server actually differed — signature-compared against the cache, the same
-technique `js/supporter-sync.js` uses on the polling side — and the screen is
+server actually differed - signature-compared against the cache, the same
+technique `js/supporter-sync.js` uses on the polling side - and the screen is
 rebuilt only when it did.
 
 `backfill()` got the same treatment, since it runs on every reconnect and every
@@ -678,8 +678,8 @@ reloading every photo and losing the scroll position, to show what was already
 there.
 
 **And one latent bug found while debugging it.** `backfilling` was a boolean
-cleared only in a `finally`. A fetch that never settles — no response, no
-rejection, exactly what one bar of signal produces — means the `finally` never
+cleared only in a `finally`. A fetch that never settles - no response, no
+rejection, exactly what one bar of signal produces - means the `finally` never
 runs and backfill is disabled for the rest of the page's life. The one
 mechanism whose whole job is recovering from a bad connection would have been
 switched off by a bad connection. It is a timestamp now, and a run older than
@@ -687,7 +687,7 @@ switched off by a bad connection. It is a timestamp now, and a run older than
 
 > Worth recording how nearly this was missed: the first three attempts to test
 > the backfill path all reported "no redraw", which looked like a pass. It was
-> not — the browser pane reports `visibilityState: "hidden"`, so the handler
+> not - the browser pane reports `visibilityState: "hidden"`, so the handler
 > was correctly returning early and *nothing was running at all*. A test that
 > cannot distinguish "behaved correctly" from "never executed" is not a test.
 > Counting the actual fetches is what separated them.
@@ -697,19 +697,19 @@ switched off by a bad connection. It is a timestamp now, and a run older than
 Commit 7. Listed here rather than in the order of work because the list is
 long and the ordering is not interesting.
 
-- **flow.md** — Flow 4 currently says a screen for this "is planned" and points
+- **flow.md** - Flow 4 currently says a screen for this "is planned" and points
   at v3-plan. It becomes a real flow. Flow 2 gains the pill box setting; the
   "what can go wrong" table gains the buy-list card.
-- **ui.md** — the organiser screens, the step-counter-is-not-adherence rule, and
+- **ui.md** - the organiser screens, the step-counter-is-not-adherence rule, and
   the packet photo's place next to the pill tile.
-- **architecture.md** — `dose_qty` replacing `dosage`, the two new stores, the
+- **architecture.md** - `dose_qty` replacing `dosage`, the two new stores, the
   frozen-plan rule, and the routine tables' echo suppression.
-- **repo-structure.md** — `js/organiser.js`, `js/views/organiser.js`, the new
+- **repo-structure.md** - `js/organiser.js`, `js/views/organiser.js`, the new
   migrations.
-- **next-steps.md** — §6's refill item is *decided against* rather than built;
+- **next-steps.md** - §6's refill item is *decided against* rather than built;
   already struck with the reasoning.
-- **ui.md** — the bottom bar's shape-not-colour rule; already written.
-- **v3-plan.md** — Phase 3 marked done, with what departed from the plan.
+- **ui.md** - the bottom bar's shape-not-colour rule; already written.
+- **v3-plan.md** - Phase 3 marked done, with what departed from the plan.
 
 ## Explicitly out of this phase
 

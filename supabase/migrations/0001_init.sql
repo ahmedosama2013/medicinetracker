@@ -1,6 +1,6 @@
 -- CarePair: online sync schema.
 -- One authenticated identity per household (the "simple"/elder person, via
--- Google sign-in). A "supporter" never signs in — every write they make goes
+-- Google sign-in). A "supporter" never signs in - every write they make goes
 -- through a SECURITY DEFINER function gated on households.share_code, a
 -- standing secret they hold on their device. See docs/architecture.md.
 

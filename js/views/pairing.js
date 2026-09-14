@@ -1,4 +1,4 @@
-/* Helper: enter the household's share code. No account, no sign-in — the code
+/* Helper: enter the household's share code. No account, no sign-in - the code
  * itself is validated by loading the routine it unlocks, then stored on this
  * device the same way the local `role` always has been.
  *
@@ -8,7 +8,7 @@
  *
  * Four states, each a tinted panel with a glyph, a heading and an explanation:
  * invalid code, connection failed, connecting, connected. The two failures are
- * deliberately different — a wrong code is the helper's to fix by asking; a
+ * deliberately different - a wrong code is the helper's to fix by asking; a
  * dropped connection is not their fault and must not be reported as if it
  * were.
  */

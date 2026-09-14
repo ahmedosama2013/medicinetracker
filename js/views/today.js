@@ -5,7 +5,7 @@
  * button stating the plain current fact -- "You have not taken these yet",
  * flipping in place to "You have already taken these" -- and reversing it is
  * never behind a confirm dialog. "See the pills" sits beneath it as an
- * underlined text link — a link, not a second button, because two
+ * underlined text link - a link, not a second button, because two
  * equal-weight buttons per card made the screen feel busy.
  *
  * Three more things are deliberate and easy to undo by accident:
@@ -71,7 +71,7 @@ async function elderToday({ app, isCurrent, settings }) {
 
   // ---- the offline banner -------------------------------------------------
 
-  /* One sentence, one line, never a paragraph — and nothing on the screen is
+  /* One sentence, one line, never a paragraph - and nothing on the screen is
    * disabled by it. Taps are queued locally either way; the banner exists so
    * the person is never left wondering whether their tap counted.
    *
@@ -109,7 +109,7 @@ async function elderToday({ app, isCurrent, settings }) {
     if (!group) { refresh(); return; }
     const next = buildCard(describeSlot(group, day.states, date));
 
-    /* The whole day has been swapped out from under us — something
+    /* The whole day has been swapped out from under us - something
      * re-rendered while this write was in flight, which is easy during a
      * confirmation dialog. replaceWith would write into a detached tree and
      * silently do nothing, which looks exactly like the tap being ignored. */
@@ -124,7 +124,7 @@ async function elderToday({ app, isCurrent, settings }) {
     const before = new Map(day.states);
     /* Only what is still unmarked. store.logSlot filters out medicines that
      * already have a row, so something deliberately left out today survives a
-     * later "I have taken these" — the person said something about that
+     * later "I have taken these" - the person said something about that
      * medicine and this button must not overrule it. */
     for (const m of card.medicines) {
       if (!m.state) day.states.set(doseKey(card.id, m.medicineId), 'taken');
@@ -188,7 +188,7 @@ async function elderToday({ app, isCurrent, settings }) {
     ]));
 
     /* One real button. When everything in the slot is already marked it
-     * becomes Undo, in the same place — undo is always one tap away where the
+     * becomes Undo, in the same place - undo is always one tap away where the
      * mark was made, never behind a confirm. */
     node.appendChild(el('div.slot-actions', [
       card.resolved
@@ -368,7 +368,7 @@ async function elderToday({ app, isCurrent, settings }) {
   }
 
   /* The elder's cold start. Setup ends at sign-in, and until a helper has
-   * added something there is nothing this screen can show — so instead of
+   * added something there is nothing this screen can show - so instead of
    * describing the emptiness it carries the next step: their code, at a size
    * that can be read out over a phone call. */
   /* Realtime is supposed to make this unnecessary -- the moment the helper

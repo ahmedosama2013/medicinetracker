@@ -1,11 +1,11 @@
-# v3 plan — visual overhaul and supporter parity
+# v3 plan - visual overhaul and supporter parity
 
 > Unrelated to [medicine-tracker-plan-v3.md](medicine-tracker-plan-v3.md),
 > which is the third revision of the original build spec and long superseded.
 > The shared "v3" is a coincidence of numbering.
 
 The plan for the redesign discussed in September 2026, and the running record of
-what each phase actually did — including where it departed from the plan and why.
+what each phase actually did - including where it departed from the plan and why.
 
 **This is not a description of the app.** [ui.md](ui.md) describes what the
 screens are and the rules they obey; [architecture.md](architecture.md)
@@ -23,14 +23,14 @@ done and folded into those three; Phases 3–4 are still ahead.
 > and gained a contrast and honesty pass. See [ui.md](ui.md) and
 > `design_handoff_carepair_elder_ui/`.
 >
-> Everything in this file about the **architecture** — the supporter's lack of
-> a session, the cache they gained, the freeze line, the render serialisation —
+> Everything in this file about the **architecture** - the supporter's lack of
+> a session, the cache they gained, the freeze line, the render serialisation -
 > is still exactly right and still load-bearing. It is the screen descriptions
 > that are history.
 
 This file exists because the interesting part of this work is not the CSS. It is
-that four of the wanted features are blocked on the same architectural fact —
-**a supporter device has no session** — and that fact is invisible from the
+that four of the wanted features are blocked on the same architectural fact -
+**a supporter device has no session** - and that fact is invisible from the
 feature list. Phasing is arranged around it.
 
 ---
@@ -44,7 +44,7 @@ a weight cap of 600, a second photo per medicine (the packet), a nudge button,
 a code-first cold start for the elder, a plain-language purpose line, reminder
 escalation to the supporter, refill surfaced to the elder, and organiser mode.
 
-**Out, deliberately.** Read-aloud (`SpeechSynthesis` mispronounces drug names —
+**Out, deliberately.** Read-aloud (`SpeechSynthesis` mispronounces drug names -
 too much error potential for too little gain), QR pairing (the pair is usually
 remote), multi-patient support, and any aggregate adherence number.
 
@@ -57,7 +57,7 @@ scores. The whole day is always shown. A tap changes only the slot tapped.
 reacts to the clock" rule now means "nothing *moves* because of the clock".
 
 **One new rule.** *Skipped is not failure.* Amber, never red. The word is
-"Skipped", never "Missed". Organiser mode never writes to the dose log —
+"Skipped", never "Missed". Organiser mode never writes to the dose log -
 filling a tray is not taking a medicine, and conflating them falsifies the
 calendar.
 
@@ -86,7 +86,7 @@ identity required.
 
 ### Skip is nearly free server-side, and awkward client-side
 
-`dose_log.status` already exists — `not null default 'taken'` with
+`dose_log.status` already exists - `not null default 'taken'` with
 `check (status in ('taken'))`. Widening the check to `('taken','skipped')` is
 one line. The awkward part is that there is **no UPDATE policy on `dose_log`**,
 so a cycling target that goes taken → skipped is a delete followed by an
@@ -96,7 +96,7 @@ inside one transaction. The unique constraint
 
 ### IndexedDB cannot currently migrate anything
 
-`js/db.js` is at `DB_VERSION = 2` and `upgrade(db)` is version-agnostic — it
+`js/db.js` is at `DB_VERSION = 2` and `upgrade(db)` is version-agnostic - it
 only ever does `if (!contains(name)) createObjectStore(...)`. It cannot add an
 index to an existing store and cannot rewrite records. So:
 
@@ -110,7 +110,7 @@ index to an existing store and cannot rewrite records. So:
 
 ### New medicine columns must be threaded through five places
 
-`mapMedicine` in `js/sync.js` enumerates columns explicitly — a new server
+`mapMedicine` in `js/sync.js` enumerates columns explicitly - a new server
 column is silently dropped. Adding `purpose` and `packet_photo_path` means
 touching: the migration, `public.get_routine`, `public.upsert_medicine`,
 `mapMedicine`, and the form. `upsert_medicine`'s returning object already omits
@@ -118,7 +118,7 @@ touching: the migration, `public.get_routine`, `public.upsert_medicine`,
 
 ### Two things are already done
 
-The share code charset is `[2-9ABCDEFGHJKMNPQRSTVWXYZ]` — ambiguous characters
+The share code charset is `[2-9ABCDEFGHJKMNPQRSTVWXYZ]` - ambiguous characters
 are already excluded, so the "make the code easier to read out" idea needs only
 presentation work. And the second reminder shipped in migration `0004` as a
 `stage` column on `app.notification_sends`; escalation to the supporter is a
@@ -126,7 +126,7 @@ third stage on the same mechanism, not a new one.
 
 ---
 
-## Phase 0 — Foundations
+## Phase 0 - Foundations
 
 Nothing user-visible ships alone. Everything after depends on this.
 
@@ -144,7 +144,7 @@ Nothing user-visible ships alone. Everything after depends on this.
    times, doses and the share code.
 4. **Converge the type scale.** Simple mode keeps its 46px targets and loses its
    oversized type; the two densities now differ on touch, not text.
-5. **The pill identity component.** A 44px rounded-square tile in six states —
+5. **The pill identity component.** A 44px rounded-square tile in six states -
    own photo, community photo, generated fallback, taken, skipped, archived.
    Deterministic colour and form glyph from the medicine when no photo exists.
    New helper in `js/ui.js`.
@@ -159,7 +159,7 @@ stylesheet. Land the CSS first, nav second, so a regression has one cause.
 Phase 0 shipped as written except for the supporter's tab set. The plan had
 `NAV.supporter` gaining Today and Calendar here and `router.HOME.supporter`
 moving to `#/today`. Both are deferred to Phase 2, because a supporter device
-has no local dose log at all — `js/sync.js` is never imported there — so those
+has no local dose log at all - `js/sync.js` is never imported there - so those
 tabs would have led to slot cards whose Done buttons cannot write. The bar is
 unified now; the supporter's tabs arrive with the RPCs in items 12–14.
 
@@ -167,16 +167,16 @@ Two other things surfaced while building it:
 
 - **`js/views/calendar.js` inlines CSS variables** (`var(--ok)`, `var(--surface-2)`)
   in `style` attributes, so renaming tokens silently blanked the completion
-  rings — a rename the stylesheet cannot catch. Now `var(--taken-line)` /
+  rings - a rename the stylesheet cannot catch. Now `var(--taken-line)` /
   `var(--sunken)`, and the old `opacity: .22` trick is gone: opacity only works
   against a known background and there are two of them now. Worth grepping
   `var\(--` across `js/` before any future token rename.
 - **`--taken-tint` needed splitting into `tint` and `wash`.** The same value
   behind an 18px badge and behind a whole card reads completely differently in
-  dark mode — as a whisper and as a shout. Small fills use `tint`, whole
+  dark mode - as a whisper and as a shout. Small fills use `tint`, whole
   surfaces use `wash`; identical in light, far apart in dark.
 
-## Phase 1 — Elder screens
+## Phase 1 - Elder screens
 
 7. **Today.** Slot cards with a time-of-day glyph, per-medicine rows anchored by
    the pill tile, a cycling dose target, the today-only progress rail, the `Now`
@@ -185,10 +185,10 @@ Two other things surfaced while building it:
 8. **Three-state logging.** Widen the `dose_log` check constraint, decide
    delete-then-insert vs. an UPDATE policy, extend `js/sync.js` and the outbox,
    and give the calendar ring a third state. A tap landing on *skipped* raises a
-   toast with Undo — the state is loud on purpose, because a cycling target can
+   toast with Undo - the state is loud on purpose, because a cycling target can
    be reached by accident.
 > **Item 8 done.** Migration `0005_skipped_doses.sql` widens the check and adds
-> the UPDATE policy 0001 deliberately omitted — the reasoning is in the
+> the UPDATE policy 0001 deliberately omitted - the reasoning is in the
 > migration's header, since it reverses a documented decision. Client side, the
 > outbox now keys every per-medicine write on `dose:date:slot:medicine` rather
 > than the dose uuid, so cycling a medicine while offline coalesces to one
@@ -198,7 +198,7 @@ Two other things surfaced while building it:
 >
 > Two decisions that were open in next-steps.md §3, now settled: **Done never
 > overrides a skip** (it marks only what is unmarked), and **Undo on a slot
-> does clear skips** — it means "put this slot back to untouched", and leaving
+> does clear skips** - it means "put this slot back to untouched", and leaving
 > amber behind would make the button's effect depend on invisible history.
 >
 > Calendar gets its third state as arc *length* from taken + skipped and arc
@@ -226,7 +226,7 @@ Item 9 kept the full-screen photo viewer rather than replacing it. That view
 answers "which pill is this?", which is the entire reason the photos exist
 (flow.md, Flow 4), so it moved one tap deeper instead of away: the sheet is the
 detail, and the photo inside it is the door to the big version. With no photo
-the block is a plain div, not a button — a control that opens a full-screen
+the block is a plain div, not a button - a control that opens a full-screen
 view of nothing is a dead end, and a square of empty space pushes dosage and
 times below the fold.
 
@@ -235,7 +235,7 @@ from reading the code:
 
 - `redrawSlot` called `buildSlot` before reading the node it was replacing.
   `buildSlot` registers the node it creates, so `replaceWith` was handed the
-  new detached node and quietly became a no-op — every dose change wrote to
+  new detached node and quietly became a no-op - every dose change wrote to
   the database correctly and updated nothing on screen.
 - **Escape dismissed every open overlay at once.** Each layer adds its own
   `document` keydown listener, so the stack all fired together. Latent since
@@ -244,12 +244,12 @@ from reading the code:
   person back to the month grid. `mountOverlay` now ignores Escape unless its
   layer is the host's last child.
 
-## Phase 2 — Supporter parity
+## Phase 2 - Supporter parity
 
 12. **Read RPCs.** `get_dose_log(p_code, p_from, p_to)` and snapshot access,
     both `security definer`, both scoped by `app.household_by_code`.
 13. **Supporter Today.** Same slot cards; the dose target becomes a read-out
-    (taken at 8:12 am / skipped / nothing yet). No realtime — refresh on view,
+    (taken at 8:12 am / skipped / nothing yet). No realtime - refresh on view,
     poll while visible, and say "updated just now" rather than pretending.
 14. **Mark on behalf.** `log_dose` / `unlog_dose` RPCs, behind one confirmation
     dialog, with the row labelled as marked by the supporter. Two people writing
@@ -258,14 +258,14 @@ from reading the code:
     elder's subscription. Rate-limit to one per slot per hour, server-side.
 16. **Medicines as a visual inventory.** 40px tiles; a missing photo becomes a
     visible, tappable prompt rather than an invisible gap.
-17. **Settings split** into Account, Reminders, Times of day, About — for both
+17. **Settings split** into Account, Reminders, Times of day, About - for both
     roles. The current single Reminders toggle cannot express what Phase 4 needs.
 
-### Phase 2a done — reads, and the supporter's day
+### Phase 2a done - reads, and the supporter's day
 
 Migration `0006_supporter_parity.sql` adds `logged_by` and four code-gated
 functions: `get_dose_log`, `get_history`, `log_dose`, `unlog_slot`. The write
-pair exists but nothing calls it yet — item 14 needs the confirmation UI in
+pair exists but nothing calls it yet - item 14 needs the confirmation UI in
 front of it, and shipping the capability before the guardrail is the wrong
 order.
 
@@ -278,13 +278,13 @@ day. The alternative was parameterising every read path in `schedule.js`,
 `day.js` and `calendar.js` by role, which is far more code and two ways for
 the same screen to be wrong. The reason behind the old note still holds and
 still shapes the file: **the cache is read-only on that side.** Supporter
-writes will never go through `sync.js`'s outbox — nothing on that device
-flushes it — they go straight out through the RPCs and are followed by a
+writes will never go through `sync.js`'s outbox - nothing on that device
+flushes it - they go straight out through the RPCs and are followed by a
 refresh.
 
 Realtime is not available to a supporter: it respects RLS, and with no session
 they match no rows, so no events ever arrive. Hence polling, and hence the
-freshness line on their Today. That line is not decoration — polled data
+freshness line on their Today. That line is not decoration - polled data
 presenting itself as live is a lie the person only discovers when it matters,
 and "they haven't marked anything" is precisely the wrong thing to be wrong
 about.
@@ -292,12 +292,12 @@ about.
 History is fetched a range at a time rather than all at once: 75 days on open,
 and `ensureRange` pulls a month the first time the calendar pages to it.
 Without that, paging back would render hollow rings, which do not read as "not
-loaded" — they read as "they took nothing that month".
+loaded" - they read as "they took nothing that month".
 
 Also landed, because it fell out of the same work: **read-only days now show
 per-medicine state.** The elder's own frozen past days previously showed
 nothing per row, so a locked day could tell you the slot was incomplete but
-not which medicine went unmarked. And the read-only footer tick is gone — v2
+not which medicine went unmarked. And the read-only footer tick is gone - v2
 rendered it alongside the head's tag, saying the same thing twice, in the
 taken colour regardless of whether anything was skipped.
 
@@ -334,9 +334,9 @@ and a two-position toggle cannot express it.
 
 **The nudge is rate limited on the server, not in the UI.** A worried relative
 tapping four times must not produce four buzzes on an elderly person's phone,
-and a client-side limit is a suggestion. It never names a medicine — same
+and a client-side limit is a suggestion. It never names a medicine - same
 reason `send-reminders` doesn't, since the body passes through a third-party
-push service onto a lock screen — and it distinguishes "nobody is subscribed"
+push service onto a lock screen - and it distinguishes "nobody is subscribed"
 from "sent", because silence would otherwise read as being ignored.
 
 `last_nudge_at` is a column rather than a table on purpose. If a log of nudges
@@ -348,7 +348,7 @@ to keep.
 `get_dose_log` and `get_history` have been exercised only through their
 failure paths locally. The nudge function has never run at all.
 
-## Phase 3 — Organiser mode
+## Phase 3 - Organiser mode
 
 Its own phase because it is the only part with unresolved design questions.
 Entry point is a card on Today, not a tab.
@@ -360,12 +360,12 @@ Entry point is a card on Today, not a tab.
 >
 > Two departures worth naming: **item 22 (the buy list) was dropped**, because
 > knowing you are short does not tell anyone when to buy and that is the real
-> question — see next-steps.md §6. And the entry point is **Settings → Pill
+> question - see next-steps.md §6. And the entry point is **Settings → Pill
 > box**, not a card on Today. Its slot in the phase went to the bottom bar,
 > which now says which tab you are on by shape rather than by colour alone.
 
 18. **Week computation.** Seven days forward from the chosen start, per medicine,
-    from `schedule.dueOn` — not from snapshots, which only exist for past days.
+    from `schedule.dueOn` - not from snapshots, which only exist for past days.
 19. **Step screen.** One medicine at a time: packet photo, purpose line, the
     total to take out, and a day × slot grid so an entire box is opened once.
 20. **Check screen.** The same grid with counts instead of dots, because counting
@@ -383,7 +383,7 @@ tablets; an explicit "nothing today" mark for non-daily schedules; a numeral
 inside the dot for doses above one; and excluding syrups, drops, inhalers and
 injections from the count with a "these stay out of the box" strip.
 
-## Phase 4 — Roadmap features
+## Phase 4 - Roadmap features
 
 Cheapest last, because Phases 0–2 make most of them small.
 
@@ -392,8 +392,8 @@ Cheapest last, because Phases 0–2 make most of them small.
 24. **Supporter push identity.** `user_id` nullable, `device_id` and `role`
     added, registration through a service-role edge function.
 25. **Reminder escalation.** A third `stage` on `app.notification_sends`:
-    still unmarked after stage 2 notifies the supporter. Default on — sharing the
-    code is the consent — but listed and switchable in the elder's Settings.
+    still unmarked after stage 2 notifies the supporter. Default on - sharing the
+    code is the consent - but listed and switchable in the elder's Settings.
 26. **Supporter self-reminder per slot.** A bell toggle in the slot header on
     supporter Today. Needs 24.
 27. **DRAP autocomplete.** Static JSON in the repo, loaded on demand, supporter
@@ -407,8 +407,8 @@ Cheapest last, because Phases 0–2 make most of them small.
 
 `ui.md` is rewritten against Phase 1. `flow.md` gains organiser mode and the
 supporter's Today. `next-steps.md` has §3 (skip), §4 (DRAP) and the refill and
-PRN items struck or rewritten. The three surviving rules — skipped is not
-failure, organiser never logs doses, no aggregate adherence anywhere — go in
+PRN items struck or rewritten. The three surviving rules - skipped is not
+failure, organiser never logs doses, no aggregate adherence anywhere - go in
 `ui.md` where someone will find them before building a chart.
 
 ---
@@ -426,7 +426,7 @@ merge, and the calendar's counting at once. The riskiest sequencing mistake
 would be building organiser mode before item 23, which would mean building its
 step screen twice.
 
-**Phase 2.5 — Stability** was added after Phase 2 shipped and is not in the
+**Phase 2.5 - Stability** was added after Phase 2 shipped and is not in the
 numbered list above; see [phase-2.5-plan.md](phase-2.5-plan.md). It is entirely
 fixes to what Phases 0-2 built, and it went before Phase 3 because organiser
 mode is the most stateful screen in the product and should not be built on a

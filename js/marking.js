@@ -8,7 +8,7 @@
  *    Nothing is ever disabled for being offline.
  *
  * 2. MARKING FOR SOMEONE ELSE IS ALWAYS LABELLED. The helper is asked once per
- *    session and then never again — replaced by the persistent dashed chip on
+ *    session and then never again - replaced by the persistent dashed chip on
  *    their Today. Asking on every tap is how you train someone to dismiss
  *    dialogs without reading them.
  *
@@ -25,7 +25,7 @@ import { confirmDialog } from './ui.js';
 
 /* Once per session, not once per tap. Module-level so it survives every
  * re-render and every navigation within the app's lifetime, and resets on a
- * reload — which is the right granularity for "while you are in the app". */
+ * reload - which is the right granularity for "while you are in the app". */
 let behalfConfirmed = false;
 
 /** Whether the helper's "acting on their behalf" chip should be showing. */
@@ -65,7 +65,7 @@ export async function mayMarkSlot(settings, { slotName, count, householdName } =
  * Two taps on the same medicine used to fire two independent writes and let
  * the network decide which won. Chaining per dose means the last tap is the
  * last write, which is the only ordering a person would predict. Different
- * medicines still write in parallel — they cannot conflict. */
+ * medicines still write in parallel - they cannot conflict. */
 const writeQueue = new Map();
 
 export function queueWrite(key, task) {

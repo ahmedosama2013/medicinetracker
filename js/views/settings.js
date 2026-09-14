@@ -1,7 +1,7 @@
 /* Settings, in both dialects.
  *
  * The elder's is the ONLY elder screen that scrolls by design, and it holds
- * exactly four things — account and code, reminders, how it looks, about —
+ * exactly four things - account and code, reminders, how it looks, about -
  * plus the two ways out at the bottom. No medicine administration: a role
  * switcher or a medicine list here is a trap for the person taking the pills,
  * one wrong tap from an admin app.
@@ -205,7 +205,7 @@ async function elderSettings({ app, isCurrent, settings }) {
   const displayName = auth.fullNameFromSession(session) || (email ? email.split('@')[0] : '');
 
   /* Turning them ON goes through a dialog first, because the very next thing
-   * the person sees is the browser's own permission prompt — and an
+   * the person sees is the browser's own permission prompt - and an
    * unexplained system prompt is the single easiest thing in the app to
    * dismiss by accident, after which reminders cannot be asked for again.
    * Turning them OFF is immediate: it has no consequence outside the phone. */

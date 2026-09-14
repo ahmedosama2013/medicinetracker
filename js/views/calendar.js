@@ -1,17 +1,17 @@
-/* Month calendar — the helper's record of what happened.
+/* Month calendar - the helper's record of what happened.
  *
  * Six visually AND textually distinct day states, because no mark in this app
  * may ever be carried by colour alone:
  *
  *   ✓  every medicine dealt with          green
  *   ○  something still unmarked           amber
- *   —  something not taken                neutral grey, never red
+ *   -  something not taken                neutral grey, never red
  *   ·  nothing was due                    paper
  *   ▣  a read-only record, past the lock line
  *      (no mark, plain) a future day, not markable
  *
  * No percentages, no streaks, no scores. This is a memory aid and it must
- * never read as medical judgement — the legend says so out loud.
+ * never read as medical judgement - the legend says so out loud.
  *
  * Editable days are those after the household's lock line and not in the
  * future. A nightly server-side job advances `lockedThrough`, synced onto this
@@ -31,7 +31,7 @@ import { go } from '../router.js';
 const DAY_TONE = {
   done: { bg: 'var(--green-tint)', fg: 'var(--green)', line: 'var(--green-line)', glyph: '✓' },
   part: { bg: 'var(--amber-tint)', fg: 'var(--amber-ink)', line: 'var(--amber)', glyph: '○' },
-  skipped: { bg: 'var(--neutral-tint)', fg: 'var(--neutral)', line: 'var(--neutral-line)', glyph: '—' },
+  skipped: { bg: 'var(--neutral-tint)', fg: 'var(--neutral)', line: 'var(--neutral-line)', glyph: '-' },
   nodue: { bg: 'var(--e-paper)', fg: 'var(--faint)', line: 'var(--divider)', glyph: '·' },
   future: { bg: 'var(--card)', fg: 'var(--s-muted)', line: 'var(--s-line-2)', glyph: '' },
 };
