@@ -56,6 +56,11 @@ export const setSlotInBox = (code, slotId, inBox) =>
 export const setUsesOrganizer = (code, usesOrganizer) =>
   call('set_uses_organizer', { p_code: code, p_uses_organizer: usesOrganizer });
 
+/* The household's nightly summary on/off (0029). Both roles, same reasoning
+ * as setUsesOrganizer just above. */
+export const setNightlySummary = (code, enabled) =>
+  call('set_nightly_summary', { p_code: code, p_enabled: enabled });
+
 // ---- history (see supabase/migrations/0006_supporter_parity.sql) -----------
 
 export const loadDoseLog = (code, from, to) =>

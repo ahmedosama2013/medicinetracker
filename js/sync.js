@@ -245,17 +245,26 @@ async function refetchHistory(householdId) {
 }
 
 async function refetchHouseholdMeta(householdId) {
-  const { data } = await supabase().from('households').select('locked_through, timezone, uses_organizer').eq('id', householdId).single();
+  const { data } = await supabase().from('households').select('locked_through, timezone, uses_organizer, nightly_summary_enabled, nightly_summary_time').eq('id', householdId).single();
   if (!data) return false;
   const before = await store.getSettings();
-  await store.saveSettings({ lockedThrough: data.locked_through, timezone: data.timezone, usesOrganizer: data.uses_organizer });
+  await store.saveSettings({
+    lockedThrough: data.locked_through, timezone: data.timezone, usesOrganizer: data.uses_organizer,
+    // Undefined only before 0029 has run; keep whatever was there.
+    ...(data.nightly_summary_enabled !== undefined && {
+      nightlySummary: data.nightly_summary_enabled,
+      nightlySummaryTime: String(data.nightly_summary_time).slice(0, 5),
+    }),
+  });
   setTimezone(data.timezone);
   // The lock line moves once a night, and moving it changes which past days
   // the calendar will still accept a correction on -- so it is worth a redraw,
   // and only then. usesOrganizer changing is worth one too: it decides whether
   // the "Fill the Organizer" tab is even there, and the supporter may have
-  // just flipped it from their own phone.
-  return before.lockedThrough !== data.locked_through || before.usesOrganizer !== data.uses_organizer;
+  // just flipped it from their own phone. So is the nightly summary switch,
+  // for the same reason: an open Settings screen should show the new answer.
+  return before.lockedThrough !== data.locked_through || before.usesOrganizer !== data.uses_organizer
+    || (data.nightly_summary_enabled !== undefined && before.nightlySummary !== data.nightly_summary_enabled);
 }
 
 /* Reads straight out of storage, whichever bucket the photo lives in.

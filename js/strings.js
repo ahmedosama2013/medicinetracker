@@ -26,7 +26,7 @@
  * Deno and never reach the browser.
  */
 
-export const APP_VERSION = '1.0.1';
+export const APP_VERSION = '1.1.0';
 
 /** "Umer Butt" -> "Umer". The stored household name is first + last; every
  * screen that greets someone by name shows only the first. */
@@ -230,6 +230,15 @@ export const S = {
   remindersTurnOff: 'Turn reminders off',
   remindersTest: 'Send me a test reminder',
   remindersTestSent: 'Test reminder sent to this phone',
+
+  // ---- the nightly summary on/off (both roles; see 0029) -----------------
+  settingsNightlySection: 'End-of-day check',
+  nightlyNote: time => `If anything from today is not marked by ${time}, you get one gentle message. Your helper sees this same setting - changing it here changes it for them too.`,
+  nightlyNoteSupporter: time => `At ${time} their time, if anything from their day is still not marked, one message goes to both of you. Changing it here changes it for them too.`,
+  nightlyOn: 'On',
+  nightlyOnHint: 'One message at the end of the day, only if something is not marked.',
+  nightlyOff: 'Off',
+  nightlyOffHint: 'No end-of-day message, on either phone.',
   remindersTestFailed: 'Could not send the test reminder - check your internet',
   remindersAllowTitle: 'Allow reminders?',
   remindersAllowBody: 'Your phone will ask permission to show CarePair reminders. Choose Allow on the next message.',
@@ -528,7 +537,7 @@ export const S = {
   settingsHousehold: 'Household',
   settingsAppearance: 'Appearance',
   supporterNotificationsLabel: 'Tell me if a medicine is not marked',
-  supporterNotificationsHint: 'Only for medicines that were due - never a summary or a score.',
+  supporterNotificationsHint: 'Only when a medicine that was due is still not marked - never a score.',
   supporterNotificationsChange: 'Change',
   supporterNotificationsOn: 'On',
   supporterNotificationsOff: 'Off',

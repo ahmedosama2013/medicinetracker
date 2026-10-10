@@ -61,6 +61,10 @@ export async function getSettings() {
     // once a household exists; true until then, matching every household's
     // behaviour before this setting existed.
     usesOrganizer: true,
+    // Mirrored from `households.nightly_summary_enabled` and
+    // `nightly_summary_time` (0029). Household state, shared by both phones.
+    nightlySummary: true,
+    nightlySummaryTime: '23:50',
     storagePersisted: false,
     createdAt: nowIso(),
   };

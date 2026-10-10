@@ -36,8 +36,9 @@ import { S, APP_VERSION, firstNameOf } from '../strings.js';
 import {
   el, mount, screen, clear, toast, confirmDialog, field, applyTheme,
   loadingState, codeCard, paintTone, TONE, settingsGroup, supGroup, organizerChoice,
+  nightlySummaryChoice,
 } from '../ui.js';
-import { timeToMinutes } from '../date.js';
+import { timeToMinutes, formatTime } from '../date.js';
 import { go } from '../router.js';
 
 /* Three states, not a switch: "match system" is the default and has to stay
@@ -164,6 +165,34 @@ async function selectUsesOrganizer(settings, value, draw) {
     draw();
   }
 }
+
+/* The household's nightly summary on/off (0029). Same shape as
+ * selectUsesOrganizer above -- one code-gated write from either role,
+ * optimistic with a revert -- minus the reload, because nothing outside this
+ * screen depends on it. The other phone catches up on its next sync. */
+async function selectNightlySummary(settings, value, draw) {
+  const code = settings.role === 'supporter' ? settings.supporterCode : settings.shareCode;
+  const previous = settings.nightlySummary !== false;
+  if (previous === value) return;
+  settings.nightlySummary = value;
+  draw();
+  try {
+    if (settings.role !== 'supporter') {
+      // Same Realtime echo as in selectUsesOrganizer.
+      const sync = await import('../sync.js');
+      sync.markRoutineWrite(settings.householdId);
+    }
+    await supporter.setNightlySummary(code, value);
+    await store.saveSettings({ nightlySummary: value });
+  } catch {
+    settings.nightlySummary = previous;
+    toast(S.errGeneric);
+    draw();
+  }
+}
+
+/* "11:50 pm", from the household's own setting rather than hard-coded. */
+const nightlyTime = settings => formatTime(settings.nightlySummaryTime || '23:50');
 
 function themeList(current, onSelect) {
   return el('div.scard.scard-flush', THEMES.map(t => {
@@ -321,6 +350,13 @@ async function elderSettings({ app, isCurrent, settings }) {
           ]),
         ]),
 
+        /* Shown whatever this phone's own reminders are set to: it is a
+         * household setting, and the helper may still be getting it. */
+        settingsGroup(S.settingsNightlySection, [
+          el('p.scard-note', { text: S.nightlyNote(nightlyTime(settings)) }),
+          nightlySummaryChoice(settings.nightlySummary, value => selectNightlySummary(settings, value, draw)),
+        ]),
+
         settingsGroup(S.settingsOrganizerSection, [
           el('p.scard-note', { text: S.organizerQuestionNote }),
           organizerChoice(settings.usesOrganizer, value => selectUsesOrganizer(settings, value, draw)),
@@ -446,6 +482,12 @@ async function supporterSettings({ app, isCurrent, settings }) {
               onclick: () => setEscalation(d.value),
             }))) : null,
           ]),
+        ]),
+
+        // Shown even with this phone's alerts off -- see the elder's twin.
+        supGroup(S.settingsNightlySection, [
+          el('p.s-card-note', { text: S.nightlyNoteSupporter(nightlyTime(settings)) }),
+          nightlySummaryChoice(settings.nightlySummary, value => selectNightlySummary(settings, value, draw), { dense: true }),
         ]),
 
         supGroup(S.settingsHousehold, [

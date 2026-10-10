@@ -53,7 +53,7 @@ function signatureOf(routine, rows) {
     .sort().join('|');
   const slots = (routine?.slots || []).map(s => `${s.id}:${s.label}:${s.time}:${s.inBox}`).sort().join('|');
   const doses = (rows || []).map(r => `${r.id}:${r.status}:${r.loggedBy}`).sort().join('|');
-  return `${meds}#${schedules}#${slots}#${doses}#${routine?.household?.usesOrganizer}`;
+  return `${meds}#${schedules}#${slots}#${doses}#${routine?.household?.usesOrganizer}#${routine?.household?.nightlySummary}`;
 }
 
 /* When the cache last actually reached the server. Surfaced on the
@@ -179,6 +179,14 @@ async function pullRoutine(code) {
   // the same way the timezone above is.
   if (routine.household?.usesOrganizer !== undefined) {
     await store.saveSettings({ usesOrganizer: routine.household.usesOrganizer });
+  }
+
+  // The nightly summary switch (0029), guarded the same way.
+  if (routine.household?.nightlySummary !== undefined) {
+    await store.saveSettings({
+      nightlySummary: routine.household.nightlySummary,
+      nightlySummaryTime: routine.household.nightlySummaryTime || '23:50',
+    });
   }
 
   return { routine, photos: () => cachePhotos(code, medicines, previousPaths) };

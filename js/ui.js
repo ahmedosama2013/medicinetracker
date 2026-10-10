@@ -560,7 +560,27 @@ export function field({ label, control, hint, error, id }) {
  * the supporter's tighter density without changing the elder's markup.
  */
 export function organizerChoice(value, onSelect, { dense = false } = {}) {
-  const option = (optValue, label, hint) => {
+  return yesNoChoice(value, onSelect, {
+    yes: [S.organizerYes, S.organizerYesHint],
+    no: [S.organizerNo, S.organizerNoHint],
+    dense,
+  });
+}
+
+/** Whether the household gets the nightly summary (0029). Same cards as
+ * organizerChoice, so both household-wide yes/no settings look alike. */
+export function nightlySummaryChoice(value, onSelect, { dense = false } = {}) {
+  return yesNoChoice(value, onSelect, {
+    yes: [S.nightlyOn, S.nightlyOnHint],
+    no: [S.nightlyOff, S.nightlyOffHint],
+    dense,
+  });
+}
+
+/* The cards themselves. `value` is treated as true unless it is exactly
+ * false, which is also how both settings default. */
+function yesNoChoice(value, onSelect, { yes, no, dense }) {
+  const option = (optValue, [label, hint]) => {
     const selected = (value !== false) === optValue;
     return el(`button.organizer-option${dense ? '.organizer-option-dense' : ''}`, {
       type: 'button',
@@ -575,10 +595,7 @@ export function organizerChoice(value, onSelect, { dense = false } = {}) {
     ]);
   };
 
-  return el('div.organizer-choice', [
-    option(true, S.organizerYes, S.organizerYesHint),
-    option(false, S.organizerNo, S.organizerNoHint),
-  ]);
+  return el('div.organizer-choice', [option(true, yes), option(false, no)]);
 }
 
 export function settingsGroup(label, children) {
