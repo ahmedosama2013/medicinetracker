@@ -26,135 +26,89 @@
  *      later. A title needs no grammatical agreement, and both iOS and
  *      Android always show it without expanding the notification.
  *
- *   4. VARIANT CHOICE MUST STAY DETERMINISTIC. A push that fails is retried
- *      up to three times. If the wording were random, attempt two would
- *      arrive worded differently and read as a second, separate reminder --
- *      the one thing a gentle nudge must never do. pick() below is a pure
- *      function of a key the caller derives from the notification's identity,
- *      so a retry is byte-identical while the words still vary day to day.
+ *   4. ONE WORDING PER NOTIFICATION, NO VARIANTS. Plain and identical every
+ *      time, so each kind is recognisable at a glance -- and a retried push
+ *      is byte-identical by construction.
  *
- * A SUPPORTER-FACING MESSAGE NAMES THE ELDER, BY DESIGN. Every message above
- * is written to the elder and never identifies them -- there is no one else
- * it could be about. A message TO a supporter is different: it is already
- * about a specific person, `households.display_name`, which the supporter's
- * own Settings screen shows them today, so this is not a new exposure. Rule 3
- * still applies to the slot label -- it just now shares the title with the
- * name rather than owning it alone: `"<name> - <slot label> medicines"`. The
- * body stays as generic and gender-neutral as the elder's own copy ("their",
- * never "her"/"his" -- the app has no pronoun for the elder).
+ * A SUPPORTER-FACING MESSAGE NAMES THE ELDER AND STATES THE ELDER'S CLOCK.
+ * Every elder message is written to the elder and never identifies them. A
+ * message TO a supporter is about a specific person, so it carries their
+ * first name (from `households.display_name`, which the supporter's own
+ * Settings already shows). It also says what time it is "their time": a
+ * supporter in another timezone otherwise reads an 11:50 pm summary arriving
+ * at 8:50 pm their own time as a reminder fired on the wrong clock. "Their",
+ * never "her"/"his" -- the app has no pronoun for the elder.
  */
 
 // ---- the copy -------------------------------------------------------------
 
 export const PUSH_COPY = {
   /** Stage 1: the slot's own time, anything in it still unmarked. */
-  stage1: [
-    '🌤️ Ready whenever you are.',
-    '✨ These are ready for you.',
-    '⏰ Time to grab these - no rush.',
-  ],
+  stage1: "It's time for your medicines.",
 
   /** Stage 2: one hour later (per household), still unmarked. */
-  stage2: [
-    '🌸 Still here whenever you get a moment.',
-    '💫 Just a gentle nudge - no rush.',
-    '🌤️ These are still waiting for you.',
-  ],
+  stage2: 'Not marked yet.',
 
-  /* The nightly catch-all. Names no slot and no medicine -- it covers the
-   * whole day, and by this hour the useful message is "have a look", not
-   * "here is what you owe". The third variant carries rule 2 out loud. */
-  nightlyTitle: 'Before the day ends',
-  nightly: [
-    "🌙 A few things from today aren't marked yet - quick look?",
-    '✨ Almost bedtime - anything left to mark off?',
-    "🌟 If you've taken everything today, worth marking it off.",
-  ],
+  /** The nightly catch-all. Names no slot and no medicine. */
+  nightlyTitle: 'End of the day',
+  nightly: "Some of today's medicines are not marked yet.",
 
-  /* The supporter's manual nudge. Deliberately one wording rather than
-   * three: it is occasional and person-initiated, so day-to-day variety buys
-   * nothing, and a single string keeps rule 4 trivially satisfied. Kept
-   * plain on purpose -- an earlier draft ("someone's thinking of you") read
-   * as more intimate than a household utility app should ever sound. */
+  /** The supporter's manual nudge. */
   nudgeTitle: 'CarePair',
-  nudge: '👋 Someone is reminding you to take your medicines',
+  nudge: 'Your helper is reminding you to take your medicines.',
 
-  // A deliberate one-off action from the elder's own Settings screen. It
-  // confirms delivery without mentioning medicines on the lock screen.
+  /** A deliberate one-off from the elder's own Settings screen. */
   testTitle: 'CarePair',
-  test: 'This is a test reminder. Check that it appeared on this phone.',
+  test: 'This is a test reminder.',
 
-  /* Stage 3: a supporter's own escalation, some time after the SLOT's own
-   * time (delay is per-subscription -- see 0020, which corrected this from
-   * an earlier version anchored on the elder's own stage-2 delay instead).
-   * Never "still hasn't taken it" -- the supporter can see this even less
-   * than the elder's own notifications can, so rule 2 matters most here.
-   * Elder-facing copy above stays calm on purpose (docs/ui.md); a
-   * supporter's own copy can carry more energy since it's a check-in
-   * between two people who both opted into it, not a reminder aimed at
-   * someone who may already feel watched. */
-  escalation: [
-    '👀 Still not marked - worth a quick call?',
-    '📞 Nothing logged yet! Maybe check in?',
-    '💛 A little check-in could go a long way right now.',
-  ],
+  /** Stage 3: a supporter's own escalation, after their chosen delay. */
+  escalation: (time: string) => `Not marked yet. Due at ${time} their time.`,
 
-  /* The nightly catch-all, addressed to a supporter instead of the elder. */
-  nightlyForSupporter: [
-    '📋 A few things today are still unmarked!',
-    "🌙 Not everything's marked yet - worth a call before bed?",
-    '💛 A quick check-in before the day wraps up?',
-  ],
+  /** The nightly catch-all, addressed to a supporter. */
+  nightlyForSupporterTitle: (name: string) => `${name} - end of day`,
+  nightlyForSupporter: (time: string | null) => time
+    ? `Some of today's medicines are not marked. It's ${time} their time.`
+    : "Some of today's medicines are not marked.",
 } as const;
 
+// ---- helpers ---------------------------------------------------------------
+
+/* "21:00" or "21:00:00" -> "9:00 pm", matching js/date.js's formatTime. */
+export function formatTime(time: string): string {
+  const [h, m] = String(time).split(':').map(Number);
+  const suffix = h < 12 ? 'am' : 'pm';
+  const hour = h % 12 === 0 ? 12 : h % 12;
+  return `${hour}:${String(m || 0).padStart(2, '0')} ${suffix}`;
+}
+
+/* First name for a supporter's title. Skips a leading honorific, so
+ * "Dr Jawed Samejo" is "Jawed" rather than "Dr". Falls back to the whole
+ * name if that is all there is. */
+const HONORIFICS = new Set(['dr', 'mr', 'mrs', 'ms', 'miss', 'prof', 'sir']);
+export function firstName(fullName: string | null | undefined): string {
+  const words = String(fullName || '').trim().split(/\s+/).filter(Boolean);
+  const rest = words.filter((w, i) => !(i < words.length - 1 && HONORIFICS.has(w.toLowerCase().replace(/\.$/, ''))));
+  return rest[0] || words[0] || 'Them';
+}
+
 // ---- assembling one notification ------------------------------------------
-
-/* FNV-1a. Any stable string hash would do; this one is short enough to read
- * and has no dependencies. Math.imul keeps the multiply in 32-bit range --
- * a plain `*` overflows into a float and stops being a hash. */
-function hash(key: string): number {
-  let h = 2166136261;
-  for (let i = 0; i < key.length; i++) {
-    h ^= key.charCodeAt(i);
-    h = Math.imul(h, 16777619);
-  }
-  return h >>> 0;
-}
-
-function pick(variants: readonly string[], key: string): string {
-  return variants[hash(key) % variants.length];
-}
 
 export interface Notification {
   title: string;
   body: string;
 }
 
-/**
- * A slot reminder, stage 1 or stage 2.
- *
- * The key includes the stage so the two messages for one slot never land on
- * the same variant, and includes the date so the wording moves on tomorrow.
- */
-export function slotNotification(
-  stage: number,
-  slotLabel: string,
-  localDate: string,
-  slotId: string,
-): Notification {
-  const variants = stage === 2 ? PUSH_COPY.stage2 : PUSH_COPY.stage1;
+/** A slot reminder, stage 1 or stage 2. */
+export function slotNotification(stage: number, slotLabel: string): Notification {
   return {
     title: `${slotLabel} medicines`,
-    body: pick(variants, `${localDate}|${slotId}|${stage}`),
+    body: stage === 2 ? PUSH_COPY.stage2 : PUSH_COPY.stage1,
   };
 }
 
-/** The nightly catch-all. One per household per day, so that is the key. */
-export function nightlyNotification(localDate: string, householdId: string): Notification {
-  return {
-    title: PUSH_COPY.nightlyTitle,
-    body: pick(PUSH_COPY.nightly, `${localDate}|${householdId}`),
-  };
+/** The nightly catch-all, for the elder. */
+export function nightlyNotification(): Notification {
+  return { title: PUSH_COPY.nightlyTitle, body: PUSH_COPY.nightly };
 }
 
 /** The supporter's nudge. */
@@ -167,31 +121,26 @@ export function testNotification(): Notification {
   return { title: PUSH_COPY.testTitle, body: PUSH_COPY.test };
 }
 
-/**
- * A supporter's stage-3 escalation. Keyed without the subscription id: two
- * supporters watching the same slot should be free to land on the same
- * variant, since each only ever sees their own notification.
- */
+/** A supporter's stage-3 escalation. `slotTime` is the household's clock. */
 export function escalationNotification(
   slotLabel: string,
   elderName: string,
-  localDate: string,
-  slotId: string,
+  slotTime: string,
 ): Notification {
   return {
-    title: `${elderName} - ${slotLabel} medicines`,
-    body: pick(PUSH_COPY.escalation, `${localDate}|${slotId}|escalation`),
+    title: `${firstName(elderName)} - ${slotLabel} medicines`,
+    body: PUSH_COPY.escalation(formatTime(slotTime)),
   };
 }
 
-/** The nightly catch-all, for a supporter subscription. */
+/** The nightly catch-all, for a supporter. `summaryTime` is the household's
+ * clock; null only if the database predates 0029, which returns it. */
 export function nightlyNotificationForSupporter(
   elderName: string,
-  localDate: string,
-  householdId: string,
+  summaryTime: string | null,
 ): Notification {
   return {
-    title: `${elderName} - today's medicines`,
-    body: pick(PUSH_COPY.nightlyForSupporter, `${localDate}|${householdId}|supporter`),
+    title: PUSH_COPY.nightlyForSupporterTitle(firstName(elderName)),
+    body: PUSH_COPY.nightlyForSupporter(summaryTime ? formatTime(summaryTime) : null),
   };
 }

@@ -25,6 +25,7 @@
 import { createClient } from 'npm:@supabase/supabase-js@2'
 import webpush from 'npm:web-push@3.6.7'
 import { nudgeNotification } from '../_shared/messages.ts'
+import { logPush, pushError } from '../_shared/push-log.ts'
 
 const supabase = createClient(
   Deno.env.get('SUPABASE_URL')!,
@@ -165,6 +166,9 @@ Deno.serve(async (req) => {
     // message exists to obey: never "you forgot", because the supporter
     // cannot see whether the dose was taken and simply not marked.
     const { title, body } = nudgeNotification()
+    const log = (subscriptionId: string) => ({
+      householdId, subscriptionId, role: 'patient', kind: 'nudge' as const, title, body,
+    })
     for (const sub of subs) {
       try {
         await webpush.sendNotification(
@@ -172,7 +176,9 @@ Deno.serve(async (req) => {
           JSON.stringify({ title, body }),
         )
         sent += 1
+        await logPush(supabase, { ...log(sub.id), ok: true })
       } catch (err) {
+        await logPush(supabase, { ...log(sub.id), ok: false, ...pushError(err) })
         failures.push(String((err as { statusCode?: number; body?: string })?.body ?? (err as Error)?.message ?? err).slice(0, 120))
         // A direct update, not rpc('disable_push_subscription'): that function
         // lives in the `app` schema, which PostgREST does not expose, so the

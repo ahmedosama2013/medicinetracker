@@ -26,7 +26,7 @@
  * Deno and never reach the browser.
  */
 
-export const APP_VERSION = '1.1.0';
+export const APP_VERSION = '1.0.2';
 
 /** "Umer Butt" -> "Umer". The stored household name is first + last; every
  * screen that greets someone by name shows only the first. */

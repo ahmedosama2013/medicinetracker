@@ -7,6 +7,7 @@
 import { createClient } from 'npm:@supabase/supabase-js@2'
 import webpush from 'npm:web-push@3.6.7'
 import { testNotification } from '../_shared/messages.ts'
+import { logPush, pushError } from '../_shared/push-log.ts'
 
 const supabase = createClient(
   Deno.env.get('SUPABASE_URL')!,
@@ -50,7 +51,7 @@ Deno.serve(async req => {
 
     const { data: sub, error: subError } = await supabase
       .from('push_subscriptions')
-      .select('id, endpoint, p256dh, auth_key')
+      .select('id, household_id, endpoint, p256dh, auth_key')
       .eq('endpoint', endpoint)
       .eq('user_id', user.id)
       .eq('role', 'patient')
@@ -62,10 +63,13 @@ Deno.serve(async req => {
     const vapidError = ensureVapid()
     if (vapidError) return Response.json({ error: 'Push notifications are not configured yet.' }, { status: 500, headers: corsHeaders })
 
+    const { title, body } = testNotification()
+    const log = { householdId: sub.household_id, subscriptionId: sub.id, role: 'patient', kind: 'test' as const, title, body }
     try {
-      const { title, body } = testNotification()
       await webpush.sendNotification({ endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth_key } }, JSON.stringify({ title, body }))
+      await logPush(supabase, { ...log, ok: true })
     } catch (err) {
+      await logPush(supabase, { ...log, ok: false, ...pushError(err) })
       const statusCode = (err as { statusCode?: number }).statusCode
       if (statusCode === 404 || statusCode === 410) {
         await supabase.from('push_subscriptions').update({ disabled_at: new Date().toISOString() }).eq('id', sub.id)

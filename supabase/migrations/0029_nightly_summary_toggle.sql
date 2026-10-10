@@ -37,15 +37,19 @@ grant execute on function public.set_nightly_summary(text, boolean) to anon, aut
 -- claim_daily_summary: skip households that turned it off.
 -- ============================================================
 
--- Same signature and return columns as 0018, so CREATE OR REPLACE is enough
--- and the public.claim_daily_summary() wrapper keeps working untouched. The
--- only change is the filter in `hh`.
+-- Two changes from 0018: the filter in `hh`, and a new `summary_time` column
+-- so the supporter's message can say what time it is on the elder's clock
+-- ("It's 11:50 pm their time"). A changed RETURNS TABLE needs both the app.
+-- function and its public. wrapper dropped first -- same trap 0018 notes.
+drop function if exists public.claim_daily_summary();
+drop function if exists app.claim_daily_summary(interval, interval);
+
 create or replace function app.claim_daily_summary(
   p_window interval default '20 minutes',
   p_retry  interval default '4 minutes'
 ) returns table (
   subscription_id uuid, endpoint text, p256dh text, auth_key text,
-  household_id uuid, local_date date, role text, elder_name text
+  household_id uuid, local_date date, role text, elder_name text, summary_time time
 )
 language sql volatile security definer set search_path = '' as $$
   with hh as (
@@ -61,7 +65,8 @@ language sql volatile security definer set search_path = '' as $$
        and now() <  ((hh.today + hh.nightly_summary_time) at time zone hh.timezone) + p_window
   ),
   pending as (
-    select w.id as household_id, w.today as local_date, w.display_name
+    select w.id as household_id, w.today as local_date, w.display_name,
+           w.nightly_summary_time
       from in_window w
      where exists (
        select 1 from app.unlogged_slots(w.id, w.today) u
@@ -79,14 +84,25 @@ language sql volatile security definer set search_path = '' as $$
     returning household_id, local_date
   )
   select ps.id, ps.endpoint, ps.p256dh, ps.auth_key, c.household_id, c.local_date,
-         ps.role, p.display_name
+         ps.role, p.display_name, p.nightly_summary_time
     from claimed c
     join pending p on p.household_id = c.household_id and p.local_date = c.local_date
     join public.push_subscriptions ps
       on ps.household_id = c.household_id and ps.disabled_at is null and ps.notify_due;
 $$;
 
+create or replace function public.claim_daily_summary()
+returns table (
+  subscription_id uuid, endpoint text, p256dh text, auth_key text,
+  household_id uuid, local_date date, role text, elder_name text, summary_time time
+)
+language sql volatile security definer set search_path = '' as $$
+  select * from app.claim_daily_summary();
+$$;
+
 revoke all on function app.claim_daily_summary(interval, interval) from public, anon, authenticated;
+revoke all on function public.claim_daily_summary() from public, anon, authenticated;
+grant execute on function public.claim_daily_summary() to service_role;
 
 -- ============================================================
 -- get_routine: so a supporter's device learns the setting, and the time.

@@ -23,6 +23,7 @@ import {
   nightlyNotificationForSupporter,
   slotNotification,
 } from '../_shared/messages.ts'
+import { logPush, pushError, type PushKind } from '../_shared/push-log.ts'
 
 const supabase = createClient(
   Deno.env.get('SUPABASE_URL')!,
@@ -84,15 +85,31 @@ interface PushTarget {
  * the app was uninstalled, or the browser rotated its subscription -- so the
  * row is disabled rather than retried forever. Any other failure is left
  * unmarked for the next run's stale-reclaim.
+ *
+ * Every attempt, delivered or not, is also written to app.push_log (0030).
  */
-async function deliver(target: PushTarget, title: string, body: string): Promise<boolean> {
+interface LogMeta {
+  household_id: string
+  role: string
+  kind: PushKind
+  local_date: string
+  slot_id?: string | null
+}
+
+async function deliver(target: PushTarget, title: string, body: string, meta: LogMeta): Promise<boolean> {
+  const log = {
+    householdId: meta.household_id, subscriptionId: target.subscription_id, role: meta.role,
+    kind: meta.kind, title, body, localDate: meta.local_date, slotId: meta.slot_id ?? null,
+  }
   try {
     await webpush.sendNotification(
       { endpoint: target.endpoint, keys: { p256dh: target.p256dh, auth: target.auth_key } },
       JSON.stringify({ title, body }),
     )
+    await logPush(supabase, { ...log, ok: true })
     return true
   } catch (err) {
+    await logPush(supabase, { ...log, ok: false, ...pushError(err) })
     const status = (err as { statusCode?: number })?.statusCode
     if (status === 404 || status === 410) {
       await supabase.rpc('disable_push_subscription', { p_id: target.subscription_id })
@@ -118,10 +135,10 @@ Deno.serve(async () => {
   if (dueError) problems.push(`claim_due_notifications: ${dueError.message}`)
 
   for (const row of due ?? []) {
-    const { title, body } = slotNotification(
-      row.stage, row.slot_label, row.local_date, row.slot_id,
-    )
-    if (await deliver(row, title, body)) {
+    const { title, body } = slotNotification(row.stage, row.slot_label)
+    // claim_due_notifications only ever returns the elder's own phones (0019).
+    const kind = row.stage === 2 ? 'follow-up' : 'reminder'
+    if (await deliver(row, title, body, { ...row, role: 'patient', kind })) {
       sent += 1
       await supabase.rpc('mark_notification_sent', {
         p_household: row.household_id,
@@ -139,10 +156,8 @@ Deno.serve(async () => {
   if (escalationError) problems.push(`claim_supporter_escalations: ${escalationError.message}`)
 
   for (const row of escalations ?? []) {
-    const { title, body } = escalationNotification(
-      row.slot_label, row.elder_name, row.local_date, row.slot_id,
-    )
-    if (await deliver(row, title, body)) {
+    const { title, body } = escalationNotification(row.slot_label, row.elder_name, row.slot_time)
+    if (await deliver(row, title, body, { ...row, role: 'supporter', kind: 'escalation' })) {
       sent += 1
       await supabase.rpc('mark_supporter_escalation_sent', {
         p_subscription_id: row.subscription_id,
@@ -159,9 +174,9 @@ Deno.serve(async () => {
 
   for (const row of summaries ?? []) {
     const { title, body } = row.role === 'supporter'
-      ? nightlyNotificationForSupporter(row.elder_name, row.local_date, row.household_id)
-      : nightlyNotification(row.local_date, row.household_id)
-    if (await deliver(row, title, body)) {
+      ? nightlyNotificationForSupporter(row.elder_name, row.summary_time ?? null)
+      : nightlyNotification()
+    if (await deliver(row, title, body, { ...row, kind: 'nightly' })) {
       sent += 1
       await supabase.rpc('mark_daily_summary_sent', {
         p_household: row.household_id,
